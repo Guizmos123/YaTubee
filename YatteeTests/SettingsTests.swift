@@ -10,6 +10,37 @@ import Foundation
 import SwiftUI
 @testable import Yattee
 
+// MARK: - App Localization Tests
+
+@Suite("App Localization Tests", .serialized)
+struct AppLocalizationTests {
+    @Test("Explicit locale resolves independently from the system language")
+    func explicitLocaleResolution() {
+        #expect(AppLocalization.string("settings.title", locale: Locale(identifier: "en")) == "Settings")
+        #expect(AppLocalization.string("settings.title", locale: Locale(identifier: "fr")) == "Réglages")
+    }
+
+    @Test("Persisted language switches materialized strings immediately")
+    func persistedLanguageSwitch() {
+        let defaults = UserDefaults.standard
+        let key = SettingsKey.appLanguage.rawValue
+        let previousValue = defaults.object(forKey: key)
+        defer {
+            if let previousValue {
+                defaults.set(previousValue, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+
+        defaults.set(AppLanguage.french.rawValue, forKey: key)
+        #expect(AppLocalization.string("settings.title") == "Réglages")
+
+        defaults.set(AppLanguage.english.rawValue, forKey: key)
+        #expect(AppLocalization.string("settings.title") == "Settings")
+    }
+}
+
 // MARK: - AppTheme Tests
 
 @Suite("AppTheme Tests")

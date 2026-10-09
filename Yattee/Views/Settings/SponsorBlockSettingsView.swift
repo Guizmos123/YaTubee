@@ -31,7 +31,7 @@ struct SponsorBlockSettingsView: View {
         #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
         #endif
-        .navigationTitle(String(localized: "settings.sponsorBlock.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.sponsorBlock.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -46,7 +46,7 @@ private struct EnableSection: View {
     var body: some View {
         SettingsFormSection(footer: "settings.sponsorBlock.footer") {
             Toggle(
-                String(localized: "settings.sponsorBlock.enabled"),
+                AppLocalization.string("settings.sponsorBlock.enabled"),
                 isOn: $settings.sponsorBlockEnabled
             )
         }
@@ -88,7 +88,7 @@ private struct AdvancedSection: View {
     var body: some View {
         SettingsFormSection("settings.sponsorBlock.advanced.header", footer: "settings.sponsorBlock.apiURL.footer") {
             TextField(
-                String(localized: "settings.sponsorBlock.apiURL"),
+                AppLocalization.string("settings.sponsorBlock.apiURL"),
                 text: $apiURLText,
                 prompt: Text(SettingsManager.defaultSponsorBlockAPIURL)
             )
@@ -107,7 +107,7 @@ private struct AdvancedSection: View {
             }
 
             if settings.sponsorBlockAPIURL != SettingsManager.defaultSponsorBlockAPIURL {
-                Button(String(localized: "settings.sponsorBlock.apiURL.reset")) {
+                Button(AppLocalization.string("settings.sponsorBlock.apiURL.reset")) {
                     apiURLText = ""
                     settings.sponsorBlockAPIURL = SettingsManager.defaultSponsorBlockAPIURL
                 }
@@ -128,13 +128,13 @@ private struct AboutSection: View {
     var body: some View {
         SettingsFormSection("settings.sponsorBlock.about.header") {
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "settings.sponsorBlock.about.description"))
+                Text(AppLocalization.string("settings.sponsorBlock.about.description"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
 
                 Link(destination: URL(string: "https://sponsor.ajay.app")!) {
                     HStack {
-                        Text(String(localized: "settings.sponsorBlock.about.learnMore"))
+                        Text(AppLocalization.string("settings.sponsorBlock.about.learnMore"))
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)

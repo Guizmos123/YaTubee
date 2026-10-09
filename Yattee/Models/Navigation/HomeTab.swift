@@ -17,9 +17,9 @@ enum HomeTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .playlists: return String(localized: "home.playlists.title")
-        case .history: return String(localized: "home.history.title")
-        case .downloads: return String(localized: "home.downloads.title")
+        case .playlists: return AppLocalization.string("home.playlists.title")
+        case .history: return AppLocalization.string("home.history.title")
+        case .downloads: return AppLocalization.string("home.downloads.title")
         }
     }
 

@@ -52,7 +52,7 @@ struct iCloudSettingsView: View {
         SettingsFormContainer {
             #if DEBUG
             SettingsFormSection(footer: "settings.icloud.dev.footer") {
-                Label(String(localized: "settings.icloud.dev.title"), systemImage: "hammer.fill")
+                Label(AppLocalization.string("settings.icloud.dev.title"), systemImage: "hammer.fill")
                     .foregroundStyle(.orange)
                     .font(.subheadline)
             }
@@ -60,7 +60,7 @@ struct iCloudSettingsView: View {
 
             if cloudKitSync?.isCloudKitAvailable == false {
                 SettingsFormSection(footer: "settings.icloud.unavailable.footer") {
-                    Label(String(localized: "settings.icloud.unavailable"), systemImage: "icloud.slash")
+                    Label(AppLocalization.string("settings.icloud.unavailable"), systemImage: "icloud.slash")
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -75,7 +75,7 @@ struct iCloudSettingsView: View {
                             }
                         }
                     )) {
-                        Label(String(localized: "settings.icloud.enable"), systemImage: "icloud")
+                        Label(AppLocalization.string("settings.icloud.enable"), systemImage: "icloud")
                     }
                 }
 
@@ -86,7 +86,7 @@ struct iCloudSettingsView: View {
             }
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.icloud.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.icloud.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -95,73 +95,73 @@ struct iCloudSettingsView: View {
             await cloudKitSync?.refreshAccountStatus()
         }
         .confirmationDialog(
-            String(localized: "settings.icloud.enable.confirmation.title"),
+            AppLocalization.string("settings.icloud.enable.confirmation.title"),
             isPresented: $showingEnableConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.icloud.enable.confirmation.action"), role: .destructive) {
+            Button(AppLocalization.string("settings.icloud.enable.confirmation.action"), role: .destructive) {
                 enableiCloudSync()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "settings.icloud.enable.confirmation.message"))
+            Text(AppLocalization.string("settings.icloud.enable.confirmation.message"))
         }
         .presentationCompactAdaptation(.sheet)
         .confirmationDialog(
-            String(localized: "settings.icloud.disable.confirmation.title"),
+            AppLocalization.string("settings.icloud.disable.confirmation.title"),
             isPresented: $showingDisableConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.icloud.disable.confirmation.action"), role: .destructive) {
+            Button(AppLocalization.string("settings.icloud.disable.confirmation.action"), role: .destructive) {
                 disableiCloudSync()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "settings.icloud.disable.confirmation.message"))
+            Text(AppLocalization.string("settings.icloud.disable.confirmation.message"))
         }
         .presentationCompactAdaptation(.sheet)
         // Confirmation for categories that replace local data (instances, settings, media sources)
         .confirmationDialog(
-            String(localized: "settings.icloud.category.enable.title"),
+            AppLocalization.string("settings.icloud.category.enable.title"),
             isPresented: .init(
                 get: { showingCategoryEnableConfirmation != nil },
                 set: { if !$0 { showingCategoryEnableConfirmation = nil } }
             ),
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.icloud.category.enable.action"), role: .destructive) {
+            Button(AppLocalization.string("settings.icloud.category.enable.action"), role: .destructive) {
                 if let category = showingCategoryEnableConfirmation {
                     enableCategory(category)
                 }
                 showingCategoryEnableConfirmation = nil
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
                 showingCategoryEnableConfirmation = nil
             }
         } message: {
-            Text(String(localized: "settings.icloud.category.enable.message"))
+            Text(AppLocalization.string("settings.icloud.category.enable.message"))
         }
         .presentationCompactAdaptation(.sheet)
         // Confirmation for categories that upload/merge local data (subscriptions, bookmarks, playlists, history)
         .confirmationDialog(
-            String(localized: "settings.icloud.category.sync.title"),
+            AppLocalization.string("settings.icloud.category.sync.title"),
             isPresented: .init(
                 get: { showingCategorySyncConfirmation != nil },
                 set: { if !$0 { showingCategorySyncConfirmation = nil } }
             ),
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.icloud.category.sync.action")) {
+            Button(AppLocalization.string("settings.icloud.category.sync.action")) {
                 if let category = showingCategorySyncConfirmation {
                     enableCategory(category)
                 }
                 showingCategorySyncConfirmation = nil
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
                 showingCategorySyncConfirmation = nil
             }
         } message: {
-            Text(String(localized: "settings.icloud.category.sync.message"))
+            Text(AppLocalization.string("settings.icloud.category.sync.message"))
         }
         .presentationCompactAdaptation(.sheet)
     }
@@ -181,7 +181,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.instances"), systemImage: "server.rack")
+                Label(AppLocalization.string("settings.icloud.category.instances"), systemImage: "server.rack")
             }
 
             Toggle(isOn: Binding(
@@ -194,7 +194,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.subscriptions"), systemImage: "person.2")
+                Label(AppLocalization.string("settings.icloud.category.subscriptions"), systemImage: "person.2")
             }
 
             Toggle(isOn: Binding(
@@ -207,7 +207,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.bookmarks"), systemImage: "bookmark.fill")
+                Label(AppLocalization.string("settings.icloud.category.bookmarks"), systemImage: "bookmark.fill")
             }
 
             Toggle(isOn: Binding(
@@ -220,7 +220,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.playlists"), systemImage: "list.bullet.rectangle")
+                Label(AppLocalization.string("settings.icloud.category.playlists"), systemImage: "list.bullet.rectangle")
             }
 
             Toggle(isOn: Binding(
@@ -233,7 +233,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.playbackHistory"), systemImage: "clock.arrow.circlepath")
+                Label(AppLocalization.string("settings.icloud.category.playbackHistory"), systemImage: "clock.arrow.circlepath")
             }
 
             Toggle(isOn: Binding(
@@ -246,7 +246,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.searchHistory"), systemImage: "magnifyingglass.circle")
+                Label(AppLocalization.string("settings.icloud.category.searchHistory"), systemImage: "magnifyingglass.circle")
             }
 
             Toggle(isOn: Binding(
@@ -259,7 +259,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.settings"), systemImage: "gearshape")
+                Label(AppLocalization.string("settings.icloud.category.settings"), systemImage: "gearshape")
             }
 
             Toggle(isOn: Binding(
@@ -272,7 +272,7 @@ struct iCloudSettingsView: View {
                     }
                 }
             )) {
-                Label(String(localized: "settings.icloud.category.mediaSources"), systemImage: "externaldrive.connected.to.line.below")
+                Label(AppLocalization.string("settings.icloud.category.mediaSources"), systemImage: "externaldrive.connected.to.line.below")
             }
         }
         #if os(macOS)
@@ -288,7 +288,7 @@ struct iCloudSettingsView: View {
         SettingsFormSection(footer: footer) {
             // iCloud Account Status
             HStack {
-                Label(String(localized: "settings.icloud.account"), systemImage: "person.crop.circle")
+                Label(AppLocalization.string("settings.icloud.account"), systemImage: "person.crop.circle")
                 Spacer()
                 HStack(spacing: 6) {
                     accountStatusIcon
@@ -299,7 +299,7 @@ struct iCloudSettingsView: View {
             
             // Sync Status
             HStack {
-                Label(String(localized: "settings.icloud.status"), systemImage: "arrow.triangle.2.circlepath")
+                Label(AppLocalization.string("settings.icloud.status"), systemImage: "arrow.triangle.2.circlepath")
                 Spacer()
                 HStack(spacing: 6) {
                     syncStatusIcon
@@ -311,7 +311,7 @@ struct iCloudSettingsView: View {
             // Pending Changes (if any)
             if let count = cloudKitSync?.pendingChangesCount, count > 0 {
                 HStack {
-                    Label(String(localized: "settings.icloud.pending"), systemImage: "clock")
+                    Label(AppLocalization.string("settings.icloud.pending"), systemImage: "clock")
                     Spacer()
                     Text(verbatim: "\(count) item\(count == 1 ? "" : "s")")
                         .foregroundStyle(.secondary)
@@ -321,7 +321,7 @@ struct iCloudSettingsView: View {
             // Last Sync (automatic)
             if let lastSync = cloudKitSync?.lastSyncDate {
                 HStack {
-                    Label(String(localized: "settings.icloud.lastSynced"), systemImage: "checkmark.circle")
+                    Label(AppLocalization.string("settings.icloud.lastSynced"), systemImage: "checkmark.circle")
                     Spacer()
                     Text(lastSync, style: .relative)
                         .foregroundStyle(.secondary)
@@ -359,7 +359,7 @@ struct iCloudSettingsView: View {
             Button {
                 syncNow()
             } label: {
-                Label(String(localized: "settings.icloud.syncNow"), systemImage: syncNowIcon)
+                Label(AppLocalization.string("settings.icloud.syncNow"), systemImage: syncNowIcon)
             }
             .disabled(cloudKitSync?.isSyncing == true)
         }
@@ -439,7 +439,7 @@ struct iCloudSettingsView: View {
                 HStack {
                     Image(systemName: "exclamationmark.circle.fill")
                         .foregroundStyle(.red)
-                    Text(String(localized: "settings.icloud.syncError"))
+                    Text(AppLocalization.string("settings.icloud.syncError"))
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: expandedError ? "chevron.up" : "chevron.down")
@@ -462,7 +462,7 @@ struct iCloudSettingsView: View {
                             await cloudKitSync?.sync()
                         }
                     } label: {
-                        Label(String(localized: "settings.icloud.retrySync"), systemImage: "arrow.clockwise")
+                        Label(AppLocalization.string("settings.icloud.retrySync"), systemImage: "arrow.clockwise")
                             .font(.caption)
                     }
                     .buttonStyle(.bordered)
@@ -484,7 +484,7 @@ struct iCloudSettingsView: View {
                 HStack {
                     Image(systemName: "arrow.up.circle.fill")
                         .foregroundStyle(.orange)
-                    Text(String(localized: "settings.icloud.update.title"))
+                    Text(AppLocalization.string("settings.icloud.update.title"))
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: expandedUpdateWarning ? "chevron.up" : "chevron.down")
@@ -494,7 +494,7 @@ struct iCloudSettingsView: View {
             }
 
             if expandedUpdateWarning {
-                Text(String(localized: "settings.icloud.update.message"))
+                Text(AppLocalization.string("settings.icloud.update.message"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

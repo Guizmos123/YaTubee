@@ -16,9 +16,9 @@ struct DownloadQualitySheet: View {
 
         var label: String {
             switch self {
-            case .video: String(localized: "player.quality.video")
-            case .audio: String(localized: "stream.audio")
-            case .subtitles: String(localized: "stream.subtitles")
+            case .video: AppLocalization.string("player.quality.video")
+            case .audio: AppLocalization.string("stream.audio")
+            case .subtitles: AppLocalization.string("stream.subtitles")
             }
         }
     }
@@ -285,13 +285,13 @@ struct DownloadQualitySheet: View {
             #else
             .background(Color(.systemGroupedBackground))
             #endif
-            .navigationTitle(String(localized: "download.selectQuality"))
+            .navigationTitle(AppLocalization.string("download.selectQuality"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "common.cancel")) {
+                    Button(AppLocalization.string("common.cancel")) {
                         dismiss()
                     }
                 }
@@ -304,7 +304,7 @@ struct DownloadQualitySheet: View {
                             ProgressView()
                                 .controlSize(.small)
                         } else {
-                            Text(String(localized: "download.start"))
+                            Text(AppLocalization.string("download.start"))
                         }
                     }
                     .disabled(!canDownload)
@@ -361,7 +361,7 @@ struct DownloadQualitySheet: View {
             Spacer()
             ProgressView()
                 .controlSize(.large)
-            Text(String(localized: "download.selectQuality.loading"))
+            Text(AppLocalization.string("download.selectQuality.loading"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -416,9 +416,9 @@ struct DownloadQualitySheet: View {
     private var videoSection: some View {
         if videoStreams.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "download.noStreams.title"), systemImage: "exclamationmark.triangle")
+                Label(AppLocalization.string("download.noStreams.title"), systemImage: "exclamationmark.triangle")
             } description: {
-                Text(String(localized: "download.noStreams.description"))
+                Text(AppLocalization.string("download.noStreams.description"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -440,7 +440,7 @@ struct DownloadQualitySheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             if requiresAudioTrack {
-                Text(String(localized: "download.videoOnly.hint"))
+                Text(AppLocalization.string("download.videoOnly.hint"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
@@ -452,7 +452,7 @@ struct DownloadQualitySheet: View {
     private var audioSection: some View {
         if audioStreams.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "download.noAudio.title"), systemImage: "speaker.slash")
+                Label(AppLocalization.string("download.noAudio.title"), systemImage: "speaker.slash")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -514,14 +514,14 @@ struct DownloadQualitySheet: View {
     @ViewBuilder
     private var selectionSummary: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(String(localized: "download.summary"), systemImage: "info.circle")
+            Label(AppLocalization.string("download.summary"), systemImage: "info.circle")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 4) {
                 if let video = selectedVideoStream {
                     HStack {
-                        Text(String(localized: "download.summary.video"))
+                        Text(AppLocalization.string("download.summary.video"))
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text("\(video.qualityLabel) \(video.isMuxed ? "(muxed)" : "")")
@@ -531,7 +531,7 @@ struct DownloadQualitySheet: View {
 
                 if requiresAudioTrack, let audio = selectedAudioStream {
                     HStack {
-                        Text(String(localized: "download.summary.audio"))
+                        Text(AppLocalization.string("download.summary.audio"))
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(formatAudioLabel(audio))
@@ -541,7 +541,7 @@ struct DownloadQualitySheet: View {
 
                 if let caption = selectedCaption {
                     HStack {
-                        Text(String(localized: "download.summary.subtitles"))
+                        Text(AppLocalization.string("download.summary.subtitles"))
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text(caption.displayName)
@@ -587,7 +587,7 @@ struct DownloadQualitySheet: View {
 
                         if showAdvancedStreamDetails {
                             if stream.isMuxed {
-                                Text(String(localized: "stream.badge.muxed"))
+                                Text(AppLocalization.string("stream.badge.muxed"))
                                     .font(.caption2)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
@@ -673,7 +673,7 @@ struct DownloadQualitySheet: View {
                     if showAdvancedStreamDetails {
                         HStack(spacing: 4) {
                             if stream.isOriginalAudio {
-                                Text(String(localized: "stream.audio.original"))
+                                Text(AppLocalization.string("stream.audio.original"))
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -722,11 +722,11 @@ struct DownloadQualitySheet: View {
                                 .font(.caption2)
                                 .foregroundStyle(.orange)
                         }
-                        Text(caption?.displayName ?? String(localized: "stream.subtitles.none"))
+                        Text(caption?.displayName ?? AppLocalization.string("stream.subtitles.none"))
                             .font(.headline)
 
                         if let caption, caption.isAutoGenerated {
-                            Text(String(localized: "stream.subtitle.auto"))
+                            Text(AppLocalization.string("stream.subtitle.auto"))
                                 .font(.caption2)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -756,7 +756,7 @@ struct DownloadQualitySheet: View {
         if let lang = stream.audioLanguage {
             return Locale.current.localizedString(forLanguageCode: lang) ?? lang.uppercased()
         }
-        return stream.audioTrackName ?? String(localized: "stream.audio.default")
+        return stream.audioTrackName ?? AppLocalization.string("stream.audio.default")
     }
 
     private func formatCodec(_ codec: String) -> String {
@@ -794,7 +794,7 @@ struct DownloadQualitySheet: View {
 
         // Validate audio selection for video-only streams
         if videoStream.isVideoOnly && selectedAudioStream == nil {
-            errorMessage = String(localized: "download.error.audioRequired")
+            errorMessage = AppLocalization.string("download.error.audioRequired")
             return
         }
 

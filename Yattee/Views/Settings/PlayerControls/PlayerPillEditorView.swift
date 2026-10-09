@@ -24,7 +24,7 @@ struct PlayerPillEditorView: View {
             buttonsSection
             addButtonSection
         }
-        .navigationTitle(String(localized: "settings.playerControls.playerPill"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.playerPill"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -42,7 +42,7 @@ struct PlayerPillEditorView: View {
     private var visibilitySection: some View {
         Section {
             Picker(
-                String(localized: "pill.visibility.title"),
+                AppLocalization.string("pill.visibility.title"),
                 selection: $visibility
             ) {
                 ForEach(PillVisibility.allCases, id: \.self) { mode in
@@ -55,9 +55,9 @@ struct PlayerPillEditorView: View {
                 viewModel.syncPillVisibility(newValue)
             }
         } header: {
-            Text(String(localized: "pill.visibility.header"))
+            Text(AppLocalization.string("pill.visibility.header"))
         } footer: {
-            Text(String(localized: "pill.visibility.footer"))
+            Text(AppLocalization.string("pill.visibility.footer"))
         }
     }
 
@@ -66,7 +66,7 @@ struct PlayerPillEditorView: View {
     private var buttonsSection: some View {
         Section {
             if viewModel.pillButtons.isEmpty {
-                Text(String(localized: "pill.buttons.empty"))
+                Text(AppLocalization.string("pill.buttons.empty"))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(Array(viewModel.pillButtons.enumerated()), id: \.element.id) { index, config in
@@ -80,9 +80,9 @@ struct PlayerPillEditorView: View {
                 }
             }
         } header: {
-            Text(String(localized: "pill.buttons.header"))
+            Text(AppLocalization.string("pill.buttons.header"))
         } footer: {
-            Text(String(localized: "pill.buttons.footer"))
+            Text(AppLocalization.string("pill.buttons.footer"))
         }
         .disabled(!viewModel.canEditActivePreset)
     }
@@ -110,7 +110,7 @@ struct PlayerPillEditorView: View {
                 }
             } label: {
                 Label(
-                    String(localized: "settings.playerControls.delete"),
+                    AppLocalization.string("settings.playerControls.delete"),
                     systemImage: "trash"
                 )
             }
@@ -169,7 +169,7 @@ struct PlayerPillEditorView: View {
                 }
             }
         } header: {
-            Text(String(localized: "pill.addButton.header"))
+            Text(AppLocalization.string("pill.addButton.header"))
         }
         .disabled(!viewModel.canEditActivePreset)
     }

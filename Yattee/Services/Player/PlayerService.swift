@@ -895,7 +895,7 @@ final class PlayerService {
                         LoggingService.shared.warning("[Player] Download for \(videoID.videoID) is completed but videoAndStream returned nil (local file missing?)", category: .player)
                         toastManager?.show(
                             category: .download,
-                            title: String(localized: "toast.download.fileMissing.title"),
+                            title: AppLocalization.string("toast.download.fileMissing.title"),
                             icon: "exclamationmark.triangle",
                             iconColor: .orange,
                             autoDismissDelay: 4.0
@@ -1015,7 +1015,7 @@ final class PlayerService {
                 LoggingService.shared.warning("[Player] Download for \(video.id) is completed but videoAndStream returned nil (local file missing?)", category: .player)
                 toastManager?.show(
                     category: .download,
-                    title: String(localized: "toast.download.fileMissing.title"),
+                    title: AppLocalization.string("toast.download.fileMissing.title"),
                     icon: "exclamationmark.triangle",
                     iconColor: .orange,
                     autoDismissDelay: 4.0
@@ -1236,7 +1236,7 @@ final class PlayerService {
             LoggingService.shared.logPlayerError("Stream refresh failed: exceeded max attempts (\(maxStreamRefreshAttempts))")
             toastManager?.show(
                 category: .playerStatus,
-                title: String(localized: "toast.player.streamRefreshFailed.title"),
+                title: AppLocalization.string("toast.player.streamRefreshFailed.title"),
                 icon: "exclamationmark.triangle",
                 iconColor: .red,
                 autoDismissDelay: 3.0
@@ -1253,7 +1253,7 @@ final class PlayerService {
         // Show toast that refresh is starting
         toastManager?.show(
             category: .playerStatus,
-            title: String(localized: "toast.player.refreshingStream.title"),
+            title: AppLocalization.string("toast.player.refreshingStream.title"),
             icon: "arrow.clockwise",
             iconColor: .blue,
             autoDismissDelay: 2.0
@@ -1300,7 +1300,7 @@ final class PlayerService {
             // Show success toast
             toastManager?.show(
                 category: .playerStatus,
-                title: String(localized: "toast.player.streamRefreshed.title"),
+                title: AppLocalization.string("toast.player.streamRefreshed.title"),
                 icon: "checkmark.circle",
                 iconColor: .green,
                 autoDismissDelay: 2.0
@@ -1314,7 +1314,7 @@ final class PlayerService {
             if streamRefreshAttempts >= maxStreamRefreshAttempts {
                 toastManager?.show(
                     category: .playerStatus,
-                    title: String(localized: "toast.player.streamRefreshFailed.title"),
+                    title: AppLocalization.string("toast.player.streamRefreshFailed.title"),
                     icon: "exclamationmark.triangle",
                     iconColor: .red,
                     autoDismissDelay: 3.0
@@ -3016,7 +3016,7 @@ final class PlayerService {
 
         // 2. Fall back to description parsing
         if let description = video.description {
-            let introTitle = String(localized: "player.chapters.intro")
+            let introTitle = AppLocalization.string("player.chapters.intro")
             let chapters = ChapterParser.parse(
                 description: description,
                 videoDuration: videoDuration,
@@ -3200,7 +3200,7 @@ extension PlayerService: PlayerBackendDelegate {
         // Skip immediately if player is NOT visible to user (no point showing error screen)
         if isSheetCollapsed || isInBackground || isPiPActive {
             // Show toast notification
-            toastManager?.showInfo(String(localized: "player.error.skippingToNext.title"))
+            toastManager?.showInfo(AppLocalization.string("player.error.skippingToNext.title"))
 
             await playNext()
         }

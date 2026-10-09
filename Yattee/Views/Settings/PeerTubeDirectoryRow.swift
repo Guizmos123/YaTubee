@@ -30,13 +30,13 @@ struct PeerTubeDirectoryRow: View {
 
                 // Add button or added indicator
                 if isAlreadyAdded {
-                    Label(String(localized: "peertube.explore.added"), systemImage: "checkmark.circle.fill")
+                    Label(AppLocalization.string("peertube.explore.added"), systemImage: "checkmark.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.green)
                         .labelStyle(CompactLabelStyle())
                 } else {
                     Button(action: onAdd) {
-                        Label(String(localized: "common.add"), systemImage: "plus.circle")
+                        Label(AppLocalization.string("common.add"), systemImage: "plus.circle")
                             .labelStyle(CompactLabelStyle())
                     }
                     .buttonStyle(.bordered)

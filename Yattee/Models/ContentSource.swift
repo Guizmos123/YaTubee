@@ -36,11 +36,11 @@ enum ContentSource: Codable, Hashable, Sendable {
         switch self {
         case .global(let provider):
             if provider == Self.youtubeProvider {
-                return String(localized: "source.youtube")
+                return AppLocalization.string("source.youtube")
             }
             return provider.prefix(1).uppercased() + provider.dropFirst()
         case .federated(_, let instance):
-            return instance.host ?? String(localized: "instances.type.peertube")
+            return instance.host ?? AppLocalization.string("instances.type.peertube")
         case .extracted(let extractor, let originalURL):
             // Capitalize the extractor name, or fall back to URL host
             let formatted = extractor.replacingOccurrences(of: "_", with: " ")

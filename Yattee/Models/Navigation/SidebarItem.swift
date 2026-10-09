@@ -87,19 +87,19 @@ enum SidebarItem: Hashable, Identifiable {
     var title: String {
         switch self {
         case .home:
-            return String(localized: "tabs.home")
+            return AppLocalization.string("tabs.home")
         case .search:
-            return String(localized: "tabs.search")
+            return AppLocalization.string("tabs.search")
         case .sources:
-            return String(localized: "tabs.sources")
+            return AppLocalization.string("tabs.sources")
         case .settings:
-            return String(localized: "tabs.settings")
+            return AppLocalization.string("tabs.settings")
         case .nowPlaying:
-            return String(localized: "sidebar.nowPlaying")
+            return AppLocalization.string("sidebar.nowPlaying")
         case .openURL:
-            return String(localized: "sidebar.mainItem.openURL")
+            return AppLocalization.string("sidebar.mainItem.openURL")
         case .remoteControl:
-            return String(localized: "sidebar.mainItem.remoteControl")
+            return AppLocalization.string("sidebar.mainItem.remoteControl")
         case .channel(_, let name, _):
             return name
         case .playlist(_, let title):
@@ -109,19 +109,19 @@ enum SidebarItem: Hashable, Identifiable {
         case .instance(_, let name, _):
             return name
         case .bookmarks:
-            return String(localized: "home.bookmarks.title")
+            return AppLocalization.string("home.bookmarks.title")
         case .history:
-            return String(localized: "home.history.title")
+            return AppLocalization.string("home.history.title")
         case .downloads:
-            return String(localized: "home.downloads.title")
+            return AppLocalization.string("home.downloads.title")
         case .subscriptionsFeed:
-            return String(localized: "home.subscriptions.title")
+            return AppLocalization.string("home.subscriptions.title")
         case .manageChannels:
-            return String(localized: "sidebar.manageChannels")
+            return AppLocalization.string("sidebar.manageChannels")
         case .playlistsList:
-            return String(localized: "home.playlists.title")
+            return AppLocalization.string("home.playlists.title")
         case .continueWatching:
-            return String(localized: "home.continueWatching.title")
+            return AppLocalization.string("home.continueWatching.title")
         }
     }
 

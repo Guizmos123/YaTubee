@@ -103,7 +103,7 @@ struct UnifiedPlaylistDetailView: View {
     }
 
     private var navigationTitleText: String {
-        title.isEmpty ? cachedHeader?.title ?? String(localized: "playlist.title") : title
+        title.isEmpty ? cachedHeader?.title ?? AppLocalization.string("playlist.title") : title
     }
 
     private var navigationThumbnailURL: URL? {
@@ -117,7 +117,7 @@ struct UnifiedPlaylistDetailView: View {
         var parts: [String] = []
 
         if videoCount > 0 || !isLoading {
-            parts.append(String(localized: "playlist.videoCount \(videoCount)"))
+            parts.append(AppLocalization.string("playlist.videoCount \(videoCount)"))
         }
 
         if let localPlaylist {
@@ -126,7 +126,7 @@ struct UnifiedPlaylistDetailView: View {
 
         // Return placeholder while loading to prevent navigation subtitle jump
         if parts.isEmpty && isLoading {
-            return String(localized: "common.loading")
+            return AppLocalization.string("common.loading")
         }
 
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
@@ -148,9 +148,9 @@ struct UnifiedPlaylistDetailView: View {
                 errorView(error)
             } else {
                 ContentUnavailableView(
-                    String(localized: "playlist.notFound"),
+                    AppLocalization.string("playlist.notFound"),
                     systemImage: "list.bullet.rectangle",
-                    description: Text(String(localized: "playlist.notFound.description"))
+                    description: Text(AppLocalization.string("playlist.notFound.description"))
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -176,11 +176,11 @@ struct UnifiedPlaylistDetailView: View {
             }
         }
         .confirmationDialog(
-            String(localized: "playlist.delete.confirm"),
+            AppLocalization.string("playlist.delete.confirm"),
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "common.delete"), role: .destructive) {
+            Button(AppLocalization.string("common.delete"), role: .destructive) {
                 if let localPlaylist {
                     dataManager?.deletePlaylist(localPlaylist)
                     dismiss()
@@ -320,7 +320,7 @@ struct UnifiedPlaylistDetailView: View {
         let summaryText: String? = {
             var parts: [String] = []
             if videoCount > 0 || !isLoading {
-                parts.append(String(localized: "playlist.videoCount \(videoCount)"))
+                parts.append(AppLocalization.string("playlist.videoCount \(videoCount)"))
             }
             if let localPlaylist {
                 parts.append(localPlaylist.formattedTotalDuration)
@@ -374,7 +374,7 @@ struct UnifiedPlaylistDetailView: View {
                 Button {
                     playAll()
                 } label: {
-                    Label(String(localized: "playlist.play"), systemImage: "play.fill")
+                    Label(AppLocalization.string("playlist.play"), systemImage: "play.fill")
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
@@ -401,7 +401,7 @@ struct UnifiedPlaylistDetailView: View {
                 Button {
                     // No action - already downloaded
                 } label: {
-                    Label(String(localized: "playlist.downloaded"), systemImage: "checkmark.circle.fill")
+                    Label(AppLocalization.string("playlist.downloaded"), systemImage: "checkmark.circle.fill")
                 }
                 .fontWeight(.semibold)
                 .buttonStyle(.bordered)
@@ -410,7 +410,7 @@ struct UnifiedPlaylistDetailView: View {
                 Button {
                     downloadCoordinator.startDownload(videos: videos)
                 } label: {
-                    Label(String(localized: "playlist.downloadAll"), systemImage: "arrow.down.circle")
+                    Label(AppLocalization.string("playlist.downloadAll"), systemImage: "arrow.down.circle")
                 }
                 .fontWeight(.semibold)
                 .buttonStyle(.bordered)
@@ -426,15 +426,15 @@ struct UnifiedPlaylistDetailView: View {
                         Task { await importToLocal() }
                     } label: {
                         if isImporting, let progress = importProgress {
-                            Label(String(localized: "playlist.savingToLibrary \(progress.current) \(progress.total)"), systemImage: "plus.rectangle.on.folder")
+                            Label(AppLocalization.string("playlist.savingToLibrary \(progress.current) \(progress.total)"), systemImage: "plus.rectangle.on.folder")
                         } else {
-                            Label(String(localized: "playlist.saveToLibrary"), systemImage: "plus.rectangle.on.folder")
+                            Label(AppLocalization.string("playlist.saveToLibrary"), systemImage: "plus.rectangle.on.folder")
                         }
                     }
                     .disabled(isImporting)
 
                     ShareLink(item: playlistShareURL()) {
-                        Label(String(localized: "common.share"), systemImage: "square.and.arrow.up")
+                        Label(AppLocalization.string("common.share"), systemImage: "square.and.arrow.up")
                     }
                 }
 
@@ -443,13 +443,13 @@ struct UnifiedPlaylistDetailView: View {
                     Button {
                         showingEditSheet = true
                     } label: {
-                        Label(String(localized: "playlist.edit"), systemImage: "pencil")
+                        Label(AppLocalization.string("playlist.edit"), systemImage: "pencil")
                     }
 
                     Button(role: .destructive) {
                         showingDeleteConfirmation = true
                     } label: {
-                        Label(String(localized: "playlist.delete"), systemImage: "trash")
+                        Label(AppLocalization.string("playlist.delete"), systemImage: "trash")
                     }
                 }
             } label: {
@@ -575,7 +575,7 @@ struct UnifiedPlaylistDetailView: View {
                 Button {
                     playAll()
                 } label: {
-                    Label(String(localized: "playlist.play"), systemImage: "play.fill")
+                    Label(AppLocalization.string("playlist.play"), systemImage: "play.fill")
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .font(.headline)
                 }
@@ -589,9 +589,9 @@ struct UnifiedPlaylistDetailView: View {
                 } label: {
                     Group {
                         if isImporting, let progress = importProgress {
-                            Label(String(localized: "playlist.savingToLibrary \(progress.current) \(progress.total)"), systemImage: "plus.rectangle.on.folder")
+                            Label(AppLocalization.string("playlist.savingToLibrary \(progress.current) \(progress.total)"), systemImage: "plus.rectangle.on.folder")
                         } else {
-                            Label(String(localized: "playlist.saveToLibrary"), systemImage: "plus.rectangle.on.folder")
+                            Label(AppLocalization.string("playlist.saveToLibrary"), systemImage: "plus.rectangle.on.folder")
                         }
                     }
                     .frame(maxWidth: .infinity, minHeight: 50)
@@ -606,7 +606,7 @@ struct UnifiedPlaylistDetailView: View {
                 Button {
                     showingEditSheet = true
                 } label: {
-                    Label(String(localized: "playlist.edit"), systemImage: "pencil")
+                    Label(AppLocalization.string("playlist.edit"), systemImage: "pencil")
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .font(.headline)
                 }
@@ -615,7 +615,7 @@ struct UnifiedPlaylistDetailView: View {
                 Button {
                     showingDeleteConfirmation = true
                 } label: {
-                    Label(String(localized: "playlist.delete"), systemImage: "trash")
+                    Label(AppLocalization.string("playlist.delete"), systemImage: "trash")
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .font(.headline)
                         .foregroundStyle(.red)
@@ -650,9 +650,9 @@ struct UnifiedPlaylistDetailView: View {
 
     private var emptyPlaylistView: some View {
         ContentUnavailableView {
-            Label(String(localized: "playlist.empty"), systemImage: "music.note.list")
+            Label(AppLocalization.string("playlist.empty"), systemImage: "music.note.list")
         } description: {
-            Text(String(localized: "playlist.empty.description"))
+            Text(AppLocalization.string("playlist.empty.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, 40)
@@ -692,11 +692,11 @@ struct UnifiedPlaylistDetailView: View {
 
     private func errorView(_ error: String) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await loadPlaylist() }
             }
             .buttonStyle(.bordered)
@@ -952,7 +952,7 @@ struct UnifiedPlaylistDetailView: View {
         isImporting = false
         importProgress = nil
 
-        appEnvironment.toastManager.showSuccess(String(localized: "playlist.imported.title"))
+        appEnvironment.toastManager.showSuccess(AppLocalization.string("playlist.imported.title"))
     }
 }
 

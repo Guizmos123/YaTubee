@@ -108,7 +108,7 @@ struct ErrorDetailsSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle(String(localized: "player.error.details.title"))
+            .navigationTitle(AppLocalization.string("player.error.details.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -121,15 +121,15 @@ struct ErrorDetailsSheet: View {
                     Button {
                         copyToClipboard()
                     } label: {
-                        Label(String(localized: "player.error.copy"), systemImage: "doc.on.doc")
+                        Label(AppLocalization.string("player.error.copy"), systemImage: "doc.on.doc")
                     }
-                    .accessibilityLabel(String(localized: "player.error.copy.accessibilityLabel"))
+                    .accessibilityLabel(AppLocalization.string("player.error.copy.accessibilityLabel"))
 
                     // Share button (not available on tvOS)
                     ShareLink(item: errorMessage) {
-                        Label(String(localized: "player.error.share"), systemImage: "square.and.arrow.up")
+                        Label(AppLocalization.string("player.error.share"), systemImage: "square.and.arrow.up")
                     }
-                    .accessibilityLabel(String(localized: "player.error.share.accessibilityLabel"))
+                    .accessibilityLabel(AppLocalization.string("player.error.share.accessibilityLabel"))
                 }
                 #endif
             }

@@ -8,7 +8,7 @@
 import Foundation
 
 /// Sideloaded installs (AltStore, SideStore, Sideloadly, …) are re-signed by a
-/// team that cannot register `iCloud.stream.yattee.app` (container IDs are
+/// team that cannot register `iCloud.com.app.yatubee` (container IDs are
 /// globally unique), so the iCloud entitlements are stripped or remapped.
 /// `CKContainer(identifier:)` fatally traps in that state, so the container
 /// must never be created when the entitlement is missing.

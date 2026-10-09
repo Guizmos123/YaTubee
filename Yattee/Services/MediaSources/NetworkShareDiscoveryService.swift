@@ -24,9 +24,9 @@ struct DiscoveredShare: Identifiable, Hashable, Sendable {
 
         var displayName: String {
             switch self {
-            case .webdav: String(localized: "discovery.shareType.webdav")
-            case .webdavs: String(localized: "discovery.shareType.webdavs")
-            case .smb: String(localized: "discovery.shareType.smb")
+            case .webdav: AppLocalization.string("discovery.shareType.webdav")
+            case .webdavs: AppLocalization.string("discovery.shareType.webdavs")
+            case .smb: AppLocalization.string("discovery.shareType.smb")
             }
         }
 

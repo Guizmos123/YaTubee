@@ -14,7 +14,7 @@ struct TranslationContributorsView: View {
     var body: some View {
         content
             .opaqueWindowBackground()
-            .navigationTitle(String(localized: "settings.translators.title"))
+            .reactiveNavigationTitle(AppLocalization.string("settings.translators.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -29,7 +29,7 @@ struct TranslationContributorsView: View {
     private var content: some View {
         if contributors.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "settings.translators.empty"), systemImage: "globe")
+                Label(AppLocalization.string("settings.translators.empty"), systemImage: "globe")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {

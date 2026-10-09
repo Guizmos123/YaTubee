@@ -55,6 +55,8 @@ struct SettingsView: View {
                             iCloudSettingsView()
                         case .appearance:
                             AppearanceSettingsView()
+                        case .language:
+                            LanguageSettingsView()
                         case .layoutNavigation:
                             LayoutNavigationSettingsView()
                         case .playback:
@@ -74,7 +76,7 @@ struct SettingsView: View {
                         case .about:
                             AboutView()
                         case .none:
-                            Text(String(localized: "settings.placeholder.selectSection"))
+                            Text(AppLocalization.string("settings.placeholder.selectSection"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
@@ -94,7 +96,7 @@ struct SettingsView: View {
                 .frame(width: 48, height: 48)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            Text(verbatim: "Yattee")
+            Text(verbatim: "YaTubee")
                 .font(.callout)
                 .fontWeight(.semibold)
 
@@ -118,7 +120,7 @@ struct SettingsView: View {
                         SourcesListView()
                     } label: {
                         HStack {
-                            Label(String(localized: "sources.title"), systemImage: "server.rack")
+                            Label(AppLocalization.string("sources.title"), systemImage: "server.rack")
                             Spacer()
                             if appEnvironment.mediaSourcesManager.hasSourcesNeedingPassword {
                                 Image(systemName: "exclamationmark.circle.fill")
@@ -129,13 +131,13 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.row.sources")
 
                     NavigationLink {
-                        TVSidebarDetailContainer(systemImage: "icloud", title: String(localized: "settings.icloud.title")) { iCloudSettingsView() }
+                        TVSidebarDetailContainer(systemImage: "icloud", title: AppLocalization.string("settings.icloud.title")) { iCloudSettingsView() }
                     } label: {
                         HStack {
-                            Label(String(localized: "settings.icloud.title"), systemImage: "icloud")
+                            Label(AppLocalization.string("settings.icloud.title"), systemImage: "icloud")
                             #if DEBUG
                             Spacer()
-                            Text(String(localized: "settings.icloud.dev.badge"))
+                            Text(AppLocalization.string("settings.icloud.dev.badge"))
                                 .font(.caption2.bold())
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 6)
@@ -145,38 +147,42 @@ struct SettingsView: View {
                         }
                     }
 
-                    NavigationLink { TVSidebarDetailContainer(systemImage: "paintbrush", title: String(localized: "settings.appearance.sectionTitle")) { AppearanceSettingsView() } } label: {
-                        Label(String(localized: "settings.appearance.sectionTitle"), systemImage: "paintbrush")
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "paintbrush", title: AppLocalization.string("settings.appearance.sectionTitle")) { AppearanceSettingsView() } } label: {
+                        Label(AppLocalization.string("settings.appearance.sectionTitle"), systemImage: "paintbrush")
                     }
 
-                    NavigationLink { TVSidebarDetailContainer(systemImage: "hand.tap", title: String(localized: "settings.layoutNavigation.title")) { LayoutNavigationSettingsView() } } label: {
-                        Label(String(localized: "settings.layoutNavigation.title"), systemImage: "hand.tap")
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "globe", title: AppLocalization.string("settings.language.title")) { LanguageSettingsView() } } label: {
+                        Label("settings.language.title", systemImage: "globe")
                     }
 
-                    NavigationLink { TVSidebarDetailContainer(systemImage: "rectangle.on.rectangle.angled", title: String(localized: "settings.topShelf.title", defaultValue: "Top Shelf")) { TopShelfSettingsView() } } label: {
-                        Label(String(localized: "settings.topShelf.title", defaultValue: "Top Shelf"), systemImage: "rectangle.on.rectangle.angled")
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "hand.tap", title: AppLocalization.string("settings.layoutNavigation.title")) { LayoutNavigationSettingsView() } } label: {
+                        Label(AppLocalization.string("settings.layoutNavigation.title"), systemImage: "hand.tap")
                     }
 
-                    NavigationLink { TVSidebarDetailContainer(systemImage: "play.circle", title: String(localized: "settings.playback.sectionTitle")) { PlaybackSettingsView() } } label: {
-                        Label(String(localized: "settings.playback.sectionTitle"), systemImage: "play.circle")
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "rectangle.on.rectangle.angled", title: AppLocalization.string("settings.topShelf.title", defaultValue: "Top Shelf")) { TopShelfSettingsView() } } label: {
+                        Label(AppLocalization.string("settings.topShelf.title", defaultValue: "Top Shelf"), systemImage: "rectangle.on.rectangle.angled")
                     }
 
-                    NavigationLink { TVSidebarDetailContainer(systemImage: "hand.raised", title: String(localized: "settings.privacy.title")) { PrivacySettingsView() } } label: {
-                        Label(String(localized: "settings.privacy.title"), systemImage: "hand.raised")
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "play.circle", title: AppLocalization.string("settings.playback.sectionTitle")) { PlaybackSettingsView() } } label: {
+                        Label(AppLocalization.string("settings.playback.sectionTitle"), systemImage: "play.circle")
+                    }
+
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "hand.raised", title: AppLocalization.string("settings.privacy.title")) { PrivacySettingsView() } } label: {
+                        Label(AppLocalization.string("settings.privacy.title"), systemImage: "hand.raised")
                     }
 
                     if appEnvironment.instancesManager.enabledInstances.contains(where: \.isYouTubeInstance) {
-                        NavigationLink { TVSidebarDetailContainer(systemImage: "puzzlepiece.extension", title: String(localized: "settings.youtubeEnhancements.title")) { YouTubeEnhancementsSettingsView() } } label: {
-                            Label(String(localized: "settings.youtubeEnhancements.title"), systemImage: "puzzlepiece.extension")
+                        NavigationLink { TVSidebarDetailContainer(systemImage: "puzzlepiece.extension", title: AppLocalization.string("settings.youtubeEnhancements.title")) { YouTubeEnhancementsSettingsView() } } label: {
+                            Label(AppLocalization.string("settings.youtubeEnhancements.title"), systemImage: "puzzlepiece.extension")
                         }
                     }
 
-                    NavigationLink { TVSidebarDetailContainer(systemImage: "gearshape.2", title: String(localized: "settings.advanced.title")) { AdvancedSettingsView() } } label: {
-                        Label(String(localized: "settings.advanced.title"), systemImage: "gearshape.2")
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "gearshape.2", title: AppLocalization.string("settings.advanced.title")) { AdvancedSettingsView() } } label: {
+                        Label(AppLocalization.string("settings.advanced.title"), systemImage: "gearshape.2")
                     }
 
-                    NavigationLink { TVSidebarDetailContainer(systemImage: "info.circle", title: String(localized: "settings.about.title")) { AboutView() } } label: {
-                        Label(String(localized: "settings.about.title"), systemImage: "info.circle")
+                    NavigationLink { TVSidebarDetailContainer(systemImage: "info.circle", title: AppLocalization.string("settings.about.title")) { AboutView() } } label: {
+                        Label(AppLocalization.string("settings.about.title"), systemImage: "info.circle")
                     }
                 }
             }
@@ -191,7 +197,7 @@ struct SettingsView: View {
                         .frame(width: 200, height: 200)
                         .clipShape(RoundedRectangle(cornerRadius: 46))
 
-                    Text(verbatim: "Yattee")
+                    Text(verbatim: "YaTubee")
                         .font(.title2)
                         .fontWeight(.semibold)
 
@@ -220,7 +226,7 @@ struct SettingsView: View {
                         SourcesListView()
                     } label: {
                         HStack {
-                            Label(String(localized: "sources.title"), systemImage: "server.rack")
+                            Label(AppLocalization.string("sources.title"), systemImage: "server.rack")
                             Spacer()
                             if appEnvironment.mediaSourcesManager.hasSourcesNeedingPassword {
                                 Image(systemName: "exclamationmark.circle.fill")
@@ -236,10 +242,10 @@ struct SettingsView: View {
                             iCloudSettingsView()
                         } label: {
                             HStack {
-                                Label(String(localized: "settings.icloud.title"), systemImage: "icloud")
+                                Label(AppLocalization.string("settings.icloud.title"), systemImage: "icloud")
                                 #if DEBUG
                                 Spacer()
-                                Text(String(localized: "settings.icloud.dev.badge"))
+                                Text(AppLocalization.string("settings.icloud.dev.badge"))
                                     .font(.caption2.bold())
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 6)
@@ -252,59 +258,65 @@ struct SettingsView: View {
                         NavigationLink {
                             AppearanceSettingsView()
                         } label: {
-                            Label(String(localized: "settings.appearance.sectionTitle"), systemImage: "paintbrush")
+                            Label(AppLocalization.string("settings.appearance.sectionTitle"), systemImage: "paintbrush")
+                        }
+
+                        NavigationLink {
+                            LanguageSettingsView()
+                        } label: {
+                            Label("settings.language.title", systemImage: "globe")
                         }
 
                         NavigationLink {
                             LayoutNavigationSettingsView()
                         } label: {
-                            Label(String(localized: "settings.layoutNavigation.title"), systemImage: "hand.tap")
+                            Label(AppLocalization.string("settings.layoutNavigation.title"), systemImage: "hand.tap")
                         }
 
                         NavigationLink {
                             PlaybackSettingsView()
                         } label: {
-                            Label(String(localized: "settings.playback.sectionTitle"), systemImage: "play.circle")
+                            Label(AppLocalization.string("settings.playback.sectionTitle"), systemImage: "play.circle")
                         }
 
                         #if os(iOS)
                         NavigationLink {
                             PlayerControlsSettingsView()
                         } label: {
-                            Label(String(localized: "settings.playerControls.title"), systemImage: "slider.horizontal.below.rectangle")
+                            Label(AppLocalization.string("settings.playerControls.title"), systemImage: "slider.horizontal.below.rectangle")
                         }
 
                         NavigationLink {
                             NotificationSettingsView()
                         } label: {
-                            Label(String(localized: "settings.notifications.title"), systemImage: "bell.badge")
+                            Label(AppLocalization.string("settings.notifications.title"), systemImage: "bell.badge")
                         }
 
                         NavigationLink {
                             DownloadSettingsView()
                         } label: {
-                            Label(String(localized: "settings.downloads.title"), systemImage: "arrow.down.circle")
+                            Label(AppLocalization.string("settings.downloads.title"), systemImage: "arrow.down.circle")
                         }
                         #endif
 
                         NavigationLink {
                             PrivacySettingsView()
                         } label: {
-                            Label(String(localized: "settings.privacy.title"), systemImage: "hand.raised")
+                            Label(AppLocalization.string("settings.privacy.title"), systemImage: "hand.raised")
                         }
 
                         if appEnvironment.instancesManager.enabledInstances.contains(where: \.isYouTubeInstance) {
                             NavigationLink {
                                 YouTubeEnhancementsSettingsView()
                             } label: {
-                                Label(String(localized: "settings.youtubeEnhancements.title"), systemImage: "puzzlepiece.extension")
+                                Label(AppLocalization.string("settings.youtubeEnhancements.title"), systemImage: "puzzlepiece.extension")
                             }
                         }
 
                         NavigationLink {
                             AdvancedSettingsView()
                         } label: {
-                            Label(String(localized: "settings.advanced.title"), systemImage: "gearshape.2")
+                            Label(AppLocalization.string("settings.advanced.title"), systemImage: "gearshape.2")
                         }
                     }
 
@@ -312,13 +324,13 @@ struct SettingsView: View {
                         NavigationLink {
                             AboutView()
                         } label: {
-                            Label(String(localized: "settings.about.title"), systemImage: "info.circle")
+                            Label(AppLocalization.string("settings.about.title"), systemImage: "info.circle")
                         }
                     }
 
                     Section {
                         VStack(spacing: 4) {
-                            Text(verbatim: "Yattee")
+                            Text(verbatim: "YaTubee")
                                 .font(.headline)
                             Text("\(appVersion) (\(buildNumber))")
                                 .font(.subheadline)
@@ -329,7 +341,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .navigationTitle(String(localized: "settings.title"))
+            .reactiveNavigationTitle(AppLocalization.string("settings.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if showCloseButton {
@@ -352,12 +364,37 @@ struct SettingsView: View {
     }
 }
 
+private struct ReactiveNavigationTitleModifier: ViewModifier {
+    @Environment(\.appEnvironment) private var appEnvironment
+
+    let title: () -> String
+
+    func body(content: Content) -> some View {
+        let language = appEnvironment?.settingsManager.appLanguage ?? .english
+        content.navigationTitle(resolvedTitle(for: language))
+    }
+
+    private func resolvedTitle(for language: AppLanguage) -> String {
+        switch language {
+        case .english, .french:
+            title()
+        }
+    }
+}
+
+extension View {
+    func reactiveNavigationTitle(_ title: @autoclosure @escaping () -> String) -> some View {
+        modifier(ReactiveNavigationTitleModifier(title: title))
+    }
+}
+
 // MARK: - Settings Sections
 
 enum SettingsSection: String, CaseIterable, Identifiable {
     case sources
     case icloud
     case appearance
+    case language
     case layoutNavigation
     case playback
     case playerControls
@@ -372,18 +409,19 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .sources: return String(localized: "sources.title")
-        case .icloud: return String(localized: "settings.icloud.title")
-        case .appearance: return String(localized: "settings.appearance.sectionTitle")
-        case .layoutNavigation: return String(localized: "settings.layoutNavigation.title")
-        case .playback: return String(localized: "settings.playback.sectionTitle")
-        case .playerControls: return String(localized: "settings.playerControls.title")
-        case .notifications: return String(localized: "settings.notifications.title")
-        case .downloads: return String(localized: "settings.downloads.title")
-        case .privacy: return String(localized: "settings.privacy.title")
-        case .youtubeEnhancements: return String(localized: "settings.youtubeEnhancements.title")
-        case .advanced: return String(localized: "settings.advanced.title")
-        case .about: return String(localized: "settings.about.title")
+        case .sources: return AppLocalization.string("sources.title")
+        case .icloud: return AppLocalization.string("settings.icloud.title")
+        case .appearance: return AppLocalization.string("settings.appearance.sectionTitle")
+        case .language: return AppLocalization.string("settings.language.title")
+        case .layoutNavigation: return AppLocalization.string("settings.layoutNavigation.title")
+        case .playback: return AppLocalization.string("settings.playback.sectionTitle")
+        case .playerControls: return AppLocalization.string("settings.playerControls.title")
+        case .notifications: return AppLocalization.string("settings.notifications.title")
+        case .downloads: return AppLocalization.string("settings.downloads.title")
+        case .privacy: return AppLocalization.string("settings.privacy.title")
+        case .youtubeEnhancements: return AppLocalization.string("settings.youtubeEnhancements.title")
+        case .advanced: return AppLocalization.string("settings.advanced.title")
+        case .about: return AppLocalization.string("settings.about.title")
         }
     }
 
@@ -392,6 +430,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .sources: return "server.rack"
         case .icloud: return "icloud"
         case .appearance: return "paintbrush"
+        case .language: return "globe"
         case .layoutNavigation: return "hand.tap"
         case .playback: return "play.circle"
         case .playerControls: return "slider.horizontal.below.rectangle"
@@ -402,6 +441,30 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .advanced: return "gearshape.2"
         case .about: return "info.circle"
         }
+    }
+}
+
+private struct LanguageSettingsView: View {
+    @Environment(\.appEnvironment) private var appEnvironment
+
+    var body: some View {
+        SettingsFormContainer {
+            if let settings = appEnvironment?.settingsManager {
+                SettingsFormSection(footer: "settings.language.footer") {
+                    Picker("settings.language.title", selection: Bindable(settings).appLanguage) {
+                        ForEach(AppLanguage.allCases, id: \.self) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+            }
+        }
+        .reactiveNavigationTitle(AppLocalization.string("settings.language.title"))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 

@@ -46,19 +46,23 @@ struct MediaSourcesView: View {
         appEnvironment?.needsCredentials(for: instance) ?? false
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     var body: some View {
         Group {
             #if os(tvOS)
             TVSidebarDetailContainer(
                 systemImage: "server.rack",
-                title: String(localized: "sources.title")
+                title: AppLocalization.string("sources.title")
             ) {
                 VStack(spacing: 0) {
                     HStack(spacing: 24) {
                         Button {
                             showingAddSheet = true
                         } label: {
-                            Label(String(localized: "sources.addSource"), systemImage: "plus")
+                            Label(AppLocalization.string("sources.addSource"), systemImage: "plus")
                         }
                         if let settings = sourcesSettings {
                             sortAndGroupMenu(settings)
@@ -78,15 +82,16 @@ struct MediaSourcesView: View {
             mediaSourcesInner
             #endif
         }
+        .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .navigationTitle(String(localized: "sources.title"))
+        .navigationTitle(AppLocalization.string("sources.title"))
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showingAddSheet = true
                 } label: {
-                    Label(String(localized: "sources.addSource"), systemImage: "plus")
+                    Label(AppLocalization.string("sources.addSource"), systemImage: "plus")
                 }
             }
             ToolbarItem(placement: .primaryAction) {
@@ -98,12 +103,12 @@ struct MediaSourcesView: View {
         #endif
         #if os(tvOS)
         .navigationDestination(item: $sourceToEdit) { source in
-            TVSidebarDetailContainer(systemImage: "pencil.circle", title: String(localized: "sources.editSource")) {
+            TVSidebarDetailContainer(systemImage: "pencil.circle", title: AppLocalization.string("sources.editSource")) {
                 EditSourceView(source: source)
             }
         }
         .navigationDestination(isPresented: $showingAddSheet) {
-            TVSidebarDetailContainer(systemImage: "plus.circle", title: String(localized: "sources.newSource")) {
+            TVSidebarDetailContainer(systemImage: "plus.circle", title: AppLocalization.string("sources.newSource")) {
                 AddSourceView()
             }
         }
@@ -120,10 +125,10 @@ struct MediaSourcesView: View {
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "common.delete"), role: .destructive) {
+            Button(AppLocalization.string("common.delete"), role: .destructive) {
                 confirmDelete()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
                 pendingDeleteInstance = nil
                 pendingDeleteSource = nil
             }
@@ -137,11 +142,11 @@ struct MediaSourcesView: View {
     private var mediaSourcesInner: some View {
         if isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "sources.empty.title"), systemImage: "server.rack")
+                Label(AppLocalization.string("sources.empty.title"), systemImage: "server.rack")
             } description: {
-                Text(String(localized: "sources.empty.description"))
+                Text(AppLocalization.string("sources.empty.description"))
             } actions: {
-                Button(String(localized: "sources.addSource")) {
+                Button(AppLocalization.string("sources.addSource")) {
                     showingAddSheet = true
                 }
                 .buttonStyle(.borderedProminent)
@@ -156,11 +161,11 @@ struct MediaSourcesView: View {
 
     private var deleteConfirmationMessage: String {
         if let instance = pendingDeleteInstance {
-            return String(localized: "sources.delete.confirmation.single \(instance.displayName)")
+            return AppLocalization.string("sources.delete.confirmation.single \(instance.displayName)")
         } else if let source = pendingDeleteSource {
-            return String(localized: "sources.delete.confirmation.single \(source.name)")
+            return AppLocalization.string("sources.delete.confirmation.single \(source.name)")
         }
-        return String(localized: "sources.delete.confirmation")
+        return AppLocalization.string("sources.delete.confirmation")
     }
 
     private func confirmDelete() {
@@ -228,7 +233,7 @@ struct MediaSourcesView: View {
 
         // Instances section
         if let manager = instancesManager, !manager.enabledInstances.isEmpty {
-            sectionHeader(String(localized: "sources.section.remoteServers"))
+            sectionHeader(AppLocalization.string("sources.section.remoteServers"))
 
             let sortedInstances = settings?.sorted(manager.enabledInstances) ?? manager.enabledInstances
             sectionCard {
@@ -238,7 +243,7 @@ struct MediaSourcesView: View {
 
         // Media sources section
         if let manager = mediaSourcesManager, !manager.enabledSources.isEmpty {
-            sectionHeader(String(localized: "sources.section.fileSources"))
+            sectionHeader(AppLocalization.string("sources.section.fileSources"))
 
             let sortedSources = settings?.sorted(manager.enabledSources) ?? manager.enabledSources
             sectionCard {
@@ -252,7 +257,7 @@ struct MediaSourcesView: View {
         let sortedSources = allUnifiedSources(settings: settings)
 
         if !sortedSources.isEmpty {
-            sectionHeader(String(localized: "sources.section.allSources"))
+            sectionHeader(AppLocalization.string("sources.section.allSources"))
 
             sectionCard {
                 ForEach(Array(sortedSources.enumerated()), id: \.element.id) { index, item in
@@ -312,7 +317,7 @@ struct MediaSourcesView: View {
                             .tag(option)
                     }
                 } label: {
-                    Label(String(localized: "sources.sort.title"), systemImage: "arrow.up.arrow.down")
+                    Label(AppLocalization.string("sources.sort.title"), systemImage: "arrow.up.arrow.down")
                 }
 
                 // Sort direction
@@ -321,8 +326,8 @@ struct MediaSourcesView: View {
                 } label: {
                     Label(
                         settings.sortDirection == .ascending
-                            ? String(localized: "sources.sort.ascending")
-                            : String(localized: "sources.sort.descending"),
+                            ? AppLocalization.string("sources.sort.ascending")
+                            : AppLocalization.string("sources.sort.descending"),
                         systemImage: settings.sortDirection.systemImage
                     )
                 }
@@ -340,11 +345,11 @@ struct MediaSourcesView: View {
                         }
                     }
                 )) {
-                    Label(String(localized: "sources.groupByType"), systemImage: "rectangle.3.group")
+                    Label(AppLocalization.string("sources.groupByType"), systemImage: "rectangle.3.group")
                 }
             }
         } label: {
-            Label(String(localized: "sources.sortAndGroup"), systemImage: "line.3.horizontal.decrease.circle")
+            Label(AppLocalization.string("sources.sortAndGroup"), systemImage: "line.3.horizontal.decrease.circle")
         }
     }
 
@@ -416,14 +421,14 @@ struct MediaSourcesView: View {
             Button {
                 sourceToEdit = .remoteServer(instance)
             } label: {
-                Label(String(localized: "common.edit"), systemImage: "pencil")
+                Label(AppLocalization.string("common.edit"), systemImage: "pencil")
             }
 
             Button(role: .destructive) {
                 pendingDeleteInstance = instance
                 showingDeleteConfirmation = true
             } label: {
-                Label(String(localized: "common.delete"), systemImage: "trash")
+                Label(AppLocalization.string("common.delete"), systemImage: "trash")
             }
         }
     }
@@ -482,14 +487,14 @@ struct MediaSourcesView: View {
             Button {
                 sourceToEdit = .fileSource(source)
             } label: {
-                Label(String(localized: "common.edit"), systemImage: "pencil")
+                Label(AppLocalization.string("common.edit"), systemImage: "pencil")
             }
 
             Button(role: .destructive) {
                 pendingDeleteSource = source
                 showingDeleteConfirmation = true
             } label: {
-                Label(String(localized: "common.delete"), systemImage: "trash")
+                Label(AppLocalization.string("common.delete"), systemImage: "trash")
             }
         }
     }
@@ -525,7 +530,7 @@ struct MediaSourcesView: View {
                     .foregroundStyle(.secondary)
 
                 if needsCredentials(instance) {
-                    Label(String(localized: "sources.status.authRequired"), systemImage: "key.fill")
+                    Label(AppLocalization.string("sources.status.authRequired"), systemImage: "key.fill")
                         .font(.caption2)
                         .foregroundStyle(.orange)
                 }
@@ -573,7 +578,7 @@ struct MediaSourcesView: View {
                     .foregroundStyle(.secondary)
 
                 if needsPassword {
-                    Label(String(localized: "sources.status.authRequired"), systemImage: "key.fill")
+                    Label(AppLocalization.string("sources.status.authRequired"), systemImage: "key.fill")
                         .font(.caption2)
                         .foregroundStyle(.orange)
                 }

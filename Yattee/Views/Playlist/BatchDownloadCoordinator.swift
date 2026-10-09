@@ -115,8 +115,8 @@ final class BatchDownloadCoordinator {
               let instance = appEnvironment.instancesManager.instance(for: firstVideo) else {
             appEnvironment?.toastManager.show(
                 category: .error,
-                title: String(localized: "batchDownload.error.title"),
-                subtitle: String(localized: "batchDownload.error.noInstance.subtitle")
+                title: AppLocalization.string("batchDownload.error.title"),
+                subtitle: AppLocalization.string("batchDownload.error.noInstance.subtitle")
             )
             return
         }
@@ -128,8 +128,8 @@ final class BatchDownloadCoordinator {
         // Show batch start toast
         appEnvironment.toastManager.show(
             category: .download,
-            title: String(localized: "batchDownload.starting.title"),
-            subtitle: String(localized: "batchDownload.starting.subtitle \(videos.count)"),
+            title: AppLocalization.string("batchDownload.starting.title"),
+            subtitle: AppLocalization.string("batchDownload.starting.subtitle \(videos.count)"),
             icon: "arrow.down.circle",
             iconColor: .blue,
             autoDismissDelay: 3.0
@@ -191,27 +191,27 @@ final class BatchDownloadCoordinator {
         if result.failedVideos.isEmpty {
             if result.skippedCount > 0 {
                 appEnvironment.toastManager.showSuccess(
-                    String(localized: "batchDownload.complete.title"),
-                    subtitle: String(localized: "batchDownload.complete.withSkipped.subtitle \(result.successCount) \(result.skippedCount)")
+                    AppLocalization.string("batchDownload.complete.title"),
+                    subtitle: AppLocalization.string("batchDownload.complete.withSkipped.subtitle \(result.successCount) \(result.skippedCount)")
                 )
             } else if result.successCount > 0 {
                 appEnvironment.toastManager.showSuccess(
-                    String(localized: "batchDownload.complete.title"),
-                    subtitle: String(localized: "batchDownload.complete.success.subtitle \(result.successCount)")
+                    AppLocalization.string("batchDownload.complete.title"),
+                    subtitle: AppLocalization.string("batchDownload.complete.success.subtitle \(result.successCount)")
                 )
             } else {
                 // All skipped
                 appEnvironment.toastManager.show(
                     category: .info,
-                    title: String(localized: "batchDownload.complete.skipped.title"),
-                    subtitle: String(localized: "batchDownload.complete.allSkipped.subtitle")
+                    title: AppLocalization.string("batchDownload.complete.skipped.title"),
+                    subtitle: AppLocalization.string("batchDownload.complete.allSkipped.subtitle")
                 )
             }
         } else {
             appEnvironment.toastManager.show(
                 category: .error,
-                title: String(localized: "batchDownload.complete.partial.title"),
-                subtitle: String(localized: "batchDownload.complete.partial.subtitle \(result.successCount) \(result.failedVideos.count)")
+                title: AppLocalization.string("batchDownload.complete.partial.title"),
+                subtitle: AppLocalization.string("batchDownload.complete.partial.subtitle \(result.successCount) \(result.failedVideos.count)")
             )
         }
     }
@@ -231,14 +231,14 @@ struct BatchDownloadModifier: ViewModifier {
                 }
             }
             .alert(
-                String(localized: "batchDownload.error.title"),
+                AppLocalization.string("batchDownload.error.title"),
                 isPresented: $coordinator.showingErrorAlert,
                 presenting: coordinator.errorInfo
             ) { _ in
-                Button(String(localized: "batchDownload.error.continue")) {
+                Button(AppLocalization.string("batchDownload.error.continue")) {
                     coordinator.continueAfterError()
                 }
-                Button(String(localized: "batchDownload.error.stop"), role: .destructive) {
+                Button(AppLocalization.string("batchDownload.error.stop"), role: .destructive) {
                     coordinator.stopAfterError()
                 }
             } message: { info in

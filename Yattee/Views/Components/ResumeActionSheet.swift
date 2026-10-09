@@ -60,7 +60,7 @@ struct ResumeActionSheet: View {
                         dismiss()
                     } label: {
                         Label(
-                            String(localized: "resume.action.continueAt \(formattedResumeTime)"),
+                            AppLocalization.string("resume.action.continueAt \(formattedResumeTime)"),
                             systemImage: "play.fill"
                         )
                         .labelStyle(.titleAndIcon)
@@ -71,7 +71,7 @@ struct ResumeActionSheet: View {
                         dismiss()
                     } label: {
                         Label(
-                            String(localized: "resume.action.startFromBeginning"),
+                            AppLocalization.string("resume.action.startFromBeginning"),
                             systemImage: "arrow.counterclockwise"
                         )
                         .labelStyle(.titleAndIcon)
@@ -131,7 +131,7 @@ struct ResumeActionSheet: View {
                 } label: {
                     HStack {
                         Label(
-                            String(localized: "resume.action.continueAt \(formattedResumeTime)"),
+                            AppLocalization.string("resume.action.continueAt \(formattedResumeTime)"),
                             systemImage: "play.fill"
                         )
                         .font(.body)
@@ -153,7 +153,7 @@ struct ResumeActionSheet: View {
                 } label: {
                     HStack {
                         Label(
-                            String(localized: "resume.action.startFromBeginning"),
+                            AppLocalization.string("resume.action.startFromBeginning"),
                             systemImage: "arrow.counterclockwise"
                         )
                         .font(.body)

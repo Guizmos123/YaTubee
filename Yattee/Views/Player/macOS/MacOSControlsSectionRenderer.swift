@@ -388,7 +388,7 @@ struct MacOSControlsSectionRenderer: View {
            settings.macPlayerSeparateWindow, !actions.isFullscreen {
             controlButton(
                 systemImage: settings.macPlayerFloating ? "pin.fill" : "pin",
-                help: String(localized: "player.controls.keepOnTop")
+                help: AppLocalization.string("player.controls.keepOnTop")
             ) {
                 settings.macPlayerFloating.toggle()
             }
@@ -482,14 +482,14 @@ struct MacOSControlsSectionRenderer: View {
                     }
             }
             .buttonStyle(buttonStyleForContext)
-            .help(String(localized: "controls.button.controlsLock"))
+            .help(AppLocalization.string("controls.button.controlsLock"))
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in startUnlock() }
                     .onEnded { _ in cancelUnlock() }
             )
         } else {
-            controlButton(systemImage: "lock.open", help: String(localized: "controls.button.controlsLock")) {
+            controlButton(systemImage: "lock.open", help: AppLocalization.string("controls.button.controlsLock")) {
                 actions.onControlsLockToggled?(true)
             }
         }
@@ -536,7 +536,7 @@ struct MacOSControlsSectionRenderer: View {
                     Circle()
                         .fill(.red)
                         .frame(width: 6, height: 6)
-                    Text(String(localized: "player.live"))
+                    Text(AppLocalization.string("player.live"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.red)
                 }

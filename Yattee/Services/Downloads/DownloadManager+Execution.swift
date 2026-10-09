@@ -736,7 +736,7 @@ extension DownloadManager {
             if download.warnings.isEmpty {
                 toastManager?.show(
                     category: .download,
-                    title: String(localized: "toast.download.completed.title"),
+                    title: AppLocalization.string("toast.download.completed.title"),
                     subtitle: download.title,
                     icon: "checkmark.circle.fill",
                     iconColor: .green,
@@ -746,7 +746,7 @@ extension DownloadManager {
                 // Partial success toast with warning
                 toastManager?.show(
                     category: .download,
-                    title: String(localized: "toast.download.completedWithWarnings.title"),
+                    title: AppLocalization.string("toast.download.completedWithWarnings.title"),
                     subtitle: download.title,
                     icon: "exclamationmark.triangle.fill",
                     iconColor: .orange,

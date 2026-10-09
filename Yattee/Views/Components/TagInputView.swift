@@ -44,7 +44,7 @@ struct TagInputView: View {
             
             // Input field
             HStack {
-                TextField(String(localized: "bookmark.tags.placeholder"), text: $inputText)
+                TextField(AppLocalization.string("bookmark.tags.placeholder"), text: $inputText)
                     .focused($textFieldFocused)
                     #if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
@@ -66,7 +66,7 @@ struct TagInputView: View {
                     }
                 
                 if !inputText.isEmpty {
-                    Button(String(localized: "bookmark.tags.add")) {
+                    Button(AppLocalization.string("bookmark.tags.add")) {
                         addTag()
                     }
                     .buttonStyle(.borderedProminent)
@@ -77,15 +77,15 @@ struct TagInputView: View {
             
             // Warning messages
             if showMaxTagsWarning {
-                Text(String(localized: "bookmark.tags.maxReached \(maxTags)"))
+                Text(AppLocalization.string("bookmark.tags.maxReached \(maxTags)"))
                     .font(.caption)
                     .foregroundStyle(.red)
             } else if showMaxLengthWarning {
-                Text(String(localized: "bookmark.tags.tooLong \(maxTagLength)"))
+                Text(AppLocalization.string("bookmark.tags.tooLong \(maxTagLength)"))
                     .font(.caption)
                     .foregroundStyle(.red)
             } else if tags.count >= maxTags - 2 {
-                Text(String(localized: "bookmark.tags.remaining \(maxTags - tags.count)"))
+                Text(AppLocalization.string("bookmark.tags.remaining \(maxTags - tags.count)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

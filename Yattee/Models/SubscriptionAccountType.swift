@@ -22,11 +22,11 @@ enum SubscriptionAccountType: String, Codable, Sendable, Equatable, CaseIterable
     var displayName: String {
         switch self {
         case .local:
-            return String(localized: "subscriptions.account.local")
+            return AppLocalization.string("subscriptions.account.local")
         case .invidious:
-            return String(localized: "subscriptions.account.invidious")
+            return AppLocalization.string("subscriptions.account.invidious")
         case .piped:
-            return String(localized: "subscriptions.account.piped")
+            return AppLocalization.string("subscriptions.account.piped")
         }
     }
 }

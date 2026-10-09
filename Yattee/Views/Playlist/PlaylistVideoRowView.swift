@@ -27,7 +27,7 @@ struct PlaylistVideoRowView: View {
             video: video,
             customActions: onRemove.map { removeAction in
                 [VideoContextAction(
-                    String(localized: "playlist.removeVideo"),
+                    AppLocalization.string("playlist.removeVideo"),
                     systemImage: "trash",
                     role: .destructive,
                     action: removeAction

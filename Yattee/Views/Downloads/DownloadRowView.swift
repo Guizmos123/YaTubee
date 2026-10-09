@@ -105,7 +105,7 @@ struct DownloadRowView: View {
                 video: video,
                 customActions: [
                     VideoContextAction(
-                        String(localized: "downloads.delete"),
+                        AppLocalization.string("downloads.delete"),
                         systemImage: "trash",
                         role: .destructive,
                         action: {
@@ -131,21 +131,21 @@ struct DownloadRowView: View {
             Button {
                 Task { await appEnvironment?.downloadManager.pause(download) }
             } label: {
-                Label(String(localized: "downloads.pause"), systemImage: "pause.fill")
+                Label(AppLocalization.string("downloads.pause"), systemImage: "pause.fill")
             }
 
         case .paused:
             Button {
                 Task { await appEnvironment?.downloadManager.resume(download) }
             } label: {
-                Label(String(localized: "downloads.resume"), systemImage: "play.fill")
+                Label(AppLocalization.string("downloads.resume"), systemImage: "play.fill")
             }
 
         case .failed:
             Button {
                 Task { await appEnvironment?.downloadManager.resume(download) }
             } label: {
-                Label(String(localized: "downloads.retry"), systemImage: "arrow.clockwise")
+                Label(AppLocalization.string("downloads.retry"), systemImage: "arrow.clockwise")
             }
 
         case .completed:
@@ -155,7 +155,7 @@ struct DownloadRowView: View {
         Button(role: .destructive) {
             Task { await appEnvironment?.downloadManager.cancel(download) }
         } label: {
-            Label(String(localized: "downloads.cancel"), systemImage: "xmark.circle")
+            Label(AppLocalization.string("downloads.cancel"), systemImage: "xmark.circle")
         }
     }
 
@@ -208,16 +208,16 @@ struct DownloadRowView: View {
         case .queued:
             #if os(iOS)
             if isWaitingForWiFi {
-                Label(String(localized: "downloads.status.waitingForWiFi"), systemImage: "wifi")
+                Label(AppLocalization.string("downloads.status.waitingForWiFi"), systemImage: "wifi")
                     .font(.caption)
                     .foregroundStyle(.orange)
             } else {
-                Label(String(localized: "downloads.status.queued"), systemImage: "clock")
+                Label(AppLocalization.string("downloads.status.queued"), systemImage: "clock")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             #else
-            Label(String(localized: "downloads.status.queued"), systemImage: "clock")
+            Label(AppLocalization.string("downloads.status.queued"), systemImage: "clock")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             #endif
@@ -234,12 +234,12 @@ struct DownloadRowView: View {
             #endif
 
         case .paused:
-            Label(String(localized: "downloads.status.paused"), systemImage: "pause.circle")
+            Label(AppLocalization.string("downloads.status.paused"), systemImage: "pause.circle")
                 .font(.caption)
                 .foregroundStyle(.orange)
 
         case .failed:
-            Label(String(localized: "downloads.status.failed"), systemImage: "exclamationmark.circle")
+            Label(AppLocalization.string("downloads.status.failed"), systemImage: "exclamationmark.circle")
                 .font(.caption)
                 .foregroundStyle(.red)
 
@@ -281,7 +281,7 @@ struct DownloadRowView: View {
             }
 
             // Waiting for WiFi label
-            Label(String(localized: "downloads.status.waitingForWiFi"), systemImage: "wifi")
+            Label(AppLocalization.string("downloads.status.waitingForWiFi"), systemImage: "wifi")
                 .font(.caption2)
                 .foregroundStyle(.orange)
         }

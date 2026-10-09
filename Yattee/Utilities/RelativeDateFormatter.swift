@@ -23,7 +23,7 @@ enum RelativeDateFormatter {
         let interval = Date().timeIntervalSince(date)
 
         if interval < justNowThreshold {
-            return String(localized: "common.justNow")
+            return AppLocalization.string("common.justNow")
         }
 
         let formatter = RelativeDateTimeFormatter()

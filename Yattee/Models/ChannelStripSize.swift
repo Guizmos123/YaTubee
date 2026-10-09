@@ -50,10 +50,10 @@ enum ChannelStripSize: String, CaseIterable, Codable, Hashable, Sendable {
 
     var displayName: String {
         switch self {
-        case .disabled: return String(localized: "common.disabled")
-        case .compact: return String(localized: "channelStrip.size.compact")
-        case .normal: return String(localized: "channelStrip.size.normal")
-        case .large: return String(localized: "channelStrip.size.large")
+        case .disabled: return AppLocalization.string("common.disabled")
+        case .compact: return AppLocalization.string("channelStrip.size.compact")
+        case .normal: return AppLocalization.string("channelStrip.size.normal")
+        case .large: return AppLocalization.string("channelStrip.size.large")
         }
     }
 }

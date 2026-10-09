@@ -58,71 +58,71 @@ enum ControlButtonType: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .close:
-            return String(localized: "controls.button.close")
+            return AppLocalization.string("controls.button.close")
         case .airplay:
-            return String(localized: "controls.button.airplay")
+            return AppLocalization.string("controls.button.airplay")
         case .mpvDebug:
-            return String(localized: "controls.button.debug")
+            return AppLocalization.string("controls.button.debug")
         case .brightness:
-            return String(localized: "controls.button.brightness")
+            return AppLocalization.string("controls.button.brightness")
         case .volume:
-            return String(localized: "controls.button.volume")
+            return AppLocalization.string("controls.button.volume")
         case .pictureInPicture:
-            return String(localized: "controls.button.pip")
+            return AppLocalization.string("controls.button.pip")
         case .fullscreen:
-            return String(localized: "controls.button.fullscreen")
+            return AppLocalization.string("controls.button.fullscreen")
         case .playbackSpeed:
-            return String(localized: "controls.button.speed")
+            return AppLocalization.string("controls.button.speed")
         case .videoTrack:
-            return String(localized: "controls.button.videoTrack")
+            return AppLocalization.string("controls.button.videoTrack")
         case .audioTrack:
-            return String(localized: "controls.button.audioTrack")
+            return AppLocalization.string("controls.button.audioTrack")
         case .captions:
-            return String(localized: "controls.button.captions")
+            return AppLocalization.string("controls.button.captions")
         case .chapters:
-            return String(localized: "controls.button.chapters")
+            return AppLocalization.string("controls.button.chapters")
         case .share:
-            return String(localized: "controls.button.share")
+            return AppLocalization.string("controls.button.share")
         case .addToPlaylist:
-            return String(localized: "controls.button.addToPlaylist")
+            return AppLocalization.string("controls.button.addToPlaylist")
         case .contextMenu:
-            return String(localized: "controls.button.more")
+            return AppLocalization.string("controls.button.more")
         case .spacer:
-            return String(localized: "controls.button.spacer")
+            return AppLocalization.string("controls.button.spacer")
         case .timeDisplay:
-            return String(localized: "controls.button.time")
+            return AppLocalization.string("controls.button.time")
         case .seekBackward:
-            return String(localized: "controls.button.seekBackward")
+            return AppLocalization.string("controls.button.seekBackward")
         case .seekForward:
-            return String(localized: "controls.button.seekForward")
+            return AppLocalization.string("controls.button.seekForward")
         case .playPause:
-            return String(localized: "controls.button.playPause")
+            return AppLocalization.string("controls.button.playPause")
         case .orientationLock:
-            return String(localized: "controls.button.orientationLock")
+            return AppLocalization.string("controls.button.orientationLock")
         case .panelToggle:
-            return String(localized: "controls.button.panelToggle")
+            return AppLocalization.string("controls.button.panelToggle")
         case .playPrevious:
-            return String(localized: "controls.button.playPrevious")
+            return AppLocalization.string("controls.button.playPrevious")
         case .playNext:
-            return String(localized: "controls.button.playNext")
+            return AppLocalization.string("controls.button.playNext")
         case .queue:
-            return String(localized: "controls.button.queue")
+            return AppLocalization.string("controls.button.queue")
         case .settings:
-            return String(localized: "controls.button.settings")
+            return AppLocalization.string("controls.button.settings")
         case .controlsLock:
-            return String(localized: "controls.button.controlsLock")
+            return AppLocalization.string("controls.button.controlsLock")
         case .titleAuthor:
-            return String(localized: "controls.button.titleAuthor")
+            return AppLocalization.string("controls.button.titleAuthor")
         case .panscan:
-            return String(localized: "controls.button.panscan")
+            return AppLocalization.string("controls.button.panscan")
         case .autoPlayNext:
-            return String(localized: "controls.button.autoPlayNext")
+            return AppLocalization.string("controls.button.autoPlayNext")
         case .audioMode:
-            return String(localized: "controls.button.audioMode")
+            return AppLocalization.string("controls.button.audioMode")
         case .seek:
-            return String(localized: "controls.button.seek")
+            return AppLocalization.string("controls.button.seek")
         case .keepOnTop:
-            return String(localized: "controls.button.keepOnTop")
+            return AppLocalization.string("controls.button.keepOnTop")
         }
     }
 

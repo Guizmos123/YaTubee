@@ -34,12 +34,12 @@ struct SectionEditorView: View {
             // Orientation toggle; macOS has no portrait/landscape distinction
             #if os(iOS)
             Picker(
-                String(localized: "settings.playerControls.previewOrientation"),
+                AppLocalization.string("settings.playerControls.previewOrientation"),
                 selection: $viewModel.isPreviewingLandscape
             ) {
-                Text(String(localized: "settings.playerControls.portrait"))
+                Text(AppLocalization.string("settings.playerControls.portrait"))
                     .tag(false)
-                Text(String(localized: "settings.playerControls.landscape"))
+                Text(AppLocalization.string("settings.playerControls.landscape"))
                     .tag(true)
             }
             .pickerStyle(.segmented)
@@ -51,7 +51,7 @@ struct SectionEditorView: View {
             if sectionType == .bottom {
                 Section {
                     Picker(
-                        String(localized: "settings.playerControls.glassBackground", defaultValue: "Glass Background"),
+                        AppLocalization.string("settings.playerControls.glassBackground", defaultValue: "Glass Background"),
                         selection: $controlBarTheme
                     ) {
                         ForEach(ControlsTheme.allCases, id: \.self) { theme in
@@ -64,7 +64,7 @@ struct SectionEditorView: View {
                         viewModel.updateGlobalSettingsSync { $0.controlBarTheme = newTheme }
                     }
                 } header: {
-                    Text(String(localized: "settings.playerControls.appearance"))
+                    Text(AppLocalization.string("settings.playerControls.appearance"))
                 }
             }
             #endif
@@ -87,7 +87,7 @@ struct SectionEditorView: View {
                                 removeButton(id: button.id)
                             } label: {
                                 Label(
-                                    String(localized: "settings.playerControls.delete"),
+                                    AppLocalization.string("settings.playerControls.delete"),
                                     systemImage: "trash"
                                 )
                             }
@@ -111,7 +111,7 @@ struct SectionEditorView: View {
                     }
                 }
             } header: {
-                Text(String(localized: "settings.playerControls.addedButtons"))
+                Text(AppLocalization.string("settings.playerControls.addedButtons"))
             }
 
             // Available buttons
@@ -137,12 +137,12 @@ struct SectionEditorView: View {
                     .buttonStyle(.plain)
                 }
             } header: {
-                Text(String(localized: "settings.playerControls.availableButtons"))
+                Text(AppLocalization.string("settings.playerControls.availableButtons"))
             } footer: {
-                Text(String(localized: "settings.playerControls.availableButtonsFooter"))
+                Text(AppLocalization.string("settings.playerControls.availableButtonsFooter"))
             }
         }
-        .navigationTitle(sectionTitle)
+        .reactiveNavigationTitle(sectionTitle)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -205,7 +205,7 @@ struct SectionEditorView: View {
     private func glassBackgroundLabel(for theme: ControlsTheme) -> String {
         switch theme {
         case .system:
-            return String(localized: "controls.theme.auto", defaultValue: "Auto")
+            return AppLocalization.string("controls.theme.auto", defaultValue: "Auto")
         case .light, .dark:
             return theme.displayName
         }
@@ -215,12 +215,12 @@ struct SectionEditorView: View {
     private var sectionTitle: String {
         switch sectionType {
         case .top:
-            return String(localized: "settings.playerControls.topButtons")
+            return AppLocalization.string("settings.playerControls.topButtons")
         case .bottom:
             #if os(macOS)
-            return String(localized: "settings.playerControls.controlBar", defaultValue: "Control Bar")
+            return AppLocalization.string("settings.playerControls.controlBar", defaultValue: "Control Bar")
             #else
-            return String(localized: "settings.playerControls.bottomButtons")
+            return AppLocalization.string("settings.playerControls.bottomButtons")
             #endif
         }
     }

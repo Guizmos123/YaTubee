@@ -6,7 +6,7 @@
 	<string>production</string>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
-		<string>iCloud.$(CFBundleIdentifier)</string>
+		<string>iCloud.com.app.yatubee</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>
@@ -16,7 +16,7 @@
 	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.stream.yattee.app.shared</string>
+		<string>group.com.app.yatubee</string>
 	</array>
 	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
 	<array>

@@ -27,6 +27,10 @@ struct DownloadsView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     /// View options control lives on the leading edge on macOS, trailing elsewhere.
     private var viewOptionsPlacement: ToolbarItemPlacement {
         #if os(macOS)
@@ -44,7 +48,8 @@ struct DownloadsView: View {
                 ProgressView()
             }
         }
-        .navigationTitle(String(localized: "downloads.title"))
+        .environment(\.locale, localizationLocale)
+        .navigationTitle(AppLocalization.string("downloads.title"))
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             #if os(macOS)
@@ -77,7 +82,7 @@ struct DownloadsView: View {
                 flatDownloadsList(manager, settings: settings)
             }
         }
-        .searchable(text: $searchText, prompt: Text(String(localized: "downloads.search.placeholder")))
+        .searchable(text: $searchText, prompt: Text(AppLocalization.string("downloads.search.placeholder")))
         .onChange(of: selectedDownload) { _, newValue in
             if let download = newValue {
                 if let result = downloadManager?.videoAndStream(for: download) {
@@ -87,21 +92,21 @@ struct DownloadsView: View {
             }
         }
         .alert(
-            String(localized: "downloads.status.failed"),
+            AppLocalization.string("downloads.status.failed"),
             isPresented: .init(
                 get: { failedDownloadToShow != nil },
                 set: { if !$0 { failedDownloadToShow = nil } }
             )
         ) {
-            Button(String(localized: "downloads.retry")) {
+            Button(AppLocalization.string("downloads.retry")) {
                 if let download = failedDownloadToShow {
                     Task { await manager.resume(download) }
                 }
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
             if let download = failedDownloadToShow {
-                Text(download.error ?? String(localized: "downloads.error.unknown"))
+                Text(download.error ?? AppLocalization.string("downloads.error.unknown"))
             }
         }
     }
@@ -207,7 +212,7 @@ struct DownloadsView: View {
                             .tag(option)
                     }
                 } label: {
-                    Label(String(localized: "downloads.sort.title"), systemImage: "arrow.up.arrow.down")
+                    Label(AppLocalization.string("downloads.sort.title"), systemImage: "arrow.up.arrow.down")
                 }
 
                 // Sort direction
@@ -216,8 +221,8 @@ struct DownloadsView: View {
                 } label: {
                     Label(
                         settings.sortDirection == .ascending
-                            ? String(localized: "downloads.sort.ascending")
-                            : String(localized: "downloads.sort.descending"),
+                            ? AppLocalization.string("downloads.sort.ascending")
+                            : AppLocalization.string("downloads.sort.descending"),
                         systemImage: settings.sortDirection.systemImage
                     )
                 }
@@ -229,11 +234,11 @@ struct DownloadsView: View {
                     get: { settings.groupByChannel },
                     set: { settings.groupByChannel = $0 }
                 )) {
-                    Label(String(localized: "downloads.groupByChannel"), systemImage: "person.2")
+                    Label(AppLocalization.string("downloads.groupByChannel"), systemImage: "person.2")
                 }
             }
         } label: {
-            Label(String(localized: "downloads.sortAndGroup"), systemImage: "line.3.horizontal.decrease.circle")
+            Label(AppLocalization.string("downloads.sortAndGroup"), systemImage: "line.3.horizontal.decrease.circle")
         }
     }
 
@@ -546,7 +551,7 @@ private struct CompletedDownloadsSectionContentView: View {
                 download: download,
                 isActive: false,
                 queueSource: .manual,
-                sourceLabel: String(localized: "queue.source.downloads"),
+                sourceLabel: AppLocalization.string("queue.source.downloads"),
                 videoList: videoList,
                 videoIndex: index,
                 loadMoreVideos: loadMoreDownloadsCallback
@@ -632,9 +637,9 @@ private struct DownloadsEmptyStateView: View {
                     .padding(.top, 60)
             } else {
                 ContentUnavailableView {
-                    Label(String(localized: "downloads.empty.title"), systemImage: "arrow.down.circle")
+                    Label(AppLocalization.string("downloads.empty.title"), systemImage: "arrow.down.circle")
                 } description: {
-                    Text(String(localized: "downloads.empty.description"))
+                    Text(AppLocalization.string("downloads.empty.description"))
                 }
                 .padding(.top, 60)
             }

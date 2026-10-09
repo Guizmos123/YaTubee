@@ -13,6 +13,24 @@ import UIKit
 import AppKit
 #endif
 
+// MARK: - Language
+
+enum AppLanguage: String, CaseIterable, Codable, Sendable {
+    case english = "en"
+    case french = "fr"
+
+    var locale: Locale {
+        Locale(identifier: rawValue)
+    }
+
+    var displayName: LocalizedStringKey {
+        switch self {
+        case .english: "settings.language.english"
+        case .french: "settings.language.french"
+        }
+    }
+}
+
 // MARK: - Theme & Appearance
 
 enum AppTheme: String, CaseIterable, Codable {
@@ -108,9 +126,9 @@ enum AppIcon: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .default: return String(localized: "settings.appearance.appIcon.default")
-        case .classic: return String(localized: "settings.appearance.appIcon.classic")
-        case .mascot: return String(localized: "settings.appearance.appIcon.mascot")
+        case .default: return AppLocalization.string("settings.appearance.appIcon.default")
+        case .classic: return AppLocalization.string("settings.appearance.appIcon.classic")
+        case .mascot: return AppLocalization.string("settings.appearance.appIcon.mascot")
         }
     }
 
@@ -202,8 +220,8 @@ enum DownloadQuality: String, CaseIterable, Codable, Sendable {
 
     var displayName: String {
         switch self {
-        case .ask: return String(localized: "settings.downloads.quality.ask")
-        case .best: return String(localized: "settings.downloads.quality.best")
+        case .ask: return AppLocalization.string("settings.downloads.quality.ask")
+        case .best: return AppLocalization.string("settings.downloads.quality.best")
         case .hd4k: return "4K"
         case .hd1440p: return "1440p"
         case .hd1080p: return "1080p"
@@ -245,10 +263,10 @@ enum HapticFeedbackIntensity: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .off: return String(localized: "settings.haptics.intensity.off")
-        case .light: return String(localized: "settings.haptics.intensity.light")
-        case .medium: return String(localized: "settings.haptics.intensity.medium")
-        case .heavy: return String(localized: "settings.haptics.intensity.heavy")
+        case .off: return AppLocalization.string("settings.haptics.intensity.off")
+        case .light: return AppLocalization.string("settings.haptics.intensity.light")
+        case .medium: return AppLocalization.string("settings.haptics.intensity.medium")
+        case .heavy: return AppLocalization.string("settings.haptics.intensity.heavy")
         }
     }
 }
@@ -283,29 +301,29 @@ enum SponsorBlockCategory: String, CaseIterable, Codable, Sendable {
 
     var displayName: String {
         switch self {
-        case .sponsor: return String(localized: "sponsorBlock.category.sponsor")
-        case .selfpromo: return String(localized: "sponsorBlock.category.selfpromo")
-        case .interaction: return String(localized: "sponsorBlock.category.interaction")
-        case .intro: return String(localized: "sponsorBlock.category.intro")
-        case .outro: return String(localized: "sponsorBlock.category.outro")
-        case .preview: return String(localized: "sponsorBlock.category.preview")
-        case .musicOfftopic: return String(localized: "sponsorBlock.category.musicOfftopic")
-        case .filler: return String(localized: "sponsorBlock.category.filler")
-        case .highlight: return String(localized: "sponsorBlock.category.highlight")
+        case .sponsor: return AppLocalization.string("sponsorBlock.category.sponsor")
+        case .selfpromo: return AppLocalization.string("sponsorBlock.category.selfpromo")
+        case .interaction: return AppLocalization.string("sponsorBlock.category.interaction")
+        case .intro: return AppLocalization.string("sponsorBlock.category.intro")
+        case .outro: return AppLocalization.string("sponsorBlock.category.outro")
+        case .preview: return AppLocalization.string("sponsorBlock.category.preview")
+        case .musicOfftopic: return AppLocalization.string("sponsorBlock.category.musicOfftopic")
+        case .filler: return AppLocalization.string("sponsorBlock.category.filler")
+        case .highlight: return AppLocalization.string("sponsorBlock.category.highlight")
         }
     }
 
     var localizedDescription: String {
         switch self {
-        case .sponsor: return String(localized: "sponsorBlock.category.sponsor.description")
-        case .selfpromo: return String(localized: "sponsorBlock.category.selfpromo.description")
-        case .interaction: return String(localized: "sponsorBlock.category.interaction.description")
-        case .intro: return String(localized: "sponsorBlock.category.intro.description")
-        case .outro: return String(localized: "sponsorBlock.category.outro.description")
-        case .preview: return String(localized: "sponsorBlock.category.preview.description")
-        case .musicOfftopic: return String(localized: "sponsorBlock.category.musicOfftopic.description")
-        case .filler: return String(localized: "sponsorBlock.category.filler.description")
-        case .highlight: return String(localized: "sponsorBlock.category.highlight.description")
+        case .sponsor: return AppLocalization.string("sponsorBlock.category.sponsor.description")
+        case .selfpromo: return AppLocalization.string("sponsorBlock.category.selfpromo.description")
+        case .interaction: return AppLocalization.string("sponsorBlock.category.interaction.description")
+        case .intro: return AppLocalization.string("sponsorBlock.category.intro.description")
+        case .outro: return AppLocalization.string("sponsorBlock.category.outro.description")
+        case .preview: return AppLocalization.string("sponsorBlock.category.preview.description")
+        case .musicOfftopic: return AppLocalization.string("sponsorBlock.category.musicOfftopic.description")
+        case .filler: return AppLocalization.string("sponsorBlock.category.filler.description")
+        case .highlight: return AppLocalization.string("sponsorBlock.category.highlight.description")
         }
     }
 
@@ -362,9 +380,9 @@ enum DefaultLinkAction: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .open: return String(localized: "settings.behavior.linkAction.open")
-        case .download: return String(localized: "settings.behavior.linkAction.download")
-        case .ask: return String(localized: "settings.behavior.linkAction.ask")
+        case .open: return AppLocalization.string("settings.behavior.linkAction.open")
+        case .download: return AppLocalization.string("settings.behavior.linkAction.download")
+        case .ask: return AppLocalization.string("settings.behavior.linkAction.ask")
         }
     }
 }
@@ -379,9 +397,9 @@ enum MiniPlayerVideoTapAction: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .startPiP:
-            return String(localized: "settings.behavior.miniPlayer.videoTapAction.startPiP")
+            return AppLocalization.string("settings.behavior.miniPlayer.videoTapAction.startPiP")
         case .expandPlayer:
-            return String(localized: "settings.behavior.miniPlayer.videoTapAction.expandPlayer")
+            return AppLocalization.string("settings.behavior.miniPlayer.videoTapAction.expandPlayer")
         }
     }
 }
@@ -398,9 +416,9 @@ enum MiniPlayerMinimizeBehavior: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .onScrollDown:
-            return String(localized: "settings.behavior.miniPlayer.minimizeBehavior.onScrollDown")
+            return AppLocalization.string("settings.behavior.miniPlayer.minimizeBehavior.onScrollDown")
         case .never:
-            return String(localized: "settings.behavior.miniPlayer.minimizeBehavior.never")
+            return AppLocalization.string("settings.behavior.miniPlayer.minimizeBehavior.never")
         }
     }
 }
@@ -417,11 +435,11 @@ enum VideoTapAction: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .playVideo:
-            return String(localized: "settings.behavior.videoTap.playVideo")
+            return AppLocalization.string("settings.behavior.videoTap.playVideo")
         case .openInfo:
-            return String(localized: "settings.behavior.videoTap.openInfo")
+            return AppLocalization.string("settings.behavior.videoTap.openInfo")
         case .none:
-            return String(localized: "settings.behavior.videoTap.none")
+            return AppLocalization.string("settings.behavior.videoTap.none")
         }
     }
 }
@@ -440,11 +458,11 @@ enum ResumeAction: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .continueWatching:
-            return String(localized: "settings.playback.resumeAction.continueWatching")
+            return AppLocalization.string("settings.playback.resumeAction.continueWatching")
         case .startFromBeginning:
-            return String(localized: "settings.playback.resumeAction.startFromBeginning")
+            return AppLocalization.string("settings.playback.resumeAction.startFromBeginning")
         case .ask:
-            return String(localized: "settings.playback.resumeAction.ask")
+            return AppLocalization.string("settings.playback.resumeAction.ask")
         }
     }
 }
@@ -460,8 +478,8 @@ enum VolumeMode: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .mpv: return String(localized: "settings.playback.volume.mode.inApp")
-        case .system: return String(localized: "settings.playback.volume.mode.system")
+        case .mpv: return AppLocalization.string("settings.playback.volume.mode.inApp")
+        case .system: return AppLocalization.string("settings.playback.volume.mode.system")
         }
     }
 }
@@ -477,8 +495,8 @@ enum SystemControlsMode: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .seek: return String(localized: "settings.playback.systemControls.mode.seek")
-        case .skipTrack: return String(localized: "settings.playback.systemControls.mode.skipTrack")
+        case .seek: return AppLocalization.string("settings.playback.systemControls.mode.seek")
+        case .skipTrack: return AppLocalization.string("settings.playback.systemControls.mode.skipTrack")
         }
     }
 }
@@ -548,15 +566,15 @@ enum VideoSwipeAction: String, CaseIterable, Codable, Identifiable {
     /// Localized display name for this action.
     var displayName: String {
         switch self {
-        case .playNext: return String(localized: "swipeAction.playNext")
-        case .addToQueue: return String(localized: "swipeAction.addToQueue")
-        case .download: return String(localized: "swipeAction.download")
-        case .share: return String(localized: "swipeAction.share")
-        case .videoInfo: return String(localized: "swipeAction.videoInfo")
-        case .goToChannel: return String(localized: "swipeAction.goToChannel")
-        case .addToBookmarks: return String(localized: "swipeAction.addToBookmarks")
-        case .addToPlaylist: return String(localized: "swipeAction.addToPlaylist")
-        case .markWatched: return String(localized: "swipeAction.markWatched")
+        case .playNext: return AppLocalization.string("swipeAction.playNext")
+        case .addToQueue: return AppLocalization.string("swipeAction.addToQueue")
+        case .download: return AppLocalization.string("swipeAction.download")
+        case .share: return AppLocalization.string("swipeAction.share")
+        case .videoInfo: return AppLocalization.string("swipeAction.videoInfo")
+        case .goToChannel: return AppLocalization.string("swipeAction.goToChannel")
+        case .addToBookmarks: return AppLocalization.string("swipeAction.addToBookmarks")
+        case .addToPlaylist: return AppLocalization.string("swipeAction.addToPlaylist")
+        case .markWatched: return AppLocalization.string("swipeAction.markWatched")
         }
     }
 

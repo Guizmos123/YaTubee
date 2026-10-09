@@ -31,7 +31,7 @@ struct DeArrowSettingsView: View {
         #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
         #endif
-        .navigationTitle(String(localized: "settings.deArrow.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.deArrow.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -46,7 +46,7 @@ private struct EnableSection: View {
     var body: some View {
         SettingsFormSection(footer: "settings.deArrow.footer") {
             Toggle(
-                String(localized: "settings.deArrow.enabled"),
+                AppLocalization.string("settings.deArrow.enabled"),
                 isOn: $settings.deArrowEnabled
             )
         }
@@ -61,12 +61,12 @@ private struct OptionsSection: View {
     var body: some View {
         SettingsFormSection("settings.deArrow.options.header") {
             Toggle(
-                String(localized: "settings.deArrow.replaceTitles"),
+                AppLocalization.string("settings.deArrow.replaceTitles"),
                 isOn: $settings.deArrowReplaceTitles
             )
 
             Toggle(
-                String(localized: "settings.deArrow.replaceThumbnails"),
+                AppLocalization.string("settings.deArrow.replaceThumbnails"),
                 isOn: $settings.deArrowReplaceThumbnails
             )
         }
@@ -84,7 +84,7 @@ private struct AdvancedSection: View {
     var body: some View {
         SettingsFormSection("settings.deArrow.advanced.header", footer: "settings.deArrow.apiURL.footer") {
             TextField(
-                String(localized: "settings.deArrow.apiURL"),
+                AppLocalization.string("settings.deArrow.apiURL"),
                 text: $apiURLText,
                 prompt: Text(SettingsManager.defaultDeArrowAPIURL)
             )
@@ -104,7 +104,7 @@ private struct AdvancedSection: View {
             }
 
             if settings.deArrowAPIURL != SettingsManager.defaultDeArrowAPIURL {
-                Button(String(localized: "settings.deArrow.apiURL.reset")) {
+                Button(AppLocalization.string("settings.deArrow.apiURL.reset")) {
                     apiURLText = ""
                     settings.deArrowAPIURL = SettingsManager.defaultDeArrowAPIURL
                     syncAPIURLs()
@@ -112,7 +112,7 @@ private struct AdvancedSection: View {
             }
 
             TextField(
-                String(localized: "settings.deArrow.thumbnailAPIURL"),
+                AppLocalization.string("settings.deArrow.thumbnailAPIURL"),
                 text: $thumbnailAPIURLText,
                 prompt: Text(SettingsManager.defaultDeArrowThumbnailAPIURL)
             )
@@ -132,7 +132,7 @@ private struct AdvancedSection: View {
             }
 
             if settings.deArrowThumbnailAPIURL != SettingsManager.defaultDeArrowThumbnailAPIURL {
-                Button(String(localized: "settings.deArrow.thumbnailAPIURL.reset")) {
+                Button(AppLocalization.string("settings.deArrow.thumbnailAPIURL.reset")) {
                     thumbnailAPIURLText = ""
                     settings.deArrowThumbnailAPIURL = SettingsManager.defaultDeArrowThumbnailAPIURL
                     syncAPIURLs()
@@ -165,13 +165,13 @@ private struct AboutSection: View {
     var body: some View {
         SettingsFormSection("settings.deArrow.about.header") {
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "settings.deArrow.about.description"))
+                Text(AppLocalization.string("settings.deArrow.about.description"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
 
                 Link(destination: URL(string: "https://dearrow.ajay.app")!) {
                     HStack {
-                        Text(String(localized: "settings.deArrow.learnMore"))
+                        Text(AppLocalization.string("settings.deArrow.learnMore"))
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.caption)

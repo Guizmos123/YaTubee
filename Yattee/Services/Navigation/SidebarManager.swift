@@ -311,13 +311,13 @@ enum SidebarChannelSort: String, Codable, CaseIterable, Identifiable {
     var localizedTitle: String {
         switch self {
         case .alphabetical:
-            return String(localized: "sidebar.sort.alphabetical")
+            return AppLocalization.string("sidebar.sort.alphabetical")
         case .recentlySubscribed:
-            return String(localized: "sidebar.sort.recentlySubscribed")
+            return AppLocalization.string("sidebar.sort.recentlySubscribed")
         case .lastUploaded:
-            return String(localized: "sidebar.sort.lastUploaded")
+            return AppLocalization.string("sidebar.sort.lastUploaded")
         case .custom:
-            return String(localized: "sidebar.sort.custom")
+            return AppLocalization.string("sidebar.sort.custom")
         }
     }
 }
@@ -334,9 +334,9 @@ enum SidebarPlaylistSort: String, Codable, CaseIterable, Identifiable {
     var localizedTitle: String {
         switch self {
         case .alphabetical:
-            return String(localized: "sidebar.playlist.sort.alphabetical")
+            return AppLocalization.string("sidebar.playlist.sort.alphabetical")
         case .lastUpdated:
-            return String(localized: "sidebar.playlist.sort.lastUpdated")
+            return AppLocalization.string("sidebar.playlist.sort.lastUpdated")
         }
     }
 }
@@ -354,11 +354,11 @@ enum SidebarSourceSort: String, Codable, CaseIterable, Identifiable {
     var localizedTitle: String {
         switch self {
         case .name:
-            return String(localized: "sidebar.source.sort.name")
+            return AppLocalization.string("sidebar.source.sort.name")
         case .type:
-            return String(localized: "sidebar.source.sort.type")
+            return AppLocalization.string("sidebar.source.sort.type")
         case .lastAdded:
-            return String(localized: "sidebar.source.sort.lastAdded")
+            return AppLocalization.string("sidebar.source.sort.lastAdded")
         }
     }
 }

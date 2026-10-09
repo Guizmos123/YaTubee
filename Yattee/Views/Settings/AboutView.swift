@@ -25,34 +25,34 @@ struct AboutView: View {
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "person.3",
-                        title: String(localized: "settings.contributors.title")
+                        title: AppLocalization.string("settings.contributors.title")
                     ) {
                         ContributorsView()
                     }
                 } label: {
-                    Label(String(localized: "settings.contributors.title"), systemImage: "person.3")
+                    Label(AppLocalization.string("settings.contributors.title"), systemImage: "person.3")
                 }
 
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "globe",
-                        title: String(localized: "settings.translators.title")
+                        title: AppLocalization.string("settings.translators.title")
                     ) {
                         TranslationContributorsView()
                     }
                 } label: {
-                    Label(String(localized: "settings.translators.title"), systemImage: "globe")
+                    Label(AppLocalization.string("settings.translators.title"), systemImage: "globe")
                 }
 
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "heart.text.square",
-                        title: String(localized: "settings.acknowledgements.title")
+                        title: AppLocalization.string("settings.acknowledgements.title")
                     ) {
                         AcknowledgementsView()
                     }
                 } label: {
-                    Label(String(localized: "settings.acknowledgements.title"), systemImage: "heart.text.square")
+                    Label(AppLocalization.string("settings.acknowledgements.title"), systemImage: "heart.text.square")
                 }
                 #else
                 SettingsNavigationRow("settings.contributors.title", systemImage: "person.3") {
@@ -75,13 +75,13 @@ struct AboutView: View {
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "cpu",
-                        title: String(localized: "settings.advanced.deviceCapabilities"),
+                        title: AppLocalization.string("settings.advanced.deviceCapabilities"),
                         showsDismissButton: true
                     ) {
                         DeviceCapabilitiesView()
                     }
                 } label: {
-                    Label(String(localized: "settings.advanced.deviceCapabilities"), systemImage: "cpu")
+                    Label(AppLocalization.string("settings.advanced.deviceCapabilities"), systemImage: "cpu")
                 }
                 #else
                 SettingsNavigationRow("settings.advanced.deviceCapabilities", systemImage: "cpu") {
@@ -94,7 +94,7 @@ struct AboutView: View {
             mpvInfoSection
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.about.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.about.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -106,9 +106,9 @@ struct AboutView: View {
     @ViewBuilder
     private var versionInfoSection: some View {
         SettingsFormSection("settings.about.versionInfo") {
-            versionInfoRow(label: String(localized: "settings.advanced.debug.appVersion"), value: appVersion)
-            versionInfoRow(label: String(localized: "settings.advanced.debug.buildNumber"), value: buildNumber)
-            versionInfoRow(label: String(localized: "settings.advanced.debug.osVersion"), value: osVersion)
+            versionInfoRow(label: AppLocalization.string("settings.advanced.debug.appVersion"), value: appVersion)
+            versionInfoRow(label: AppLocalization.string("settings.advanced.debug.buildNumber"), value: buildNumber)
+            versionInfoRow(label: AppLocalization.string("settings.advanced.debug.osVersion"), value: osVersion)
         }
     }
 
@@ -132,17 +132,17 @@ struct AboutView: View {
     private var mpvInfoSection: some View {
         SettingsFormSection("settings.about.mpvInfo") {
             if let versionInfo = appEnvironment?.playerService.mpvVersionInfo {
-                LabeledContent(String(localized: "settings.advanced.debug.mpvVersion")) {
+                LabeledContent(AppLocalization.string("settings.advanced.debug.mpvVersion")) {
                     Text(versionInfo.mpvVersion ?? "Unknown")
                         .foregroundStyle(.secondary)
                 }
 
-                LabeledContent(String(localized: "settings.advanced.debug.ffmpegVersion")) {
+                LabeledContent(AppLocalization.string("settings.advanced.debug.ffmpegVersion")) {
                     Text(versionInfo.ffmpegVersion ?? "Unknown")
                         .foregroundStyle(.secondary)
                 }
 
-                LabeledContent(String(localized: "settings.advanced.debug.libmpvAPI")) {
+                LabeledContent(AppLocalization.string("settings.advanced.debug.libmpvAPI")) {
                     let major = (versionInfo.apiVersion >> 16) & 0xFFFF
                     let minor = versionInfo.apiVersion & 0xFFFF
                     Text("\(major).\(minor)")
@@ -151,13 +151,13 @@ struct AboutView: View {
 
                 if let configuration = versionInfo.configuration, !configuration.isEmpty {
                     #if os(tvOS)
-                    LabeledContent(String(localized: "settings.advanced.debug.mpvConfiguration")) {
+                    LabeledContent(AppLocalization.string("settings.advanced.debug.mpvConfiguration")) {
                         Text(configuration)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                     #else
-                    DisclosureGroup(String(localized: "settings.advanced.debug.mpvConfiguration")) {
+                    DisclosureGroup(AppLocalization.string("settings.advanced.debug.mpvConfiguration")) {
                         Text(configuration)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -166,7 +166,7 @@ struct AboutView: View {
                     #endif
                 }
             } else {
-                Text(String(localized: "settings.about.mpvInfoHint"))
+                Text(AppLocalization.string("settings.about.mpvInfoHint"))
                     .foregroundStyle(.secondary)
                     .font(.footnote)
             }

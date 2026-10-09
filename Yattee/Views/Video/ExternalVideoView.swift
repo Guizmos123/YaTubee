@@ -23,12 +23,12 @@ struct ExternalVideoView: View {
         Group {
             if isLoading {
                 LoadingView(
-                    message: String(localized: "externalVideo.extracting"),
+                    message: AppLocalization.string("externalVideo.extracting"),
                     subtext: url.host ?? url.absoluteString
                 )
             } else if let error = errorMessage {
                 ErrorStateView(
-                    title: String(localized: "externalVideo.couldNotExtract"),
+                    title: AppLocalization.string("externalVideo.couldNotExtract"),
                     message: error,
                     onRetry: { await extractAndPlay() },
                     onDismiss: { dismiss() }
@@ -51,7 +51,7 @@ struct ExternalVideoView: View {
 
     private func extractAndPlay() async {
         guard let appEnvironment else {
-            errorMessage = String(localized: "externalVideo.appNotReady")
+            errorMessage = AppLocalization.string("externalVideo.appNotReady")
             isLoading = false
             return
         }
@@ -61,7 +61,7 @@ struct ExternalVideoView: View {
 
         // Find a Yattee Server instance
         guard let instance = appEnvironment.instancesManager.yatteeServerInstance else {
-            errorMessage = String(localized: "externalVideo.noYatteeServer")
+            errorMessage = AppLocalization.string("externalVideo.noYatteeServer")
             isLoading = false
             return
         }
@@ -85,18 +85,18 @@ struct ExternalVideoView: View {
             switch error {
             case .httpError(let statusCode, let message):
                 if statusCode == 422 {
-                    errorMessage = message ?? String(localized: "externalVideo.error.unsupported")
+                    errorMessage = message ?? AppLocalization.string("externalVideo.error.unsupported")
                 } else if statusCode == 400 {
-                    errorMessage = message ?? String(localized: "externalVideo.error.invalidUrl")
+                    errorMessage = message ?? AppLocalization.string("externalVideo.error.invalidUrl")
                 } else {
-                    errorMessage = message ?? String(localized: "externalVideo.error.server \(statusCode)")
+                    errorMessage = message ?? AppLocalization.string("externalVideo.error.server \(statusCode)")
                 }
             case .decodingError:
-                errorMessage = String(localized: "externalVideo.error.parsing")
+                errorMessage = AppLocalization.string("externalVideo.error.parsing")
             case .noConnection:
-                errorMessage = String(localized: "externalVideo.error.noConnection")
+                errorMessage = AppLocalization.string("externalVideo.error.noConnection")
             case .timeout:
-                errorMessage = String(localized: "externalVideo.error.timeout")
+                errorMessage = AppLocalization.string("externalVideo.error.timeout")
             default:
                 errorMessage = error.localizedDescription
             }

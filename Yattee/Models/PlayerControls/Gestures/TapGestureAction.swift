@@ -40,23 +40,23 @@ enum TapGestureAction: Codable, Hashable, Sendable {
     var displayName: String {
         switch self {
         case .togglePlayPause:
-            String(localized: "gestures.action.togglePlayPause", defaultValue: "Toggle Play/Pause")
+            AppLocalization.string("gestures.action.togglePlayPause", defaultValue: "Toggle Play/Pause")
         case .seekForward(let seconds):
-            String(localized: "gestures.action.seekForward", defaultValue: "Seek Forward") + " \(seconds)s"
+            AppLocalization.string("gestures.action.seekForward", defaultValue: "Seek Forward") + " \(seconds)s"
         case .seekBackward(let seconds):
-            String(localized: "gestures.action.seekBackward", defaultValue: "Seek Backward") + " \(seconds)s"
+            AppLocalization.string("gestures.action.seekBackward", defaultValue: "Seek Backward") + " \(seconds)s"
         case .toggleFullscreen:
-            String(localized: "gestures.action.toggleFullscreen", defaultValue: "Toggle Fullscreen")
+            AppLocalization.string("gestures.action.toggleFullscreen", defaultValue: "Toggle Fullscreen")
         case .togglePiP:
-            String(localized: "gestures.action.togglePiP", defaultValue: "Toggle PiP")
+            AppLocalization.string("gestures.action.togglePiP", defaultValue: "Toggle PiP")
         case .playNext:
-            String(localized: "gestures.action.playNext", defaultValue: "Play Next")
+            AppLocalization.string("gestures.action.playNext", defaultValue: "Play Next")
         case .playPrevious:
-            String(localized: "gestures.action.playPrevious", defaultValue: "Play Previous")
+            AppLocalization.string("gestures.action.playPrevious", defaultValue: "Play Previous")
         case .cyclePlaybackSpeed:
-            String(localized: "gestures.action.cyclePlaybackSpeed", defaultValue: "Cycle Playback Speed")
+            AppLocalization.string("gestures.action.cyclePlaybackSpeed", defaultValue: "Cycle Playback Speed")
         case .toggleMute:
-            String(localized: "gestures.action.toggleMute", defaultValue: "Toggle Mute")
+            AppLocalization.string("gestures.action.toggleMute", defaultValue: "Toggle Mute")
         }
     }
 
@@ -140,23 +140,23 @@ enum TapGestureActionType: String, CaseIterable, Identifiable, Sendable {
     var displayName: String {
         switch self {
         case .togglePlayPause:
-            String(localized: "gestures.actionType.togglePlayPause", defaultValue: "Toggle Play/Pause")
+            AppLocalization.string("gestures.actionType.togglePlayPause", defaultValue: "Toggle Play/Pause")
         case .seekForward:
-            String(localized: "gestures.actionType.seekForward", defaultValue: "Seek Forward")
+            AppLocalization.string("gestures.actionType.seekForward", defaultValue: "Seek Forward")
         case .seekBackward:
-            String(localized: "gestures.actionType.seekBackward", defaultValue: "Seek Backward")
+            AppLocalization.string("gestures.actionType.seekBackward", defaultValue: "Seek Backward")
         case .toggleFullscreen:
-            String(localized: "gestures.actionType.toggleFullscreen", defaultValue: "Toggle Fullscreen")
+            AppLocalization.string("gestures.actionType.toggleFullscreen", defaultValue: "Toggle Fullscreen")
         case .togglePiP:
-            String(localized: "gestures.actionType.togglePiP", defaultValue: "Toggle PiP")
+            AppLocalization.string("gestures.actionType.togglePiP", defaultValue: "Toggle PiP")
         case .playNext:
-            String(localized: "gestures.actionType.playNext", defaultValue: "Play Next")
+            AppLocalization.string("gestures.actionType.playNext", defaultValue: "Play Next")
         case .playPrevious:
-            String(localized: "gestures.actionType.playPrevious", defaultValue: "Play Previous")
+            AppLocalization.string("gestures.actionType.playPrevious", defaultValue: "Play Previous")
         case .cyclePlaybackSpeed:
-            String(localized: "gestures.actionType.cyclePlaybackSpeed", defaultValue: "Cycle Playback Speed")
+            AppLocalization.string("gestures.actionType.cyclePlaybackSpeed", defaultValue: "Cycle Playback Speed")
         case .toggleMute:
-            String(localized: "gestures.actionType.toggleMute", defaultValue: "Toggle Mute")
+            AppLocalization.string("gestures.actionType.toggleMute", defaultValue: "Toggle Mute")
         }
     }
 

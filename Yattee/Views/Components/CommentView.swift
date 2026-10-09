@@ -204,7 +204,7 @@ struct CommentView: View {
                     Image(systemName: "chevron.down")
                         .font(.caption2)
                         .rotationEffect(.degrees(showReplies ? -180 : 0))
-                    Text(String(localized: "comments.showReplies \(comment.replyCount)"))
+                    Text(AppLocalization.string("comments.showReplies \(comment.replyCount)"))
                         #if os(macOS)
                         .font(.subheadline)
                         #else
@@ -246,7 +246,7 @@ struct CommentView: View {
                         Button {
                             Task { await loadReplies() }
                         } label: {
-                            Text(String(localized: "comments.loadMoreReplies"))
+                            Text(AppLocalization.string("comments.loadMoreReplies"))
                                 #if os(macOS)
                                 .font(.subheadline)
                                 #else

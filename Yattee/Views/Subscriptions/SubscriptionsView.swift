@@ -54,6 +54,10 @@ struct SubscriptionsView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     // Grid layout configuration
     @State private var viewWidth: CGFloat = 0
     private var gridConfig: GridLayoutConfiguration {
@@ -70,14 +74,14 @@ struct SubscriptionsView: View {
                     Toggle("viewOptions.showSidebar", isOn: $showSidebar)
                 }
                 #elseif os(tvOS)
-                PlatformMenuPicker(String(localized: "viewOptions.showSidebar"), selection: $showSidebar) {
+                PlatformMenuPicker(AppLocalization.string("viewOptions.showSidebar"), selection: $showSidebar) {
                     Text("common.on").tag(true)
                     Text("common.off").tag(false)
                 }
                 #endif
 
                 // Layout picker (inline menu)
-                PlatformMenuPicker(String(localized: "viewOptions.layout"), selection: $layout) {
+                PlatformMenuPicker(AppLocalization.string("viewOptions.layout"), selection: $layout) {
                     ForEach(VideoListLayout.allCases, id: \.self) { option in
                         Text(option.displayName).tag(option)
                     }
@@ -85,7 +89,7 @@ struct SubscriptionsView: View {
 
                 // List-specific options
                 if layout == .list {
-                    PlatformMenuPicker(String(localized: "viewOptions.rowSize"), selection: $rowStyle) {
+                    PlatformMenuPicker(AppLocalization.string("viewOptions.rowSize"), selection: $rowStyle) {
                         Text("viewOptions.rowSize.compact").tag(VideoRowStyle.compact)
                         Text("viewOptions.rowSize.regular").tag(VideoRowStyle.regular)
                         Text("viewOptions.rowSize.large").tag(VideoRowStyle.large)
@@ -111,7 +115,7 @@ struct SubscriptionsView: View {
                 }
 
                 #if os(tvOS)
-                PlatformMenuPicker(String(localized: "viewOptions.hideWatched"), selection: $hideWatched) {
+                PlatformMenuPicker(AppLocalization.string("viewOptions.hideWatched"), selection: $hideWatched) {
                     Text("common.on").tag(true)
                     Text("common.off").tag(false)
                 }
@@ -135,7 +139,7 @@ struct SubscriptionsView: View {
                     pendingSubscriptionsData = true
                     showViewOptions = false
                 } label: {
-                    Label(String(localized: "manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
+                    Label(AppLocalization.string("manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
                 }
             }
             #elseif os(iOS)
@@ -143,7 +147,7 @@ struct SubscriptionsView: View {
                 NavigationLink {
                     SubscriptionsSettingsView()
                 } label: {
-                    Label(String(localized: "manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
+                    Label(AppLocalization.string("manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
                 }
             }
             #endif
@@ -264,7 +268,7 @@ struct SubscriptionsView: View {
             HStack(spacing: 8) {
                 ProgressView()
                     .scaleEffect(0.8)
-                Text(String(localized: "subscriptions.loadingMore"))
+                Text(AppLocalization.string("subscriptions.loadingMore"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -284,9 +288,9 @@ struct SubscriptionsView: View {
     private func errorMessage(for error: FeedLoadState.FeedLoadError) -> String {
         switch error {
         case .yatteeServerRequired:
-            return String(localized: "subscriptions.error.yatteeServerRequired")
+            return AppLocalization.string("subscriptions.error.yatteeServerRequired")
         case .notAuthenticated:
-            return String(localized: "subscriptions.error.notAuthenticated")
+            return AppLocalization.string("subscriptions.error.notAuthenticated")
         case .networkError(let message):
             return message
         }
@@ -428,7 +432,7 @@ struct SubscriptionsView: View {
                     #endif
                 }
                 #if !os(tvOS)
-                .navigationTitle(String(localized: "tabs.subscriptions"))
+                .reactiveNavigationTitle(AppLocalization.string("tabs.subscriptions"))
                 #if os(iOS)
                 .toolbarTitleDisplayMode(isIPadRegular ? .inline : .inlineLarge)
                 #else
@@ -439,7 +443,7 @@ struct SubscriptionsView: View {
                         Button {
                             showViewOptions = true
                         } label: {
-                            Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                            Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                         }
                         .liquidGlassTransitionSource(id: "subscriptionsViewOptions", in: sheetTransition)
                         #if os(macOS)
@@ -458,6 +462,15 @@ struct SubscriptionsView: View {
                         }
                         #endif
                     }
+                    #if os(iOS)
+                    ToolbarItem(placement: .primaryAction) {
+                        NavigationLink(value: NavigationDestination.search("")) {
+                            Image(systemName: "magnifyingglass")
+                        }
+                        .accessibilityIdentifier("subscriptions.searchButton")
+                        .accessibilityLabel(AppLocalization.string("tabs.search"))
+                    }
+                    #endif
                 }
                 #endif
                 #if os(macOS)
@@ -473,7 +486,7 @@ struct SubscriptionsView: View {
                             .padding(.horizontal, 40)
                             .padding(.vertical, 24)
                             #else
-                            .navigationTitle(String(localized: "subscriptions.viewOptions.title"))
+                            .reactiveNavigationTitle(AppLocalization.string("subscriptions.viewOptions.title"))
                             #if os(iOS)
                             .navigationBarTitleDisplayMode(.inline)
                             #endif
@@ -559,6 +572,7 @@ struct SubscriptionsView: View {
                 viewWidth = newWidth
             }
         }
+        .environment(\.locale, localizationLocale)
     }
 
     // MARK: - List Layout
@@ -618,9 +632,9 @@ struct SubscriptionsView: View {
         } else if !feedCache.videos.isEmpty {
             if filteredVideos.isEmpty && selectedChannelID != nil {
                 ContentUnavailableView {
-                    Label(String(localized: "subscriptions.noVideosFromChannel"), systemImage: "video.slash")
+                    Label(AppLocalization.string("subscriptions.noVideosFromChannel"), systemImage: "video.slash")
                 } description: {
-                    Text(String(localized: "subscriptions.noVideosFromChannel.description"))
+                    Text(AppLocalization.string("subscriptions.noVideosFromChannel.description"))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.vertical, 40)
@@ -639,7 +653,7 @@ struct SubscriptionsView: View {
                         .tappableVideo(
                             video,
                             queueSource: subscriptionsQueueSource,
-                            sourceLabel: String(localized: "queue.source.subscriptions"),
+                            sourceLabel: AppLocalization.string("queue.source.subscriptions"),
                             videoList: filteredVideos,
                             videoIndex: index,
                             loadMoreVideos: loadMoreSubscriptionsCallback
@@ -795,7 +809,7 @@ struct SubscriptionsView: View {
         Button {
             showViewOptions = true
         } label: {
-            Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+            Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
         }
         .buttonStyle(.bordered)
     }
@@ -808,7 +822,7 @@ struct SubscriptionsView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     TVSubscriptionsSidebarRow(
-                        name: String(localized: "subscriptions.allChannels"),
+                        name: AppLocalization.string("subscriptions.allChannels"),
                         avatarURL: nil,
                         serverURL: nil,
                         authHeader: nil,
@@ -825,7 +839,7 @@ struct SubscriptionsView: View {
                         Button {
                             appEnvironment?.navigationCoordinator.navigate(to: .manageChannels)
                         } label: {
-                            Label(String(localized: "sidebar.manageChannels"), systemImage: "person.2.badge.gearshape")
+                            Label(AppLocalization.string("sidebar.manageChannels"), systemImage: "person.2.badge.gearshape")
                         }
                     }
 
@@ -852,12 +866,12 @@ struct SubscriptionsView: View {
                                     to: .channel(subscription.channelID, subscription.contentSource)
                                 )
                             } label: {
-                                Label(String(localized: "subscriptions.goToChannel"), systemImage: "person.circle")
+                                Label(AppLocalization.string("subscriptions.goToChannel"), systemImage: "person.circle")
                             }
                             Button(role: .destructive) {
                                 unsubscribeChannel(subscription.channelID)
                             } label: {
-                                Label(String(localized: "channel.unsubscribe"), systemImage: "person.badge.minus")
+                                Label(AppLocalization.string("channel.unsubscribe"), systemImage: "person.badge.minus")
                             }
                         }
                     }
@@ -887,7 +901,7 @@ struct SubscriptionsView: View {
     @ViewBuilder
     private var channelsSidebarContent: some View {
         SubscriptionsSidebarRow(
-            name: String(localized: "subscriptions.allChannels"),
+            name: AppLocalization.string("subscriptions.allChannels"),
             avatarURL: nil,
             serverURL: nil,
             authHeader: nil,
@@ -899,7 +913,7 @@ struct SubscriptionsView: View {
             Button {
                 appEnvironment?.navigationCoordinator.navigate(to: .manageChannels)
             } label: {
-                Label(String(localized: "sidebar.manageChannels"), systemImage: "person.2.badge.gearshape")
+                Label(AppLocalization.string("sidebar.manageChannels"), systemImage: "person.2.badge.gearshape")
             }
         }
 
@@ -919,12 +933,12 @@ struct SubscriptionsView: View {
                         to: .channel(subscription.channelID, subscription.contentSource)
                     )
                 } label: {
-                    Label(String(localized: "subscriptions.goToChannel"), systemImage: "person.circle")
+                    Label(AppLocalization.string("subscriptions.goToChannel"), systemImage: "person.circle")
                 }
                 Button(role: .destructive) {
                     unsubscribeChannel(subscription.channelID)
                 } label: {
-                    Label(String(localized: "channel.unsubscribe"), systemImage: "person.badge.minus")
+                    Label(AppLocalization.string("channel.unsubscribe"), systemImage: "person.badge.minus")
                 }
             }
         }
@@ -1035,7 +1049,7 @@ struct SubscriptionsView: View {
         ScrollView {
             LazyVStack(spacing: 2) {
                 iOSSidebarRow(
-                    name: String(localized: "subscriptions.allChannels"),
+                    name: AppLocalization.string("subscriptions.allChannels"),
                     avatarURL: nil,
                     serverURL: nil,
                     authHeader: nil,
@@ -1049,7 +1063,7 @@ struct SubscriptionsView: View {
                     Button {
                         appEnvironment?.navigationCoordinator.navigate(to: .manageChannels)
                     } label: {
-                        Label(String(localized: "sidebar.manageChannels"), systemImage: "person.2.badge.gearshape")
+                        Label(AppLocalization.string("sidebar.manageChannels"), systemImage: "person.2.badge.gearshape")
                     }
                 }
 
@@ -1075,12 +1089,12 @@ struct SubscriptionsView: View {
                                 to: .channel(subscription.channelID, subscription.contentSource)
                             )
                         } label: {
-                            Label(String(localized: "subscriptions.goToChannel"), systemImage: "person.circle")
+                            Label(AppLocalization.string("subscriptions.goToChannel"), systemImage: "person.circle")
                         }
                         Button(role: .destructive) {
                             unsubscribeChannel(subscription.channelID)
                         } label: {
-                            Label(String(localized: "channel.unsubscribe"), systemImage: "person.badge.minus")
+                            Label(AppLocalization.string("channel.unsubscribe"), systemImage: "person.badge.minus")
                         }
                     }
                 }
@@ -1161,9 +1175,9 @@ struct SubscriptionsView: View {
     private var gridFeedContent: some View {
         if filteredVideos.isEmpty && selectedChannelID != nil {
             ContentUnavailableView {
-                Label(String(localized: "subscriptions.noVideosFromChannel"), systemImage: "video.slash")
+                Label(AppLocalization.string("subscriptions.noVideosFromChannel"), systemImage: "video.slash")
             } description: {
-                Text(String(localized: "subscriptions.noVideosFromChannel.description"))
+                Text(AppLocalization.string("subscriptions.noVideosFromChannel.description"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1178,7 +1192,7 @@ struct SubscriptionsView: View {
                     .tappableVideo(
                         video,
                         queueSource: subscriptionsQueueSource,
-                        sourceLabel: String(localized: "queue.source.subscriptions"),
+                        sourceLabel: AppLocalization.string("queue.source.subscriptions"),
                         videoList: filteredVideos,
                         videoIndex: index,
                         loadMoreVideos: loadMoreSubscriptionsCallback
@@ -1236,7 +1250,7 @@ struct SubscriptionsView: View {
         } else {
             NavigationLink(value: NavigationDestination.manageChannels) {
                 HStack(spacing: 4) {
-                    Text(String(localized: "subscriptions.allChannels"))
+                    Text(AppLocalization.string("subscriptions.allChannels"))
                         .fontWeight(.semibold)
                     Image(systemName: "chevron.right")
                         .font(.caption)
@@ -1266,9 +1280,9 @@ struct SubscriptionsView: View {
 
     private var gridEmptyView: some View {
         ContentUnavailableView {
-            Label(String(localized: "subscriptions.feed.title"), systemImage: "play.rectangle.on.rectangle")
+            Label(AppLocalization.string("subscriptions.feed.title"), systemImage: "play.rectangle.on.rectangle")
         } description: {
-            Text(String(localized: "subscriptions.empty.description"))
+            Text(AppLocalization.string("subscriptions.empty.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 40)
@@ -1277,9 +1291,9 @@ struct SubscriptionsView: View {
     /// Empty state shown when Yattee Server is required but not configured.
     private var yatteeServerRequiredView: some View {
         ContentUnavailableView {
-            Label(String(localized: "subscriptions.yatteeServerRequired.title"), systemImage: "server.rack")
+            Label(AppLocalization.string("subscriptions.yatteeServerRequired.title"), systemImage: "server.rack")
         } description: {
-            Text(String(localized: "subscriptions.yatteeServerRequired.description"))
+            Text(AppLocalization.string("subscriptions.yatteeServerRequired.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 40)
@@ -1288,9 +1302,9 @@ struct SubscriptionsView: View {
     /// Empty state shown when Invidious account is not authenticated.
     private var notAuthenticatedView: some View {
         ContentUnavailableView {
-            Label(String(localized: "subscriptions.notAuthenticated.title"), systemImage: "person.crop.circle.badge.exclamationmark")
+            Label(AppLocalization.string("subscriptions.notAuthenticated.title"), systemImage: "person.crop.circle.badge.exclamationmark")
         } description: {
-            Text(String(localized: "subscriptions.notAuthenticated.description"))
+            Text(AppLocalization.string("subscriptions.notAuthenticated.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 40)
@@ -1298,11 +1312,11 @@ struct SubscriptionsView: View {
 
     private func gridErrorView(_ error: String) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await loadFeed(forceRefresh: true) }
             }
         }

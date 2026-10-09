@@ -18,13 +18,13 @@ enum SubscriptionImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidData:
-            return String(localized: "subscriptions.import.error.invalidData")
+            return AppLocalization.string("subscriptions.import.error.invalidData")
         case .emptyFile:
-            return String(localized: "subscriptions.import.error.emptyFile")
+            return AppLocalization.string("subscriptions.import.error.emptyFile")
         case .noValidSubscriptions:
-            return String(localized: "subscriptions.import.error.noValidSubscriptions")
+            return AppLocalization.string("subscriptions.import.error.noValidSubscriptions")
         case .parsingFailed(let details):
-            return String(localized: "subscriptions.import.error.parsingFailed \(details)")
+            return AppLocalization.string("subscriptions.import.error.parsingFailed \(details)")
         }
     }
 }

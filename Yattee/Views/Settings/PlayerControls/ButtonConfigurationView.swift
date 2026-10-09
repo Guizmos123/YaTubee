@@ -41,7 +41,7 @@ struct ButtonConfigurationView: View {
                 #if os(iOS)
                 Section {
                     Picker(
-                        String(localized: "settings.playerControls.visibility"),
+                        AppLocalization.string("settings.playerControls.visibility"),
                         selection: $visibilityMode
                     ) {
                         ForEach(VisibilityMode.allCases, id: \.self) { mode in
@@ -52,9 +52,9 @@ struct ButtonConfigurationView: View {
                         updateVisibility(newValue)
                     }
                 } header: {
-                    Text(String(localized: "settings.playerControls.visibilityHeader"))
+                    Text(AppLocalization.string("settings.playerControls.visibilityHeader"))
                 } footer: {
-                    Text(String(localized: "settings.playerControls.visibilityFooter"))
+                    Text(AppLocalization.string("settings.playerControls.visibilityFooter"))
                 }
                 #endif
 
@@ -65,13 +65,13 @@ struct ButtonConfigurationView: View {
                 #if os(macOS)
                 if !config.buttonType.hasSettings {
                     Section {
-                        Text(String(localized: "settings.playerControls.noButtonSettings"))
+                        Text(AppLocalization.string("settings.playerControls.noButtonSettings"))
                             .foregroundStyle(.secondary)
                     }
                 }
                 #endif
             }
-            .navigationTitle(config.buttonType.displayName)
+            .reactiveNavigationTitle(config.buttonType.displayName)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #elseif os(macOS)
@@ -83,7 +83,7 @@ struct ButtonConfigurationView: View {
             }
         } else {
             ContentUnavailableView(
-                String(localized: "settings.playerControls.buttonNotFound"),
+                AppLocalization.string("settings.playerControls.buttonNotFound"),
                 systemImage: "exclamationmark.triangle"
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -143,7 +143,7 @@ struct ButtonConfigurationView: View {
     private var spacerSettings: some View {
         Section {
             Toggle(
-                String(localized: "settings.playerControls.spacer.flexible"),
+                AppLocalization.string("settings.playerControls.spacer.flexible"),
                 isOn: $spacerIsFlexible
             )
             .onChange(of: spacerIsFlexible) { _, newValue in
@@ -153,7 +153,7 @@ struct ButtonConfigurationView: View {
             #if !os(tvOS)
             if !spacerIsFlexible {
                 HStack {
-                    Text(String(localized: "settings.playerControls.spacer.width"))
+                    Text(AppLocalization.string("settings.playerControls.spacer.width"))
                     Spacer()
                     Text("\(Int(spacerWidth))pt")
                         .foregroundStyle(.secondary)
@@ -170,9 +170,9 @@ struct ButtonConfigurationView: View {
             }
             #endif
         } header: {
-            Text(String(localized: "settings.playerControls.spacer.header"))
+            Text(AppLocalization.string("settings.playerControls.spacer.header"))
         } footer: {
-            Text(String(localized: "settings.playerControls.spacer.footer"))
+            Text(AppLocalization.string("settings.playerControls.spacer.footer"))
         }
     }
 
@@ -182,7 +182,7 @@ struct ButtonConfigurationView: View {
     private var sliderSettings: some View {
         Section {
             Picker(
-                String(localized: "settings.playerControls.slider.behavior"),
+                AppLocalization.string("settings.playerControls.slider.behavior"),
                 selection: $sliderBehavior
             ) {
                 ForEach(SliderBehavior.allCases, id: \.self) { behavior in
@@ -193,9 +193,9 @@ struct ButtonConfigurationView: View {
                 updateSliderSettings(behavior: newValue)
             }
         } header: {
-            Text(String(localized: "settings.playerControls.slider.header"))
+            Text(AppLocalization.string("settings.playerControls.slider.header"))
         } footer: {
-            Text(String(localized: "settings.playerControls.slider.footer"))
+            Text(AppLocalization.string("settings.playerControls.slider.footer"))
         }
     }
 
@@ -211,7 +211,7 @@ struct ButtonConfigurationView: View {
         Section {
             #if !os(tvOS)
             HStack {
-                Text(String(localized: "settings.playerControls.seek.seconds"))
+                Text(AppLocalization.string("settings.playerControls.seek.seconds"))
                 Spacer()
                 Text("\(Int(seekSeconds))s")
                     .foregroundStyle(.secondary)
@@ -238,7 +238,7 @@ struct ButtonConfigurationView: View {
                 }
             }
         } header: {
-            Text(String(localized: "settings.playerControls.seek.header"))
+            Text(AppLocalization.string("settings.playerControls.seek.header"))
         }
     }
 
@@ -249,7 +249,7 @@ struct ButtonConfigurationView: View {
         Section {
             // Direction picker
             Picker(
-                String(localized: "settings.playerControls.seek.direction"),
+                AppLocalization.string("settings.playerControls.seek.direction"),
                 selection: $seekDirection
             ) {
                 ForEach(SeekDirection.allCases, id: \.self) { direction in
@@ -262,7 +262,7 @@ struct ButtonConfigurationView: View {
 
             #if !os(tvOS)
             HStack {
-                Text(String(localized: "settings.playerControls.seek.seconds"))
+                Text(AppLocalization.string("settings.playerControls.seek.seconds"))
                 Spacer()
                 Text("\(Int(seekSeconds))s")
                     .foregroundStyle(.secondary)
@@ -290,7 +290,7 @@ struct ButtonConfigurationView: View {
                 }
             }
         } header: {
-            Text(String(localized: "settings.playerControls.seek.header"))
+            Text(AppLocalization.string("settings.playerControls.seek.header"))
         }
     }
 
@@ -300,7 +300,7 @@ struct ButtonConfigurationView: View {
     private var timeDisplaySettings: some View {
         Section {
             Picker(
-                String(localized: "settings.playerControls.timeDisplay.format"),
+                AppLocalization.string("settings.playerControls.timeDisplay.format"),
                 selection: $timeDisplayFormat
             ) {
                 ForEach(TimeDisplayFormat.allCases, id: \.self) { format in
@@ -311,9 +311,9 @@ struct ButtonConfigurationView: View {
                 updateSettings(.timeDisplay(TimeDisplaySettings(format: newValue)))
             }
         } header: {
-            Text(String(localized: "settings.playerControls.timeDisplay.header"))
+            Text(AppLocalization.string("settings.playerControls.timeDisplay.header"))
         } footer: {
-            Text(String(localized: "settings.playerControls.timeDisplay.footer"))
+            Text(AppLocalization.string("settings.playerControls.timeDisplay.footer"))
         }
     }
 
@@ -323,7 +323,7 @@ struct ButtonConfigurationView: View {
     private var titleAuthorSettings: some View {
         Section {
             Toggle(
-                String(localized: "settings.playerControls.titleAuthor.showSourceImage"),
+                AppLocalization.string("settings.playerControls.titleAuthor.showSourceImage"),
                 isOn: $titleAuthorShowSourceImage
             )
             .onChange(of: titleAuthorShowSourceImage) { _, _ in
@@ -331,7 +331,7 @@ struct ButtonConfigurationView: View {
             }
 
             Toggle(
-                String(localized: "settings.playerControls.titleAuthor.showTitle"),
+                AppLocalization.string("settings.playerControls.titleAuthor.showTitle"),
                 isOn: $titleAuthorShowTitle
             )
             .onChange(of: titleAuthorShowTitle) { _, _ in
@@ -339,16 +339,16 @@ struct ButtonConfigurationView: View {
             }
 
             Toggle(
-                String(localized: "settings.playerControls.titleAuthor.showSourceName"),
+                AppLocalization.string("settings.playerControls.titleAuthor.showSourceName"),
                 isOn: $titleAuthorShowSourceName
             )
             .onChange(of: titleAuthorShowSourceName) { _, _ in
                 updateTitleAuthorSettings()
             }
         } header: {
-            Text(String(localized: "settings.playerControls.titleAuthor.header"))
+            Text(AppLocalization.string("settings.playerControls.titleAuthor.header"))
         } footer: {
-            Text(String(localized: "settings.playerControls.titleAuthor.footer"))
+            Text(AppLocalization.string("settings.playerControls.titleAuthor.footer"))
         }
     }
 

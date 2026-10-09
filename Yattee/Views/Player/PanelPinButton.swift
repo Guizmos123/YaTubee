@@ -43,8 +43,8 @@ struct PanelPinButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isPinned
-            ? String(localized: "wideLayoutPanel.pinButton.unpin")
-            : String(localized: "wideLayoutPanel.pinButton.pin"))
+            ? AppLocalization.string("wideLayoutPanel.pinButton.unpin")
+            : AppLocalization.string("wideLayoutPanel.pinButton.pin"))
     }
 
     // MARK: - Haptic Feedback

@@ -19,7 +19,7 @@ struct ContributorsView: View {
     var body: some View {
         content
             .opaqueWindowBackground()
-            .navigationTitle(String(localized: "settings.contributors.title"))
+            .reactiveNavigationTitle(AppLocalization.string("settings.contributors.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -37,11 +37,11 @@ struct ContributorsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = errorMessage, contributors.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+                Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error)
             } actions: {
-                Button(String(localized: "common.retry")) {
+                Button(AppLocalization.string("common.retry")) {
                     Task {
                         await loadContributors()
                     }
@@ -101,7 +101,7 @@ struct ContributorsView: View {
                         .font(.body)
                         .fontWeight(.semibold)
 
-                    Text(String(localized: "settings.contributors.commits \(contributor.contributions)"))
+                    Text(AppLocalization.string("settings.contributors.commits \(contributor.contributions)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -136,7 +136,7 @@ struct ContributorsView: View {
         } catch let error as APIError {
             await MainActor.run {
                 if case .rateLimited = error {
-                    errorMessage = String(localized: "settings.contributors.error.rateLimited")
+                    errorMessage = AppLocalization.string("settings.contributors.error.rateLimited")
                 } else {
                     errorMessage = error.localizedDescription
                 }

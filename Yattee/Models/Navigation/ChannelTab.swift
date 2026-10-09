@@ -21,15 +21,15 @@ enum ChannelTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .about:
-            return String(localized: "channel.tab.about")
+            return AppLocalization.string("channel.tab.about")
         case .videos:
-            return String(localized: "channel.tab.videos")
+            return AppLocalization.string("channel.tab.videos")
         case .playlists:
-            return String(localized: "channel.tab.playlists")
+            return AppLocalization.string("channel.tab.playlists")
         case .shorts:
-            return String(localized: "channel.tab.shorts")
+            return AppLocalization.string("channel.tab.shorts")
         case .streams:
-            return String(localized: "channel.tab.streams")
+            return AppLocalization.string("channel.tab.streams")
         }
     }
 

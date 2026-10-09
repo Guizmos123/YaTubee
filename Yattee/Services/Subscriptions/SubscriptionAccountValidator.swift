@@ -126,7 +126,7 @@ final class SubscriptionAccountValidator {
             )
 
             toastManager.showInfo(
-                String(localized: "subscriptions.accountSwitched.title"),
+                AppLocalization.string("subscriptions.accountSwitched.title"),
                 subtitle: newName
             )
         } else {
@@ -148,12 +148,12 @@ final class SubscriptionAccountValidator {
     func displayName(for account: SubscriptionAccount) -> String {
         switch account.type {
         case .local:
-            return String(localized: "subscriptions.account.local")
+            return AppLocalization.string("subscriptions.account.local")
 
         case .invidious:
             guard let instanceID = account.instanceID,
                   let instance = instancesManager.instances.first(where: { $0.id == instanceID }) else {
-                return String(localized: "subscriptions.account.invidious")
+                return AppLocalization.string("subscriptions.account.invidious")
             }
             // Use instance name if available, otherwise use hostname
             let instanceName: String
@@ -162,12 +162,12 @@ final class SubscriptionAccountValidator {
             } else {
                 instanceName = instance.url.host ?? "Invidious"
             }
-            return String(localized: "subscriptions.account.invidiousInstance \(instanceName)")
+            return AppLocalization.string("subscriptions.account.invidiousInstance \(instanceName)")
 
         case .piped:
             guard let instanceID = account.instanceID,
                   let instance = instancesManager.instances.first(where: { $0.id == instanceID }) else {
-                return String(localized: "subscriptions.account.piped")
+                return AppLocalization.string("subscriptions.account.piped")
             }
             // Use instance name if available, otherwise use hostname
             let instanceName: String
@@ -176,7 +176,7 @@ final class SubscriptionAccountValidator {
             } else {
                 instanceName = instance.url.host ?? "Piped"
             }
-            return String(localized: "subscriptions.account.pipedInstance \(instanceName)")
+            return AppLocalization.string("subscriptions.account.pipedInstance \(instanceName)")
         }
     }
 

@@ -45,7 +45,7 @@ struct LegacyAccountsImportView: View {
         #if !os(tvOS)
         // On tvOS the title comes from the TVSidebarDetailContainer sidebar;
         // a navigationTitle would render as a giant ghost behind the form.
-        .navigationTitle(String(localized: "migration.accounts.title"))
+        .reactiveNavigationTitle(AppLocalization.string("migration.accounts.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -55,7 +55,7 @@ struct LegacyAccountsImportView: View {
             #if !os(tvOS)
             if showsDoneButton {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "common.done")) {
+                    Button(AppLocalization.string("common.done")) {
                         dismiss()
                     }
                 }
@@ -74,15 +74,15 @@ struct LegacyAccountsImportView: View {
             titleVisibility: .visible,
             presenting: pendingRemoval
         ) { removal in
-            Button(String(localized: "migration.accounts.remove.confirm"), role: .destructive) {
+            Button(AppLocalization.string("migration.accounts.remove.confirm"), role: .destructive) {
                 confirmRemoval(removal)
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: { removal in
-            Text(String(localized: "migration.accounts.remove.message \(removal.displayName)"))
+            Text(AppLocalization.string("migration.accounts.remove.message \(removal.displayName)"))
         }
         .alert(importSuccessTitle, isPresented: $showingImportSuccess) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+            Button(AppLocalization.string("common.ok"), role: .cancel) {}
         } message: {
             Text(importedInstanceName)
         }
@@ -103,9 +103,9 @@ struct LegacyAccountsImportView: View {
                         }
                     }
                 } header: {
-                    Text(String(localized: "migration.accounts.section"))
+                    Text(AppLocalization.string("migration.accounts.section"))
                 } footer: {
-                    Text(String(localized: "migration.accounts.footer"))
+                    Text(AppLocalization.string("migration.accounts.footer"))
                 }
             }
 
@@ -119,9 +119,9 @@ struct LegacyAccountsImportView: View {
                         }
                     }
                 } header: {
-                    Text(String(localized: "migration.sources.section"))
+                    Text(AppLocalization.string("migration.sources.section"))
                 } footer: {
-                    Text(String(localized: "migration.sources.footer"))
+                    Text(AppLocalization.string("migration.sources.footer"))
                 }
             }
         }
@@ -135,9 +135,9 @@ struct LegacyAccountsImportView: View {
 
     private var emptyState: some View {
         ContentUnavailableView(
-            String(localized: "migration.accounts.empty.title"),
+            AppLocalization.string("migration.accounts.empty.title"),
             systemImage: "person.badge.key",
-            description: Text(String(localized: "migration.accounts.empty.description"))
+            description: Text(AppLocalization.string("migration.accounts.empty.description"))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -174,13 +174,13 @@ struct LegacyAccountsImportView: View {
                     username: state.username,
                     password: state.password
                 )
-                importSuccessTitle = String(localized: "migration.accounts.imported.title")
+                importSuccessTitle = AppLocalization.string("migration.accounts.imported.title")
                 importedInstanceName = importedInstance.displayName
                 showingImportSuccess = true
                 accountItems.removeAll { $0.legacyAccountID == item.legacyAccountID }
                 rowStates.removeValue(forKey: item.legacyAccountID)
             } catch APIError.unauthorized {
-                setImportError(String(localized: "login.error.invalidCredentials"), for: item)
+                setImportError(AppLocalization.string("login.error.invalidCredentials"), for: item)
             } catch {
                 setImportError(error.localizedDescription, for: item)
             }
@@ -190,7 +190,7 @@ struct LegacyAccountsImportView: View {
     private func importLegacyInstance(_ item: LegacyInstanceImportItem) {
         guard let service = legacyMigrationService else { return }
         let importedInstance = service.importLegacyInstance(item)
-        importSuccessTitle = String(localized: "migration.sources.imported.title")
+        importSuccessTitle = AppLocalization.string("migration.sources.imported.title")
         importedInstanceName = importedInstance.displayName
         showingImportSuccess = true
         instanceItems.removeAll { $0.legacyInstanceID == item.legacyInstanceID }
@@ -243,9 +243,9 @@ private enum PendingRemoval: Identifiable {
     var confirmationTitle: String {
         switch self {
         case .account:
-            return String(localized: "migration.accounts.remove.title")
+            return AppLocalization.string("migration.accounts.remove.title")
         case .instance:
-            return String(localized: "migration.sources.remove.title")
+            return AppLocalization.string("migration.sources.remove.title")
         }
     }
 }
@@ -307,17 +307,17 @@ private struct LegacyAccountImportRow: View {
             if state.isImporting {
                 HStack(spacing: 6) {
                     ProgressView()
-                    Text(String(localized: "migration.importing"))
+                    Text(AppLocalization.string("migration.importing"))
                 }
             } else {
-                Text(String(localized: "migration.import"))
+                Text(AppLocalization.string("migration.import"))
             }
         }
         .buttonStyle(TVSettingsButtonStyle())
         .disabled(!canImport)
 
         Button(role: .destructive, action: onRemove) {
-            Text(String(localized: "common.remove"))
+            Text(AppLocalization.string("common.remove"))
                 .foregroundStyle(.red)
         }
         .buttonStyle(TVSettingsButtonStyle())
@@ -336,7 +336,7 @@ private struct LegacyAccountImportRow: View {
 
             HStack {
                 Button(role: .destructive, action: onRemove) {
-                    Text(String(localized: "common.remove"))
+                    Text(AppLocalization.string("common.remove"))
                 }
                 .disabled(state.isImporting)
                 .foregroundStyle(.red)
@@ -349,10 +349,10 @@ private struct LegacyAccountImportRow: View {
                         HStack(spacing: 6) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "migration.importing"))
+                            Text(AppLocalization.string("migration.importing"))
                         }
                     } else {
-                        Text(String(localized: "migration.import"))
+                        Text(AppLocalization.string("migration.import"))
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -367,7 +367,7 @@ private struct LegacyAccountImportRow: View {
     private var credentialsFields: some View {
         #if os(tvOS)
         TVSettingsTextField(title: usernameLabel, text: $state.username)
-        TVSettingsTextField(title: String(localized: "login.password"), text: $state.password, isSecure: true)
+        TVSettingsTextField(title: AppLocalization.string("login.password"), text: $state.password, isSecure: true)
         #else
         TextField(usernameLabel, text: $state.username)
             .textContentType(.username)
@@ -376,7 +376,7 @@ private struct LegacyAccountImportRow: View {
             #endif
             .autocorrectionDisabled()
 
-        SecureField(String(localized: "login.password"), text: $state.password)
+        SecureField(AppLocalization.string("login.password"), text: $state.password)
             .textContentType(.password)
         #endif
     }
@@ -384,9 +384,9 @@ private struct LegacyAccountImportRow: View {
     private var usernameLabel: String {
         switch item.instanceType {
         case .invidious:
-            return String(localized: "login.email")
+            return AppLocalization.string("login.email")
         default:
-            return String(localized: "login.username")
+            return AppLocalization.string("login.username")
         }
     }
 }
@@ -429,12 +429,12 @@ private struct LegacyInstanceImportRow: View {
             .padding(.vertical, 8)
 
         Button(action: onImport) {
-            Text(String(localized: "migration.import"))
+            Text(AppLocalization.string("migration.import"))
         }
         .buttonStyle(TVSettingsButtonStyle())
 
         Button(role: .destructive, action: onRemove) {
-            Text(String(localized: "common.remove"))
+            Text(AppLocalization.string("common.remove"))
                 .foregroundStyle(.red)
         }
         .buttonStyle(TVSettingsButtonStyle())
@@ -444,7 +444,7 @@ private struct LegacyInstanceImportRow: View {
 
             HStack {
                 Button(role: .destructive, action: onRemove) {
-                    Text(String(localized: "common.remove"))
+                    Text(AppLocalization.string("common.remove"))
                 }
                 .foregroundStyle(.red)
                 .tint(.red)
@@ -452,7 +452,7 @@ private struct LegacyInstanceImportRow: View {
                 Spacer()
 
                 Button(action: onImport) {
-                    Text(String(localized: "migration.import"))
+                    Text(AppLocalization.string("migration.import"))
                 }
                 .buttonStyle(.borderedProminent)
             }

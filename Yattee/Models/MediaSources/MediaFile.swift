@@ -296,7 +296,7 @@ extension MediaFile {
 
         if languageCode == "und" {
             // For exact match without language code, use "Default" as label
-            displayName = String(localized: "subtitles.default", defaultValue: "Default")
+            displayName = AppLocalization.string("subtitles.default", defaultValue: "Default")
         } else if let localizedName = Locale.current.localizedString(forLanguageCode: languageCode) {
             displayName = localizedName
         } else {

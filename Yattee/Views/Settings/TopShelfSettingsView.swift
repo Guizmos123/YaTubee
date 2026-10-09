@@ -19,11 +19,11 @@ struct TopShelfSettingsView: View {
                         Toggle(section.localizedTitle, isOn: binding(for: section, settings: settings))
                     }
                 } header: {
-                    Text(String(localized: "settings.topShelf.sections.header", defaultValue: "Sections"))
+                    Text(AppLocalization.string("settings.topShelf.sections.header", defaultValue: "Sections"))
                 } footer: {
                     Text(String(
                         localized: "settings.topShelf.sections.footer",
-                        defaultValue: "Enabled sections appear in the Apple TV Home top shelf when Yattee is focused."
+                        defaultValue: "Enabled sections appear in the Apple TV Home top shelf when YaTubee is focused."
                     ))
                 }
             }

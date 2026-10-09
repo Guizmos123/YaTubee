@@ -52,7 +52,7 @@ struct DownloadedVideoRowView: View {
     @ViewBuilder
     private var codecBadge: some View {
         if isMuxed {
-            Text(String(localized: "stream.badge.stream"))
+            Text(AppLocalization.string("stream.badge.stream"))
                 .font(.caption2)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -177,7 +177,7 @@ struct DownloadedAudioRowView: View {
                 Text(Locale.current.localizedString(forLanguageCode: lang) ?? lang)
                     .font(.headline)
             } else {
-                Text(String(localized: "stream.audio"))
+                Text(AppLocalization.string("stream.audio"))
                     .font(.headline)
             }
 

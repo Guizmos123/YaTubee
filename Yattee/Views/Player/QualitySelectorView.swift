@@ -136,15 +136,15 @@ struct QualitySelectorView: View {
     /// Navigation title based on mode
     var navigationTitle: String {
         if showTabPicker {
-            return String(localized: "player.quality.settings")
+            return AppLocalization.string("player.quality.settings")
         } else {
             switch initialTab {
             case .video:
-                return String(localized: "player.quality.video")
+                return AppLocalization.string("player.quality.video")
             case .audio:
-                return String(localized: "stream.audio")
+                return AppLocalization.string("stream.audio")
             case .subtitles:
-                return String(localized: "stream.subtitles")
+                return AppLocalization.string("stream.subtitles")
             }
         }
     }

@@ -69,6 +69,7 @@ struct YatteeApp: App {
         WindowGroup {
             ContentView()
                 .appEnvironment(appEnvironment)
+                .environment(\.locale, appEnvironment.settingsManager.appLanguage.locale)
                 #if !os(tvOS)
                 .tint(appEnvironment.settingsManager.resolvedAccentColor)
                 #endif
@@ -102,16 +103,16 @@ struct YatteeApp: App {
                     }
                 }
                 #if os(iOS) || os(macOS)
-                .alert(String(localized: "alert.openVideo.title"), isPresented: $showingClipboardAlert) {
-                    Button(String(localized: "common.open")) {
+                .alert(AppLocalization.string("alert.openVideo.title"), isPresented: $showingClipboardAlert) {
+                    Button(AppLocalization.string("common.open")) {
                         if let url = detectedClipboardURL {
                             appEnvironment.navigationCoordinator.navigate(to: .externalVideo(url))
                         }
                     }
-                    Button(String(localized: "common.cancel"), role: .cancel) {}
+                    Button(AppLocalization.string("common.cancel"), role: .cancel) {}
                 } message: {
                     if let url = detectedClipboardURL {
-                        Text(String(localized: "alert.openVideo.message \(url.host ?? "clipboard")"))
+                        Text(AppLocalization.string("alert.openVideo.message \(url.host ?? "clipboard")"))
                     }
                 }
                 .sheet(item: $prefilledLinkURL) { url in
@@ -149,28 +150,28 @@ struct YatteeApp: App {
                 #endif
                 // First-launch iCloud sync prompt
                 .alert(
-                    String(localized: "settings.icloud.enable.confirmation.title"),
+                    AppLocalization.string("settings.icloud.enable.confirmation.title"),
                     isPresented: $showingICloudAlert
                 ) {
-                    Button(String(localized: "settings.icloud.enable.confirmation.action")) {
+                    Button(AppLocalization.string("settings.icloud.enable.confirmation.action")) {
                         enableICloudAndWait()
                     }
-                    Button(String(localized: "common.cancel"), role: .cancel) {
+                    Button(AppLocalization.string("common.cancel"), role: .cancel) {
                         finishFirstLaunchFlow()
                     }
                 } message: {
-                    Text(String(localized: "settings.icloud.enable.confirmation.message"))
+                    Text(AppLocalization.string("settings.icloud.enable.confirmation.message"))
                 }
                 .alert(
-                    String(localized: "migration.accounts.prompt.title"),
+                    AppLocalization.string("migration.accounts.prompt.title"),
                     isPresented: $showingLegacyAccountsAlert
                 ) {
-                    Button(String(localized: "migration.accounts.prompt.review")) {
+                    Button(AppLocalization.string("migration.accounts.prompt.review")) {
                         showingLegacyAccountsImport = true
                     }
-                    Button(String(localized: "migration.accounts.prompt.later"), role: .cancel) {}
+                    Button(AppLocalization.string("migration.accounts.prompt.later"), role: .cancel) {}
                 } message: {
-                    Text(String(localized: "migration.accounts.prompt.message"))
+                    Text(AppLocalization.string("migration.accounts.prompt.message"))
                 }
                 #if os(macOS)
                 .sheet(isPresented: $showingICloudProgress) {
@@ -196,7 +197,7 @@ struct YatteeApp: App {
                     NavigationStack {
                         TVSidebarDetailContainer(
                             systemImage: "person.badge.key",
-                            title: String(localized: "migration.accounts.title")
+                            title: AppLocalization.string("migration.accounts.title")
                         ) {
                             LegacyAccountsImportView()
                         }
@@ -393,7 +394,7 @@ struct YatteeApp: App {
         }
         #endif
         #if os(macOS)
-        Window(String(localized: "menu.app.settings"), id: "settings") {
+        Window(AppLocalization.string("menu.app.settings"), id: "settings") {
             SettingsView(showCloseButton: false)
                 .appEnvironment(appEnvironment)
                 .frame(minWidth: 600, idealWidth: 900, maxWidth: .infinity, minHeight: 520, idealHeight: 600, maxHeight: .infinity)
@@ -546,7 +547,7 @@ struct YatteeApp: App {
     private func presentQueueSheetFromDeepLink(videoID: VideoID) async {
         guard let instance = appEnvironment.instancesManager.instance(for: videoID.source) else {
             appEnvironment.toastManager.showError(
-                String(localized: "deepLink.noInstance.title", defaultValue: "Can't open video"),
+                AppLocalization.string("deepLink.noInstance.title", defaultValue: "Can't open video"),
                 subtitle: String(
                     localized: "deepLink.noInstance.subtitle",
                     defaultValue: "No source is configured for this video."
@@ -558,7 +559,7 @@ struct YatteeApp: App {
         let toastID = appEnvironment.toastManager.show(
             scopes: [.main, .player],
             category: .loading,
-            title: String(localized: "deepLink.loading.title", defaultValue: "Loading video…"),
+            title: AppLocalization.string("deepLink.loading.title", defaultValue: "Loading video…"),
             subtitle: instance.name,
             autoDismissDelay: 30.0
         )
@@ -646,7 +647,7 @@ struct YatteeApp: App {
                 category: .general
             )
             appEnvironment.toastManager.showError(
-                String(localized: "deepLink.noInstance.title", defaultValue: "Can't open video"),
+                AppLocalization.string("deepLink.noInstance.title", defaultValue: "Can't open video"),
                 subtitle: String(
                     localized: "deepLink.noInstance.subtitle",
                     defaultValue: "No source is configured for this video."
@@ -662,7 +663,7 @@ struct YatteeApp: App {
         let toastID = appEnvironment.toastManager.show(
             scopes: [.main, .player],
             category: .loading,
-            title: String(localized: "deepLink.loading.title", defaultValue: "Loading video…"),
+            title: AppLocalization.string("deepLink.loading.title", defaultValue: "Loading video…"),
             subtitle: instance.name,
             autoDismissDelay: 30.0
         )

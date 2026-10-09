@@ -28,21 +28,21 @@ enum DetectionError: Error, Sendable {
     var localizedDescription: String {
         switch self {
         case .sslCertificateError:
-            return String(localized: "sources.error.sslCertificate")
+            return AppLocalization.string("sources.error.sslCertificate")
         case .networkError(let message):
             return message
         case .unknownType:
-            return String(localized: "sources.error.couldNotDetect")
+            return AppLocalization.string("sources.error.couldNotDetect")
         case .invalidURL:
-            return String(localized: "sources.validation.invalidURL")
+            return AppLocalization.string("sources.validation.invalidURL")
         case .timeout:
-            return String(localized: "sources.error.timeout")
+            return AppLocalization.string("sources.error.timeout")
         case .basicAuthRequired:
-            return String(localized: "sources.error.basicAuthRequired")
+            return AppLocalization.string("sources.error.basicAuthRequired")
         case .basicAuthInvalid:
-            return String(localized: "sources.error.basicAuthInvalid")
+            return AppLocalization.string("sources.error.basicAuthInvalid")
         case .pipedFrontendDetected:
-            return String(localized: "sources.error.pipedFrontendDetected")
+            return AppLocalization.string("sources.error.pipedFrontendDetected")
         }
     }
 }

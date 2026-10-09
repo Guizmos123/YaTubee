@@ -26,7 +26,7 @@ struct DownloadSettingsView: View {
                 #endif
             }
         }
-        .navigationTitle(String(localized: "settings.downloads.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.downloads.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -55,7 +55,7 @@ private struct StorageSection: View {
                 DownloadsStorageView()
             } label: {
                 HStack {
-                    Text(String(localized: "settings.downloads.usedStorage"))
+                    Text(AppLocalization.string("settings.downloads.usedStorage"))
                     Spacer()
                     Text(formatBytes(storageUsed))
                         .foregroundStyle(.secondary)
@@ -82,7 +82,7 @@ private struct QualitySection: View {
     var body: some View {
         SettingsFormSection("settings.downloads.quality.header") {
             Picker(
-                String(localized: "settings.downloads.preferredQuality"),
+                AppLocalization.string("settings.downloads.preferredQuality"),
                 selection: $downloadSettings.preferredDownloadQuality
             ) {
                 ForEach(DownloadQuality.allCases, id: \.self) { quality in
@@ -92,15 +92,15 @@ private struct QualitySection: View {
 
             if downloadSettings.preferredDownloadQuality != .ask {
                 Toggle(
-                    String(localized: "settings.downloads.includeSubtitles"),
+                    AppLocalization.string("settings.downloads.includeSubtitles"),
                     isOn: $downloadSettings.includeSubtitlesInAutoDownload
                 )
             }
         } footer: {
             if downloadSettings.preferredDownloadQuality == .ask {
-                Text(String(localized: "settings.downloads.quality.ask.footer"))
+                Text(AppLocalization.string("settings.downloads.quality.ask.footer"))
             } else {
-                Text(String(localized: "settings.downloads.quality.auto.footer"))
+                Text(AppLocalization.string("settings.downloads.quality.auto.footer"))
             }
         }
     }
@@ -116,7 +116,7 @@ private struct ConcurrencySection: View {
             #if os(iOS)
             Stepper(value: $downloadSettings.maxConcurrentDownloads, in: 1...5) {
                 HStack {
-                    Text(String(localized: "settings.downloads.maxConcurrent"))
+                    Text(AppLocalization.string("settings.downloads.maxConcurrent"))
                     Spacer()
                     Text("\(downloadSettings.maxConcurrentDownloads)")
                         .foregroundStyle(.secondary)
@@ -124,7 +124,7 @@ private struct ConcurrencySection: View {
             }
             #else
             Stepper(
-                "\(String(localized: "settings.downloads.maxConcurrent")): \(downloadSettings.maxConcurrentDownloads)",
+                "\(AppLocalization.string("settings.downloads.maxConcurrent")): \(downloadSettings.maxConcurrentDownloads)",
                 value: $downloadSettings.maxConcurrentDownloads,
                 in: 1...5
             )
@@ -143,7 +143,7 @@ private struct CellularSection: View {
     var body: some View {
         SettingsFormSection(footer: "settings.downloads.allowCellular.footer") {
             Toggle(
-                String(localized: "settings.downloads.allowCellular"),
+                AppLocalization.string("settings.downloads.allowCellular"),
                 isOn: $downloadSettings.allowCellularDownloads
             )
             .onChange(of: downloadSettings.allowCellularDownloads) {

@@ -37,6 +37,10 @@ struct ManageChannelsView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     private var viewOptionsForm: some View {
         Form {
             // View options section
@@ -56,7 +60,7 @@ struct ManageChannelsView: View {
 
                 // List-specific options
                 if layout == .list {
-                    PlatformMenuPicker(String(localized: "viewOptions.rowSize"), selection: $rowStyle) {
+                    PlatformMenuPicker(AppLocalization.string("viewOptions.rowSize"), selection: $rowStyle) {
                         Text("viewOptions.rowSize.compact").tag(VideoRowStyle.compact)
                         Text("viewOptions.rowSize.regular").tag(VideoRowStyle.regular)
                         Text("viewOptions.rowSize.large").tag(VideoRowStyle.large)
@@ -81,7 +85,7 @@ struct ManageChannelsView: View {
                     #endif
                 }
 
-                PlatformMenuPicker(String(localized: "manageChannels.sortBy"), selection: $sortOrder) {
+                PlatformMenuPicker(AppLocalization.string("manageChannels.sortBy"), selection: $sortOrder) {
                     Text("manageChannels.sortBy.name").tag(SidebarChannelSort.alphabetical)
                     Text("manageChannels.sortBy.recentlySubscribed").tag(SidebarChannelSort.recentlySubscribed)
                     Text("manageChannels.sortBy.lastUploaded").tag(SidebarChannelSort.lastUploaded)
@@ -95,7 +99,7 @@ struct ManageChannelsView: View {
                     pendingSubscriptionsData = true
                     showViewOptions = false
                 } label: {
-                    Label(String(localized: "manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
+                    Label(AppLocalization.string("manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
                 }
             }
             #elseif os(iOS)
@@ -104,7 +108,7 @@ struct ManageChannelsView: View {
                 NavigationLink {
                     SubscriptionsSettingsView()
                 } label: {
-                    Label(String(localized: "manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
+                    Label(AppLocalization.string("manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
                 }
             }
             #endif
@@ -199,10 +203,11 @@ struct ManageChannelsView: View {
                 }
             #endif
         }
+        .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .navigationTitle(String(localized: "subscriptions.channels.title"))
+        .reactiveNavigationTitle(AppLocalization.string("subscriptions.channels.title"))
         .toolbarTitleDisplayMode(.inlineLarge)
-        .searchable(text: $searchText, prompt: Text(String(localized: "channels.search.placeholder")))
+        .searchable(text: $searchText, prompt: Text(AppLocalization.string("channels.search.placeholder")))
         .toolbar {
             #if os(macOS)
             // Pin the trailing group (search field + toolbar buttons) to the right edge,
@@ -215,7 +220,7 @@ struct ManageChannelsView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "manageChannelsViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -234,6 +239,15 @@ struct ManageChannelsView: View {
                 }
                 #endif
             }
+            #if os(iOS)
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink(value: NavigationDestination.search("")) {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityIdentifier("channels.searchButton")
+                .accessibilityLabel(AppLocalization.string("tabs.search"))
+            }
+            #endif
         }
         #endif
         #if os(macOS)
@@ -249,7 +263,7 @@ struct ManageChannelsView: View {
                 .padding(.horizontal, 40)
                 .padding(.vertical, 24)
                 #else
-                .navigationTitle(String(localized: "manageChannels.viewOptions.title"))
+                .reactiveNavigationTitle(AppLocalization.string("manageChannels.viewOptions.title"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
@@ -297,9 +311,9 @@ struct ManageChannelsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if channels.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "subscriptions.channels.title"), systemImage: "person.2")
+                Label(AppLocalization.string("subscriptions.channels.title"), systemImage: "person.2")
             } description: {
-                Text(String(localized: "subscriptions.channels.empty"))
+                Text(AppLocalization.string("subscriptions.channels.empty"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -318,7 +332,7 @@ struct ManageChannelsView: View {
             Button {
                 showViewOptions = true
             } label: {
-                Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
             }
         }
         .focusSection()
@@ -425,8 +439,8 @@ struct ManageChannelsView: View {
             } label: {
                 Label(
                     notificationsEnabled(for: channel)
-                        ? String(localized: "channel.menu.disableNotifications")
-                        : String(localized: "channel.menu.enableNotifications"),
+                        ? AppLocalization.string("channel.menu.disableNotifications")
+                        : AppLocalization.string("channel.menu.enableNotifications"),
                     systemImage: notificationsEnabled(for: channel) ? "bell.slash" : "bell"
                 )
             }
@@ -434,7 +448,7 @@ struct ManageChannelsView: View {
             Button(role: .destructive) {
                 unsubscribe(from: channel)
             } label: {
-                Label(String(localized: "channel.unsubscribe"), systemImage: "person.badge.minus")
+                Label(AppLocalization.string("channel.unsubscribe"), systemImage: "person.badge.minus")
             }
         }
     }
@@ -465,8 +479,8 @@ struct ManageChannelsView: View {
                         } label: {
                             Label(
                                 notificationsEnabled(for: channel)
-                                    ? String(localized: "channel.menu.disableNotifications")
-                                    : String(localized: "channel.menu.enableNotifications"),
+                                    ? AppLocalization.string("channel.menu.disableNotifications")
+                                    : AppLocalization.string("channel.menu.enableNotifications"),
                                 systemImage: notificationsEnabled(for: channel) ? "bell.slash" : "bell"
                             )
                         }
@@ -474,7 +488,7 @@ struct ManageChannelsView: View {
                         Button(role: .destructive) {
                             unsubscribe(from: channel)
                         } label: {
-                            Label(String(localized: "channel.unsubscribe"), systemImage: "person.badge.minus")
+                            Label(AppLocalization.string("channel.unsubscribe"), systemImage: "person.badge.minus")
                         }
                     }
                 }
@@ -578,7 +592,7 @@ struct ManageChannelsView: View {
                 channels.removeAll { $0.id.channelID == channel.id.channelID }
             } catch {
                 toastManager?.showError(
-                    String(localized: "channel.unsubscribe.error.title"),
+                    AppLocalization.string("channel.unsubscribe.error.title"),
                     subtitle: error.localizedDescription
                 )
             }

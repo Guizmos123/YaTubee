@@ -106,7 +106,7 @@ struct RemoteControlContentView: View {
                 get: { remoteControl?.isEnabled ?? false },
                 set: { remoteControl?.isEnabled = $0 }
             )) {
-                Label(String(localized: "remoteControl.enable"), systemImage: "antenna.radiowaves.left.and.right")
+                Label(AppLocalization.string("remoteControl.enable"), systemImage: "antenna.radiowaves.left.and.right")
             }
             .disabled(isIncognito)
 
@@ -116,9 +116,9 @@ struct RemoteControlContentView: View {
         } footer: {
             Group {
                 if isIncognito {
-                    Text(String(localized: "remoteControl.enableFooter.incognito"))
+                    Text(AppLocalization.string("remoteControl.enableFooter.incognito"))
                 } else {
-                    Text(String(localized: "remoteControl.enableFooter"))
+                    Text(AppLocalization.string("remoteControl.enableFooter"))
                 }
             }
             .lineLimit(nil)
@@ -133,17 +133,17 @@ struct RemoteControlContentView: View {
     @ViewBuilder
     private var statusRow: some View {
         HStack {
-            Text(String(localized: "remoteControl.status"))
+            Text(AppLocalization.string("remoteControl.status"))
             Spacer()
             if networkService?.isHosting == true {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
-                Text(String(localized: "remoteControl.status.discoverable"))
+                Text(AppLocalization.string("remoteControl.status.discoverable"))
                     .foregroundStyle(.secondary)
             } else {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.red)
-                Text(String(localized: "remoteControl.status.notDiscoverable"))
+                Text(AppLocalization.string("remoteControl.status.notDiscoverable"))
                     .foregroundStyle(.secondary)
             }
         }
@@ -158,7 +158,7 @@ struct RemoteControlContentView: View {
                 // Placeholder when disabled
                 HStack {
                     Spacer()
-                    Text(String(localized: "remoteControl.enableToDiscover"))
+                    Text(AppLocalization.string("remoteControl.enableToDiscover"))
                         .foregroundStyle(.secondary)
                         .font(.callout)
                     Spacer()
@@ -175,7 +175,7 @@ struct RemoteControlContentView: View {
                     Spacer()
                     VStack(spacing: 8) {
                         ProgressView()
-                        Text(String(localized: "remoteControl.searchingDevices"))
+                        Text(AppLocalization.string("remoteControl.searchingDevices"))
                             .foregroundStyle(.secondary)
                             .font(.caption)
                     }
@@ -185,17 +185,17 @@ struct RemoteControlContentView: View {
             }
         } header: {
             HStack {
-                Text(String(localized: "remoteControl.devicesOnNetwork"))
+                Text(AppLocalization.string("remoteControl.devicesOnNetwork"))
                 Spacer()
                 if remoteControl?.isEnabled == true, let count = remoteControl?.discoveredDevices.count, count > 0 {
-                    Text(String(localized: "remoteControl.devicesFound \(count)"))
+                    Text(AppLocalization.string("remoteControl.devicesFound \(count)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         } footer: {
             if remoteControl?.isEnabled == true, remoteControl?.discoveredDevices.isEmpty == true {
-                Text(String(localized: "remoteControl.noDevicesFooter"))
+                Text(AppLocalization.string("remoteControl.noDevicesFooter"))
                     .lineLimit(nil)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -279,7 +279,7 @@ private struct DeviceRowContent: View {
                         statusBadge
                     }
                 } else {
-                    Text(String(localized: "remoteControl.noVideoPlaying"))
+                    Text(AppLocalization.string("remoteControl.noVideoPlaying"))
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -353,7 +353,7 @@ private struct DeviceRowContent: View {
 #Preview {
     NavigationStack {
         RemoteControlContentView(navigationStyle: .link)
-            .navigationTitle(String(localized: "remoteControl.title"))
+            .navigationTitle(AppLocalization.string("remoteControl.title"))
     }
     .appEnvironment(.preview)
 }

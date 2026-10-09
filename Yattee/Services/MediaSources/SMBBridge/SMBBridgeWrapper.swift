@@ -69,7 +69,7 @@ enum SMBProtocol: Int32, Codable, Hashable, Sendable, CaseIterable {
     /// Display name for UI
     var displayName: String {
         switch self {
-        case .auto: return String(localized: "smb.protocol.auto")
+        case .auto: return AppLocalization.string("smb.protocol.auto")
         case .smb1: return "SMB1"
         case .smb2: return "SMB2"
         case .smb3: return "SMB3"

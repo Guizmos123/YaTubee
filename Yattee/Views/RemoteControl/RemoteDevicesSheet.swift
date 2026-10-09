@@ -16,7 +16,7 @@ struct RemoteDevicesSheet: View {
         DynamicSheetContainer {
             NavigationStack {
                 RemoteControlContentView(navigationStyle: .selection($selectedDevice))
-                    .navigationTitle(String(localized: "remoteControl.title"))
+                    .navigationTitle(AppLocalization.string("remoteControl.title"))
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
                     #endif

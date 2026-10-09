@@ -34,13 +34,13 @@ struct NetworkShareDiscoverySheet: View {
                 .padding(.horizontal, 40)
                 .padding(.vertical, 40)
                 #else
-                .navigationTitle(String(localized: "discovery.title"))
+                .reactiveNavigationTitle(AppLocalization.string("discovery.title"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "common.cancel")) {
+                        Button(AppLocalization.string("common.cancel")) {
                             discoveryService?.stopDiscovery()
                             dismiss()
                         }
@@ -69,7 +69,7 @@ struct NetworkShareDiscoverySheet: View {
                         HStack {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "discovery.scanning"))
+                            Text(AppLocalization.string("discovery.scanning"))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -82,11 +82,11 @@ struct NetworkShareDiscoverySheet: View {
                     // Empty state
                     Section {
                         ContentUnavailableView {
-                            Label(String(localized: "discovery.empty.title"), systemImage: "network.slash")
+                            Label(AppLocalization.string("discovery.empty.title"), systemImage: "network.slash")
                         } description: {
-                            Text(String(localized: "discovery.empty.description"))
+                            Text(AppLocalization.string("discovery.empty.description"))
                         } actions: {
-                            Button(String(localized: "discovery.scanAgain")) {
+                            Button(AppLocalization.string("discovery.scanAgain")) {
                                 service.startDiscovery()
                             }
                         }
@@ -106,7 +106,7 @@ struct NetworkShareDiscoverySheet: View {
                                 }
                             }
                         } header: {
-                            Text(String(localized: "discovery.section.webdav"))
+                            Text(AppLocalization.string("discovery.section.webdav"))
                         }
                     }
 
@@ -119,7 +119,7 @@ struct NetworkShareDiscoverySheet: View {
                                 }
                             }
                         } header: {
-                            Text(String(localized: "discovery.section.smb"))
+                            Text(AppLocalization.string("discovery.section.smb"))
                         }
                     }
                 }
@@ -130,9 +130,9 @@ struct NetworkShareDiscoverySheet: View {
         } else {
             // No environment available
             ContentUnavailableView {
-                Label(String(localized: "discovery.unavailable.title"), systemImage: "exclamationmark.triangle")
+                Label(AppLocalization.string("discovery.unavailable.title"), systemImage: "exclamationmark.triangle")
             } description: {
-                Text(String(localized: "discovery.unavailable.description"))
+                Text(AppLocalization.string("discovery.unavailable.description"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

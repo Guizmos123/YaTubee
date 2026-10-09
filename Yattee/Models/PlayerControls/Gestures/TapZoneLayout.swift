@@ -60,15 +60,15 @@ enum TapZoneLayout: String, Codable, CaseIterable, Sendable, Identifiable {
     var displayName: String {
         switch self {
         case .single:
-            String(localized: "gestures.layout.single", defaultValue: "Single Zone")
+            AppLocalization.string("gestures.layout.single", defaultValue: "Single Zone")
         case .horizontalSplit:
-            String(localized: "gestures.layout.horizontalSplit", defaultValue: "Left / Right")
+            AppLocalization.string("gestures.layout.horizontalSplit", defaultValue: "Left / Right")
         case .verticalSplit:
-            String(localized: "gestures.layout.verticalSplit", defaultValue: "Top / Bottom")
+            AppLocalization.string("gestures.layout.verticalSplit", defaultValue: "Top / Bottom")
         case .threeColumns:
-            String(localized: "gestures.layout.threeColumns", defaultValue: "Three Columns")
+            AppLocalization.string("gestures.layout.threeColumns", defaultValue: "Three Columns")
         case .quadrants:
-            String(localized: "gestures.layout.quadrants", defaultValue: "Four Quadrants")
+            AppLocalization.string("gestures.layout.quadrants", defaultValue: "Four Quadrants")
         }
     }
 

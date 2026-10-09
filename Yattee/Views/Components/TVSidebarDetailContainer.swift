@@ -64,7 +64,7 @@ struct TVSidebarDetailContainer<Content: View>: View {
                         Button {
                             dismiss()
                         } label: {
-                            Label(String(localized: "common.done"), systemImage: "chevron.backward")
+                            Label(AppLocalization.string("common.done"), systemImage: "chevron.backward")
                         }
                     }
                 }

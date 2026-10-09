@@ -58,7 +58,7 @@ final class LogExportHTTPServer {
         errorMessage = nil
 
         guard let ipAddress = getLocalIPAddress() else {
-            errorMessage = String(localized: "settings.advanced.logs.export.noNetwork")
+            errorMessage = AppLocalization.string("settings.advanced.logs.export.noNetwork")
             return
         }
 

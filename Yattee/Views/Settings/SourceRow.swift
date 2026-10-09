@@ -63,7 +63,7 @@ struct SourceRow: View {
                         .font(.headline)
 
                     if !source.isEnabled {
-                        Text(String(localized: "sources.status.disabled"))
+                        Text(AppLocalization.string("sources.status.disabled"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 6)
@@ -100,17 +100,17 @@ struct SourceRow: View {
     @ViewBuilder
     private var statusView: some View {
         if needsPassword || needsCredentials {
-            Label(String(localized: "sources.status.authRequired"), systemImage: "key.fill")
+            Label(AppLocalization.string("sources.status.authRequired"), systemImage: "key.fill")
                 .font(.caption2)
                 .foregroundStyle(.orange)
         } else if hasAuthIssue {
             // Show auth issue for remote servers (Yattee Server auth failed)
             if instanceStatus == .authFailed {
-                Label(String(localized: "sources.status.authFailed"), systemImage: "exclamationmark.triangle.fill")
+                Label(AppLocalization.string("sources.status.authFailed"), systemImage: "exclamationmark.triangle.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
             } else {
-                Label(String(localized: "sources.status.authRequired"), systemImage: "key.fill")
+                Label(AppLocalization.string("sources.status.authRequired"), systemImage: "key.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
             }

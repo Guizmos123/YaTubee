@@ -652,11 +652,11 @@ private struct PlayerSheetsModifier: ViewModifier {
                 downloadSheet
             }
             .alert(
-                String(localized: "player.deleteDownload.title"),
+                AppLocalization.string("player.deleteDownload.title"),
                 isPresented: $showingDeleteDownloadAlert
             ) {
-                Button(String(localized: "player.deleteDownload.cancel"), role: .cancel) {}
-                Button(String(localized: "player.deleteDownload.delete"), role: .destructive) {
+                Button(AppLocalization.string("player.deleteDownload.cancel"), role: .cancel) {}
+                Button(AppLocalization.string("player.deleteDownload.delete"), role: .destructive) {
                     if let video = playerState?.currentVideo,
                        let download = downloadManager?.download(for: video.id)
                     {
@@ -666,7 +666,7 @@ private struct PlayerSheetsModifier: ViewModifier {
                     }
                 }
             } message: {
-                Text(String(localized: "player.deleteDownload.message"))
+                Text(AppLocalization.string("player.deleteDownload.message"))
             }
             #endif
     }

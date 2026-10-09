@@ -74,7 +74,7 @@ struct AddWebDAVView: View {
         .scrollDismissesKeyboard(.interactively)
         #endif
         #if !os(tvOS)
-        .navigationTitle(String(localized: "sources.addWebDAV"))
+        .reactiveNavigationTitle(AppLocalization.string("sources.addWebDAV"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -97,51 +97,51 @@ struct AddWebDAVView: View {
     private var macOSBody: some View {
         Form {
             Section {
-                LabeledContent(String(localized: "sources.field.name")) {
+                LabeledContent(AppLocalization.string("sources.field.name")) {
                     TextField("", text: $name)
                 }
             } footer: {
-                Text(String(localized: "sources.footer.displayName"))
+                Text(AppLocalization.string("sources.footer.displayName"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                LabeledContent(String(localized: "sources.placeholder.webdavUrl")) {
+                LabeledContent(AppLocalization.string("sources.placeholder.webdavUrl")) {
                     TextField("", text: $urlString)
                         .textContentType(.URL)
                         .autocorrectionDisabled()
                 }
             } footer: {
-                Text(String(localized: "sources.footer.webdav"))
+                Text(AppLocalization.string("sources.footer.webdav"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                LabeledContent(String(localized: "sources.field.usernameOptional")) {
+                LabeledContent(AppLocalization.string("sources.field.usernameOptional")) {
                     TextField("", text: $username)
                         .textContentType(.username)
                         .autocorrectionDisabled()
                 }
-                LabeledContent(String(localized: "sources.field.passwordOptional")) {
+                LabeledContent(AppLocalization.string("sources.field.passwordOptional")) {
                     SecureField("", text: $password)
                         .textContentType(.password)
                 }
             } header: {
-                Text(String(localized: "sources.header.auth"))
+                Text(AppLocalization.string("sources.header.auth"))
             } footer: {
-                Text(String(localized: "sources.footer.auth"))
+                Text(AppLocalization.string("sources.footer.auth"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                Toggle(String(localized: "sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
+                Toggle(AppLocalization.string("sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
             } header: {
-                Text(String(localized: "sources.header.security"))
+                Text(AppLocalization.string("sources.header.security"))
             } footer: {
-                Text(String(localized: "sources.footer.allowInvalidCertificates"))
+                Text(AppLocalization.string("sources.footer.allowInvalidCertificates"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -155,7 +155,7 @@ struct AddWebDAVView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle(String(localized: "sources.addWebDAV"))
+        .reactiveNavigationTitle(AppLocalization.string("sources.addWebDAV"))
         .toolbar {
             if usesToolbarActionButton {
                 ToolbarItem(placement: .confirmationAction) {
@@ -165,10 +165,10 @@ struct AddWebDAVView: View {
                         if isTesting {
                             HStack(spacing: 6) {
                                 ProgressView().controlSize(.small)
-                                Text(testProgress ?? String(localized: "sources.testing"))
+                                Text(testProgress ?? AppLocalization.string("sources.testing"))
                             }
                         } else {
-                            Text(String(localized: "sources.addSource"))
+                            Text(AppLocalization.string("sources.addSource"))
                         }
                     }
                     .disabled(!canAdd || isTesting)
@@ -195,21 +195,21 @@ struct AddWebDAVView: View {
     private var nameSection: some View {
         Section {
             #if os(tvOS)
-            TVSettingsTextField(title: String(localized: "sources.field.name"), text: $name)
+            TVSettingsTextField(title: AppLocalization.string("sources.field.name"), text: $name)
             #else
-            TextField(String(localized: "sources.field.name"), text: $name)
+            TextField(AppLocalization.string("sources.field.name"), text: $name)
             #endif
         } footer: {
-            Text(String(localized: "sources.footer.displayName"))
+            Text(AppLocalization.string("sources.footer.displayName"))
         }
     }
 
     private var serverSection: some View {
         Section {
             #if os(tvOS)
-            TVSettingsTextField(title: String(localized: "sources.placeholder.webdavUrl"), text: $urlString)
+            TVSettingsTextField(title: AppLocalization.string("sources.placeholder.webdavUrl"), text: $urlString)
             #else
-            TextField(String(localized: "sources.placeholder.webdavUrl"), text: $urlString)
+            TextField(AppLocalization.string("sources.placeholder.webdavUrl"), text: $urlString)
                 .textContentType(.URL)
                 #if os(iOS)
                 .keyboardType(.URL)
@@ -218,30 +218,30 @@ struct AddWebDAVView: View {
                 .autocorrectionDisabled()
             #endif
         } footer: {
-            Text(String(localized: "sources.footer.webdav"))
+            Text(AppLocalization.string("sources.footer.webdav"))
         }
     }
 
     private var authSection: some View {
         Section {
             #if os(tvOS)
-            TVSettingsTextField(title: String(localized: "sources.field.usernameOptional"), text: $username)
-            TVSettingsTextField(title: String(localized: "sources.field.passwordOptional"), text: $password, isSecure: true)
+            TVSettingsTextField(title: AppLocalization.string("sources.field.usernameOptional"), text: $username)
+            TVSettingsTextField(title: AppLocalization.string("sources.field.passwordOptional"), text: $password, isSecure: true)
             #else
-            TextField(String(localized: "sources.field.usernameOptional"), text: $username)
+            TextField(AppLocalization.string("sources.field.usernameOptional"), text: $username)
                 .textContentType(.username)
                 #if os(iOS)
                 .textInputAutocapitalization(.never)
                 #endif
                 .autocorrectionDisabled()
 
-            SecureField(String(localized: "sources.field.passwordOptional"), text: $password)
+            SecureField(AppLocalization.string("sources.field.passwordOptional"), text: $password)
                 .textContentType(.password)
             #endif
         } header: {
-            Text(String(localized: "sources.header.auth"))
+            Text(AppLocalization.string("sources.header.auth"))
         } footer: {
-            Text(String(localized: "sources.footer.auth"))
+            Text(AppLocalization.string("sources.footer.auth"))
         }
     }
 
@@ -249,16 +249,16 @@ struct AddWebDAVView: View {
         Section {
             #if os(tvOS)
             TVSettingsToggle(
-                title: String(localized: "sources.field.allowInvalidCertificates"),
+                title: AppLocalization.string("sources.field.allowInvalidCertificates"),
                 isOn: $allowInvalidCertificates
             )
             #else
-            Toggle(String(localized: "sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
+            Toggle(AppLocalization.string("sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
             #endif
         } header: {
-            Text(String(localized: "sources.header.security"))
+            Text(AppLocalization.string("sources.header.security"))
         } footer: {
-            Text(String(localized: "sources.footer.allowInvalidCertificates"))
+            Text(AppLocalization.string("sources.footer.allowInvalidCertificates"))
         }
     }
 
@@ -271,10 +271,10 @@ struct AddWebDAVView: View {
                     HStack {
                         ProgressView()
                             .controlSize(.small)
-                        Text(testProgress ?? String(localized: "sources.testing"))
+                        Text(testProgress ?? AppLocalization.string("sources.testing"))
                     }
                 } else {
-                    Text(String(localized: "sources.addSource"))
+                    Text(AppLocalization.string("sources.addSource"))
                 }
             }
             .disabled(!canAdd || isTesting)
@@ -292,7 +292,7 @@ struct AddWebDAVView: View {
 
         isTesting = true
         testResult = nil
-        testProgress = String(localized: "sources.testing.connecting")
+        testProgress = AppLocalization.string("sources.testing.connecting")
 
         let source = MediaSource.webdav(
             name: name,

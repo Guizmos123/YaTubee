@@ -74,13 +74,18 @@ struct HomeView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     var body: some View {
         mainContent
+        .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .navigationTitle(String(localized: "tabs.home"))
+        .reactiveNavigationTitle(AppLocalization.string("tabs.home"))
         .navigationSubtitleIfAvailable(
             settingsManager?.incognitoModeEnabled == true
-                ? String(localized: "home.incognitoMode.subtitle")
+                ? AppLocalization.string("home.incognitoMode.subtitle")
                 : nil
         )
         .toolbarTitleDisplayMode(.inlineLarge)
@@ -94,8 +99,20 @@ struct HomeView: View {
                     Image(systemName: "gear")
                 }
                 .accessibilityIdentifier("home.settingsButton")
-                .accessibilityLabel(String(localized: "settings.title"))
+                .accessibilityLabel(AppLocalization.string("settings.title"))
                 .liquidGlassTransitionSource(id: "homeSettings", in: sheetTransition)
+            }
+            if #available(iOS 26, *) {
+                ToolbarSpacer(.fixed, placement: .primaryAction)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    appEnvironment?.navigationCoordinator.navigate(to: .search(""))
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityIdentifier("home.searchButton")
+                .accessibilityLabel(AppLocalization.string("tabs.search"))
             }
             #endif
         }
@@ -120,7 +137,7 @@ struct HomeView: View {
                 HomeSettingsView()
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button(String(localized: "common.done")) {
+                            Button(AppLocalization.string("common.done")) {
                                 showingCustomizeHome = false
                             }
                         }
@@ -204,17 +221,17 @@ struct HomeView: View {
     private var emptyHomeView: some View {
         VStack(spacing: 32) {
             VStack(spacing: 12) {
-                Text(String(localized: "home.tvos.empty.title"))
+                Text(AppLocalization.string("home.tvos.empty.title"))
                     .font(.title2)
                     .fontWeight(.semibold)
-                Text(String(localized: "home.tvos.empty.message"))
+                Text(AppLocalization.string("home.tvos.empty.message"))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             Button {
                 appEnvironment?.navigationCoordinator.selectedSidebarItem = .sources
             } label: {
-                Label(String(localized: "home.tvos.empty.openSources"), systemImage: "externaldrive.connected.to.line.below")
+                Label(AppLocalization.string("home.tvos.empty.openSources"), systemImage: "externaldrive.connected.to.line.below")
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
             }
@@ -311,7 +328,7 @@ struct HomeView: View {
             Button {
                 showingCustomizeHome = true
             } label: {
-                Label(String(localized: "home.customize"), systemImage: "gear")
+                Label(AppLocalization.string("home.customize"), systemImage: "gear")
             }
             .buttonStyle(.bordered)
             .controlSize(.regular)
@@ -326,7 +343,7 @@ struct HomeView: View {
             HStack(spacing: 6) {
                 Spacer()
                 Image(systemName: "gear")
-                Text(String(localized: "home.customize"))
+                Text(AppLocalization.string("home.customize"))
                     .fontWeight(.semibold)
                 Spacer()
             }
@@ -441,7 +458,7 @@ struct HomeView: View {
             visibility[shortcut] = false
             settingsManager.homeShortcutVisibility = visibility
         } label: {
-            Label(String(localized: "home.hideShortcut"), systemImage: "eye.slash")
+            Label(AppLocalization.string("home.hideShortcut"), systemImage: "eye.slash")
         }
     }
 
@@ -450,7 +467,7 @@ struct HomeView: View {
         Button {
             showingCustomizeHome = true
         } label: {
-            Label(String(localized: "home.editShortcuts"), systemImage: "gear")
+            Label(AppLocalization.string("home.editShortcuts"), systemImage: "gear")
         }
     }
     #endif
@@ -531,7 +548,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "link",
-                title: String(localized: "home.shortcut.openURL"),
+                title: AppLocalization.string("home.shortcut.openURL"),
                 count: 0,
                 subtitle: "",
                 showsCount: false,
@@ -554,7 +571,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "antenna.radiowaves.left.and.right",
-                title: String(localized: "home.shortcut.remoteControl"),
+                title: AppLocalization.string("home.shortcut.remoteControl"),
                 count: discoveredDevicesCount,
                 subtitle: "",
                 showsCount: false,
@@ -578,7 +595,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "list.bullet.rectangle",
-                title: String(localized: "home.playlists.title"),
+                title: AppLocalization.string("home.playlists.title"),
                 count: playlists.count,
                 subtitle: formatCount(playlists.count, singular: "home.count.playlist", plural: "home.count.playlists"),
                 colorfulColor: HomeShortcutItem.playlists.cardColor
@@ -598,7 +615,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "bookmark",
-                title: String(localized: "home.bookmarks.title"),
+                title: AppLocalization.string("home.bookmarks.title"),
                 count: bookmarksCount,
                 subtitle: formatCount(bookmarksCount, singular: "home.count.bookmark", plural: "home.count.bookmarks"),
                 colorfulColor: HomeShortcutItem.bookmarks.cardColor
@@ -618,7 +635,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "play.circle",
-                title: String(localized: "home.shortcut.continueWatching"),
+                title: AppLocalization.string("home.shortcut.continueWatching"),
                 count: continueWatchingCount,
                 subtitle: formatCount(continueWatchingCount, singular: "home.count.video", plural: "home.count.videos"),
                 colorfulColor: HomeShortcutItem.continueWatching.cardColor
@@ -638,7 +655,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "clock",
-                title: String(localized: "home.history.title"),
+                title: AppLocalization.string("home.history.title"),
                 count: historyCount,
                 subtitle: formatCount(historyCount, singular: "home.count.video", plural: "home.count.videos"),
                 colorfulColor: HomeShortcutItem.history.cardColor
@@ -660,7 +677,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "arrow.down.circle",
-                title: String(localized: "home.downloads.title"),
+                title: AppLocalization.string("home.downloads.title"),
                 count: count,
                 subtitle: formatCount(count, singular: "home.count.video", plural: "home.count.videos"),
                 colorfulColor: HomeShortcutItem.downloads.cardColor
@@ -677,7 +694,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "person.2",
-                title: String(localized: "home.channels.title"),
+                title: AppLocalization.string("home.channels.title"),
                 count: channelsCount,
                 subtitle: formatCount(channelsCount, singular: "home.count.channel", plural: "home.count.channels"),
                 colorfulColor: HomeShortcutItem.channels.cardColor
@@ -697,9 +714,9 @@ struct HomeView: View {
         } label: {
             HomeShortcutCardView(
                 icon: "play.square.stack",
-                title: String(localized: "home.subscriptions.title"),
+                title: AppLocalization.string("home.subscriptions.title"),
                 count: 0,
-                subtitle: String(localized: "home.subscriptions.subtitle"),
+                subtitle: AppLocalization.string("home.subscriptions.subtitle"),
                 showsCount: false,
                 colorfulColor: HomeShortcutItem.subscriptions.cardColor
             )
@@ -793,7 +810,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "link",
-                title: String(localized: "home.shortcut.openURL"),
+                title: AppLocalization.string("home.shortcut.openURL"),
                 subtitle: ""
             )
         }
@@ -808,7 +825,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "antenna.radiowaves.left.and.right",
-                title: String(localized: "home.shortcut.remoteControl"),
+                title: AppLocalization.string("home.shortcut.remoteControl"),
                 subtitle: "",
                 statusIndicator: Circle()
                     .fill(isHosting ? Color.green : Color.red)
@@ -824,7 +841,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "list.bullet.rectangle",
-                title: String(localized: "home.playlists.title"),
+                title: AppLocalization.string("home.playlists.title"),
                 subtitle: formatCount(playlists.count, singular: "home.count.playlist", plural: "home.count.playlists")
             )
         }
@@ -837,7 +854,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "bookmark.fill",
-                title: String(localized: "home.bookmarks.title"),
+                title: AppLocalization.string("home.bookmarks.title"),
                 subtitle: formatCount(bookmarksCount, singular: "home.count.bookmark", plural: "home.count.bookmarks")
             )
         }
@@ -850,7 +867,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "play.circle",
-                title: String(localized: "home.shortcut.continueWatching"),
+                title: AppLocalization.string("home.shortcut.continueWatching"),
                 subtitle: formatCount(continueWatchingCount, singular: "home.count.video", plural: "home.count.videos")
             )
         }
@@ -863,7 +880,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "clock",
-                title: String(localized: "home.history.title"),
+                title: AppLocalization.string("home.history.title"),
                 subtitle: formatCount(historyCount, singular: "home.count.video", plural: "home.count.videos")
             )
         }
@@ -878,7 +895,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "arrow.down.circle",
-                title: String(localized: "home.downloads.title"),
+                title: AppLocalization.string("home.downloads.title"),
                 subtitle: formatCount(count, singular: "home.count.video", plural: "home.count.videos")
             )
         }
@@ -892,7 +909,7 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "person.2",
-                title: String(localized: "home.channels.title"),
+                title: AppLocalization.string("home.channels.title"),
                 subtitle: formatCount(channelsCount, singular: "home.count.channel", plural: "home.count.channels")
             )
         }
@@ -905,8 +922,8 @@ struct HomeView: View {
         } label: {
             HomeShortcutRowView(
                 icon: "play.rectangle.on.rectangle",
-                title: String(localized: "home.subscriptions.title"),
-                subtitle: String(localized: "home.subscriptions.subtitle")
+                title: AppLocalization.string("home.subscriptions.title"),
+                subtitle: AppLocalization.string("home.subscriptions.subtitle")
             )
         }
         .buttonStyle(.plain)
@@ -966,7 +983,7 @@ struct HomeView: View {
     private func formatCount(_ count: Int, singular: String.LocalizationValue, plural: String.LocalizationValue) -> String {
         let formattedCount = CountFormatter.compact(count)
         let key = count == 1 ? singular : plural
-        return String(localized: "\(formattedCount) \(String(localized: key))")
+        return AppLocalization.string("\(formattedCount) \(AppLocalization.string(key))")
     }
     
     // MARK: - Queue Support
@@ -1078,7 +1095,7 @@ struct HomeView: View {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: continueWatchingQueueSource,
-                    sourceLabel: String(localized: "queue.source.continueWatching"),
+                    sourceLabel: AppLocalization.string("queue.source.continueWatching"),
                     loadMoreVideos: loadMoreContinueWatchingCallback
                 )
             } else {
@@ -1096,7 +1113,7 @@ struct HomeView: View {
                                 loadData()
                             },
                             queueSource: continueWatchingQueueSource,
-                            sourceLabel: String(localized: "queue.source.continueWatching"),
+                            sourceLabel: AppLocalization.string("queue.source.continueWatching"),
                             videoList: videoList,
                             videoIndex: index,
                             loadMoreVideos: loadMoreContinueWatchingCallback
@@ -1136,7 +1153,7 @@ struct HomeView: View {
                 HomeHorizontalCards(
                     videos: limitedVideos,
                     queueSource: feedQueueSource,
-                    sourceLabel: String(localized: "queue.source.subscriptions"),
+                    sourceLabel: AppLocalization.string("queue.source.subscriptions"),
                     loadMoreVideos: loadMoreFeedCallback
                 )
             } else {
@@ -1151,7 +1168,7 @@ struct HomeView: View {
                                 .tappableVideo(
                                     video,
                                     queueSource: feedQueueSource,
-                                    sourceLabel: String(localized: "queue.source.subscriptions"),
+                                    sourceLabel: AppLocalization.string("queue.source.subscriptions"),
                                     videoList: limitedVideos,
                                     videoIndex: index,
                                     loadMoreVideos: loadMoreFeedCallback
@@ -1179,7 +1196,7 @@ struct HomeView: View {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: recentBookmarksQueueSource,
-                    sourceLabel: String(localized: "queue.source.bookmarks"),
+                    sourceLabel: AppLocalization.string("queue.source.bookmarks"),
                     loadMoreVideos: loadMoreRecentBookmarksCallback
                 )
             } else {
@@ -1197,7 +1214,7 @@ struct HomeView: View {
                                 loadData()
                             },
                             queueSource: recentBookmarksQueueSource,
-                            sourceLabel: String(localized: "queue.source.bookmarks"),
+                            sourceLabel: AppLocalization.string("queue.source.bookmarks"),
                             videoList: videoList,
                             videoIndex: index,
                             loadMoreVideos: loadMoreRecentBookmarksCallback
@@ -1238,7 +1255,7 @@ struct HomeView: View {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: recentHistoryQueueSource,
-                    sourceLabel: String(localized: "queue.source.history"),
+                    sourceLabel: AppLocalization.string("queue.source.history"),
                     loadMoreVideos: loadMoreRecentHistoryCallback
                 )
             } else {
@@ -1256,7 +1273,7 @@ struct HomeView: View {
                                 loadData()
                             },
                             queueSource: recentHistoryQueueSource,
-                            sourceLabel: String(localized: "queue.source.history"),
+                            sourceLabel: AppLocalization.string("queue.source.history"),
                             videoList: videoList,
                             videoIndex: index,
                             loadMoreVideos: loadMoreRecentHistoryCallback
@@ -1301,7 +1318,7 @@ struct HomeView: View {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: .manual,
-                    sourceLabel: String(localized: "queue.source.downloads"),
+                    sourceLabel: AppLocalization.string("queue.source.downloads"),
                     loadMoreVideos: loadMoreRecentDownloadsCallback
                 )
             } else {
@@ -1316,7 +1333,7 @@ struct HomeView: View {
                             download: download,
                             isActive: false,
                             queueSource: .manual,
-                            sourceLabel: String(localized: "queue.source.downloads"),
+                            sourceLabel: AppLocalization.string("queue.source.downloads"),
                             videoList: videoList,
                             videoIndex: index,
                             loadMoreVideos: loadMoreRecentDownloadsCallback

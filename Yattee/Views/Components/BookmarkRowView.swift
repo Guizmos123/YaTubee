@@ -92,7 +92,7 @@ struct BookmarkRowView: View {
             video: video,
             customActions: [
                 VideoContextAction(
-                    String(localized: "home.bookmarks.remove"),
+                    AppLocalization.string("home.bookmarks.remove"),
                     systemImage: "trash",
                     role: .destructive,
                     action: onRemove

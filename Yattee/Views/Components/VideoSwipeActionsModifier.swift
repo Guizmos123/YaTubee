@@ -240,7 +240,7 @@ struct VideoSwipeActionsModifier: ViewModifier {
                 } catch {
                     appEnvironment.toastManager.show(
                         category: .error,
-                        title: String(localized: "download.error.title"),
+                        title: AppLocalization.string("download.error.title"),
                         subtitle: error.localizedDescription,
                         icon: "exclamationmark.triangle",
                         iconColor: .red
@@ -269,7 +269,7 @@ struct VideoSwipeActionsModifier: ViewModifier {
                 } catch {
                     appEnvironment.toastManager.show(
                         category: .error,
-                        title: String(localized: "download.error.title"),
+                        title: AppLocalization.string("download.error.title"),
                         subtitle: error.localizedDescription,
                         icon: "exclamationmark.triangle",
                         iconColor: .red

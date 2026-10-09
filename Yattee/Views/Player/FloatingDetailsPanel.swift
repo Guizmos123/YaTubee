@@ -607,7 +607,7 @@ struct FloatingDetailsPanel: View {
                 }
                 .padding()
             } else {
-                Text(String(localized: "player.noDescription"))
+                Text(AppLocalization.string("player.noDescription"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)

@@ -94,18 +94,18 @@ struct TappableVideoModifier: ViewModifier {
                 onStartOver: { playVideoWithStartTime(0) }
             )
         }
-        .alert(String(localized: "common.authenticationRequired"), isPresented: $showingPasswordAlert) {
-            SecureField(String(localized: "common.password"), text: $passwordInput)
-            Button(String(localized: "common.cancel"), role: .cancel) {
+        .alert(AppLocalization.string("common.authenticationRequired"), isPresented: $showingPasswordAlert) {
+            SecureField(AppLocalization.string("common.password"), text: $passwordInput)
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
                 passwordInput = ""
                 sourceNeedingPassword = nil
             }
-            Button(String(localized: "common.connect")) {
+            Button(AppLocalization.string("common.connect")) {
                 savePasswordAndContinue()
             }
         } message: {
             if let source = sourceNeedingPassword {
-                Text(String(localized: "common.enterPassword \(source.name)"))
+                Text(AppLocalization.string("common.enterPassword \(source.name)"))
             }
         }
         .videoQueueContext(queueContext)

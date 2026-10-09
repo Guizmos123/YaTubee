@@ -216,7 +216,7 @@ struct SearchView: View {
         Button {
             showFilterSheet = true
         } label: {
-            Label(String(localized: "search.filters"), systemImage: filtersIconName)
+            Label(AppLocalization.string("search.filters"), systemImage: filtersIconName)
         }
         .popover(isPresented: $showFilterSheet, arrowEdge: .bottom) {
             searchFiltersSheetContent
@@ -260,7 +260,7 @@ struct SearchView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
             }
             .focusSection()
@@ -272,7 +272,7 @@ struct SearchView: View {
         }
         #else
         searchContent
-        .navigationTitle(String(localized: "tabs.search"))
+        .navigationTitle("tabs.search")
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             // View options first so it is the leftmost navigation item on macOS.
@@ -280,7 +280,7 @@ struct SearchView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "searchViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -317,7 +317,7 @@ struct SearchView: View {
             }
             #endif
         }
-        .searchable(text: searchTextBinding, prompt: Text(String(localized: "search.placeholder")))
+        .searchable(text: searchTextBinding, prompt: Text(AppLocalization.string("search.placeholder")))
         .onSubmit(of: .search) {
             searchViewModel?.cancelSuggestions()
             #if !os(macOS)
@@ -475,7 +475,7 @@ struct SearchView: View {
     private var instancePickerView: some View {
         if availableInstances.count > 1 {
             HStack {
-                Text(String(localized: "search.source.title"))
+                Text(AppLocalization.string("search.source.title"))
                     .font(.headline)
                     .padding(.leading, listStyle == .inset ? 8 : 0)
 
@@ -578,7 +578,7 @@ struct SearchView: View {
     private var tvOSFiltersMenu: some View {
         Menu {
             // Sort By
-            Menu(String(localized: "search.sort")) {
+            Menu(AppLocalization.string("search.sort")) {
                 ForEach(SearchSortOption.allCases) { option in
                     Button {
                         searchViewModel?.filters.sort = option
@@ -595,7 +595,7 @@ struct SearchView: View {
             }
 
             // Upload Date
-            Menu(String(localized: "search.uploadDate")) {
+            Menu(AppLocalization.string("search.uploadDate")) {
                 ForEach(SearchDateFilter.allCases) { option in
                     Button {
                         searchViewModel?.filters.date = option
@@ -612,7 +612,7 @@ struct SearchView: View {
             }
 
             // Duration
-            Menu(String(localized: "search.duration")) {
+            Menu(AppLocalization.string("search.duration")) {
                 ForEach(SearchDurationFilter.allCases) { option in
                     Button {
                         searchViewModel?.filters.duration = option
@@ -638,11 +638,11 @@ struct SearchView: View {
                 if let filters = searchViewModel?.filters { saveFilters(filters) }
                 Task { await searchViewModel?.search(query: searchTextBinding.wrappedValue) }
             } label: {
-                Label(String(localized: "search.filters.reset"), systemImage: "arrow.counterclockwise")
+                Label(AppLocalization.string("search.filters.reset"), systemImage: "arrow.counterclockwise")
             }
             .disabled(searchViewModel?.filters.isDefault ?? true)
         } label: {
-            Label(String(localized: "search.filters"), systemImage: "line.3.horizontal.decrease")
+            Label(AppLocalization.string("search.filters"), systemImage: "line.3.horizontal.decrease")
         }
     }
     #endif
@@ -672,7 +672,7 @@ struct SearchView: View {
                         .font(.system(size: 48))
                         .foregroundStyle(.tertiary)
 
-                    Text(String(localized: "search.empty.description"))
+                    Text(AppLocalization.string("search.empty.description"))
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -694,7 +694,7 @@ struct SearchView: View {
                                 // Header - tappable to expand/collapse when more than 5 items
                                 #if os(tvOS)
                                 HStack {
-                                    Text(String(localized: "search.recentSearches.title"))
+                                    Text(AppLocalization.string("search.recentSearches.title"))
                                         .font(.headline)
                                         .foregroundStyle(.primary)
                                     Spacer()
@@ -710,7 +710,7 @@ struct SearchView: View {
                                     }
                                 } label: {
                                     HStack {
-                                        Text(String(localized: "search.recentSearches.title"))
+                                        Text(AppLocalization.string("search.recentSearches.title"))
                                             .font(.headline)
                                             .foregroundStyle(.primary)
                                         Spacer()
@@ -762,7 +762,7 @@ struct SearchView: View {
                                             Button(role: .destructive) {
                                                 deleteHistory(history)
                                             } label: {
-                                                Label(String(localized: "common.delete"), systemImage: "trash")
+                                                Label(AppLocalization.string("common.delete"), systemImage: "trash")
                                             }
                                         }
 
@@ -789,7 +789,7 @@ struct SearchView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 // Header
                                 HStack {
-                                    Text(String(localized: "search.recentChannels.title"))
+                                    Text(AppLocalization.string("search.recentChannels.title"))
                                         .font(.headline)
                                     Spacer()
                                 }
@@ -824,7 +824,7 @@ struct SearchView: View {
                                                 Button(role: .destructive) {
                                                     deleteRecentChannel(recentChannel)
                                                 } label: {
-                                                    Label(String(localized: "common.delete"), systemImage: "trash")
+                                                    Label(AppLocalization.string("common.delete"), systemImage: "trash")
                                                 }
                                             }
                                         }
@@ -842,7 +842,7 @@ struct SearchView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 // Header
                                 HStack {
-                                    Text(String(localized: "search.recentPlaylists.title"))
+                                    Text(AppLocalization.string("search.recentPlaylists.title"))
                                         .font(.headline)
                                     Spacer()
                                 }
@@ -869,7 +869,7 @@ struct SearchView: View {
                                                 Button(role: .destructive) {
                                                     deleteRecentPlaylist(recentPlaylist)
                                                 } label: {
-                                                    Label(String(localized: "common.delete"), systemImage: "trash")
+                                                    Label(AppLocalization.string("common.delete"), systemImage: "trash")
                                                 }
                                             }
                                         }
@@ -888,7 +888,7 @@ struct SearchView: View {
                         } label: {
                             HStack(spacing: 6) {
                                 Image(systemName: "trash")
-                                Text(String(localized: "search.clearAllRecents"))
+                                Text(AppLocalization.string("search.clearAllRecents"))
                                     .fontWeight(.semibold)
                             }
                         }
@@ -905,14 +905,14 @@ struct SearchView: View {
                 .background(listStyle == .inset ? ListBackgroundStyle.grouped.color : ListBackgroundStyle.plain.color)
                 .accessibilityLabel("search.recents")
                 .confirmationDialog(
-                    String(localized: "search.clearAllRecents.confirm"),
+                    AppLocalization.string("search.clearAllRecents.confirm"),
                     isPresented: $showingClearAllRecentsConfirmation,
                     titleVisibility: .visible
                 ) {
-                    Button(String(localized: "search.clearAllRecents"), role: .destructive) {
+                    Button(AppLocalization.string("search.clearAllRecents"), role: .destructive) {
                         clearAllRecents()
                     }
-                    Button(String(localized: "common.cancel"), role: .cancel) {}
+                    Button(AppLocalization.string("common.cancel"), role: .cancel) {}
                 }
                 .presentationCompactAdaptation(.sheet)
             }
@@ -954,9 +954,9 @@ struct SearchView: View {
 
     private var noResultsView: some View {
         ContentUnavailableView {
-            Label(String(localized: "search.noResults.title"), systemImage: "magnifyingglass")
+            Label(AppLocalization.string("search.noResults.title"), systemImage: "magnifyingglass")
         } description: {
-            Text(String(localized: "search.noResults.description"))
+            Text(AppLocalization.string("search.noResults.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("search.noResults")
@@ -964,11 +964,11 @@ struct SearchView: View {
 
     private func errorView(_ error: String) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await searchViewModel?.search(query: searchTextBinding.wrappedValue) }
             }
         }
@@ -1210,7 +1210,7 @@ struct SearchView: View {
                     .tappableVideo(
                         video,
                         queueSource: searchQueueSource,
-                        sourceLabel: String(localized: "queue.source.search \(searchTextBinding.wrappedValue)"),
+                        sourceLabel: AppLocalization.string("queue.source.search \(searchTextBinding.wrappedValue)"),
                         videoList: vm.videos,
                         videoIndex: videoIndex,
                         loadMoreVideos: loadMoreSearchResultsCallback
@@ -1284,7 +1284,7 @@ struct SearchView: View {
                             .tappableVideo(
                                 video,
                                 queueSource: searchQueueSource,
-                                sourceLabel: String(localized: "queue.source.search \(searchTextBinding.wrappedValue)"),
+                                sourceLabel: AppLocalization.string("queue.source.search \(searchTextBinding.wrappedValue)"),
                                 videoList: vm.videos,
                                 videoIndex: videoIndex,
                                 loadMoreVideos: loadMoreSearchResultsCallback
@@ -1536,18 +1536,18 @@ struct SearchFiltersSheet: View {
         #else
         NavigationStack {
             filtersForm
-            .navigationTitle(String(localized: "search.filters"))
+            .navigationTitle(AppLocalization.string("search.filters"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "common.cancel")) {
+                    Button(AppLocalization.string("common.cancel")) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "common.apply")) {
+                    Button(AppLocalization.string("common.apply")) {
                         onApply()
                         dismiss()
                     }
@@ -1561,19 +1561,19 @@ struct SearchFiltersSheet: View {
         Form {
             // Sort, Upload Date, Duration in one section
             Section {
-                Picker(String(localized: "search.sort"), selection: $filters.sort) {
+                Picker(AppLocalization.string("search.sort"), selection: $filters.sort) {
                     ForEach(SearchSortOption.allCases) { option in
                         Text(option.title).tag(option)
                     }
                 }
 
-                Picker(String(localized: "search.uploadDate"), selection: $filters.date) {
+                Picker(AppLocalization.string("search.uploadDate"), selection: $filters.date) {
                     ForEach(SearchDateFilter.allCases) { option in
                         Text(option.title).tag(option)
                     }
                 }
 
-                Picker(String(localized: "search.duration"), selection: $filters.duration) {
+                Picker(AppLocalization.string("search.duration"), selection: $filters.duration) {
                     ForEach(SearchDurationFilter.allCases) { option in
                         Text(option.title).tag(option)
                     }
@@ -1589,7 +1589,7 @@ struct SearchFiltersSheet: View {
                 } label: {
                     HStack {
                         Spacer()
-                        Text(String(localized: "search.filters.reset"))
+                        Text(AppLocalization.string("search.filters.reset"))
                         Spacer()
                     }
                 }

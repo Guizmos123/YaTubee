@@ -382,14 +382,14 @@ private struct PreviewButton: View {
             if settings.showTitle || settings.showSourceName {
                 VStack(alignment: .leading, spacing: 0) {
                     if settings.showTitle {
-                        Text(String(localized: "common.videoTitle"))
+                        Text(AppLocalization.string("common.videoTitle"))
                             .font(fontStyle.font(size: size * 0.5, weight: .medium))
                             .foregroundStyle(.white.opacity(0.9))
                             .lineLimit(1)
                     }
 
                     if settings.showSourceName {
-                        Text(String(localized: "common.channel"))
+                        Text(AppLocalization.string("common.channel"))
                             .font(fontStyle.font(size: size * 0.4))
                             .foregroundStyle(.white.opacity(0.6))
                             .lineLimit(1)

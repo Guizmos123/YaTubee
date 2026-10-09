@@ -31,16 +31,16 @@ struct PeerTubeFiltersSheet: View {
             .onChange(of: filters.language) { _, _ in onApply() }
             .onChange(of: filters.country) { _, _ in onApply() }
             #else
-            .navigationTitle(String(localized: "peertube.explore.filters"))
+            .reactiveNavigationTitle(AppLocalization.string("peertube.explore.filters"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "common.cancel")) {
+                    Button(AppLocalization.string("common.cancel")) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "common.apply")) {
+                    Button(AppLocalization.string("common.apply")) {
                         onApply()
                         dismiss()
                     }
@@ -59,8 +59,8 @@ struct PeerTubeFiltersSheet: View {
             // Language filter
             if !languages.isEmpty {
                 Section {
-                    Picker(String(localized: "peertube.filter.language"), selection: $filters.language) {
-                        Text(String(localized: "common.any")).tag(nil as String?)
+                    Picker(AppLocalization.string("peertube.filter.language"), selection: $filters.language) {
+                        Text(AppLocalization.string("common.any")).tag(nil as String?)
                         ForEach(languages, id: \.self) { lang in
                             Text(languageDisplayName(lang)).tag(lang as String?)
                         }
@@ -71,8 +71,8 @@ struct PeerTubeFiltersSheet: View {
             // Country filter
             if !countries.isEmpty {
                 Section {
-                    Picker(String(localized: "peertube.filter.country"), selection: $filters.country) {
-                        Text(String(localized: "common.any")).tag(nil as String?)
+                    Picker(AppLocalization.string("peertube.filter.country"), selection: $filters.country) {
+                        Text(AppLocalization.string("common.any")).tag(nil as String?)
                         ForEach(countries, id: \.self) { country in
                             Text(countryDisplayName(country)).tag(country as String?)
                         }
@@ -87,7 +87,7 @@ struct PeerTubeFiltersSheet: View {
                 } label: {
                     HStack {
                         Spacer()
-                        Text(String(localized: "common.reset"))
+                        Text(AppLocalization.string("common.reset"))
                         Spacer()
                     }
                 }

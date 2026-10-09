@@ -20,7 +20,7 @@ struct DownloadProgressInfo: Equatable {
 /// Manages video downloads with background session support.
 @Observable
 @MainActor
-final class DownloadManager: NSObject {
+final class DownloadManager: NSObject, URLSessionDownloadDelegate {
     // MARK: - Properties
 
     /// Active downloads (queued, downloading, paused).
@@ -659,7 +659,7 @@ final class DownloadManager: NSObject {
         if !suppressStartToast {
             toastManager?.show(
                 category: .download,
-                title: String(localized: "toast.download.started.title"),
+                title: AppLocalization.string("toast.download.started.title"),
                 subtitle: video.title,
                 icon: "arrow.down.circle",
                 iconColor: .blue,
@@ -1116,7 +1116,7 @@ final class DownloadManager: NSObject {
         if !batchDownloadIDs.contains(download.id) {
             toastManager?.show(
                 category: .download,
-                title: String(localized: "toast.download.completed.title"),
+                title: AppLocalization.string("toast.download.completed.title"),
                 subtitle: video.title,
                 icon: "checkmark.circle.fill",
                 iconColor: .green,

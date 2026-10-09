@@ -26,7 +26,7 @@ struct ProgressBarSettingsView: View {
                 segmentColorsSection
             }
         }
-        .navigationTitle(String(localized: "settings.playerControls.progressBar"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.progressBar"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #elseif os(macOS)
@@ -44,7 +44,7 @@ struct ProgressBarSettingsView: View {
         Section {
             #if !os(tvOS)
             ColorPicker(
-                String(localized: "settings.playerControls.progressBar.playedColor"),
+                AppLocalization.string("settings.playerControls.progressBar.playedColor"),
                 selection: $playedColor,
                 supportsOpacity: false
             )
@@ -54,7 +54,7 @@ struct ProgressBarSettingsView: View {
             .disabled(!viewModel.canEditActivePreset)
             #else
             HStack {
-                Text(String(localized: "settings.playerControls.progressBar.playedColor"))
+                Text(AppLocalization.string("settings.playerControls.progressBar.playedColor"))
                 Spacer()
                 Circle()
                     .fill(playedColor)
@@ -62,7 +62,7 @@ struct ProgressBarSettingsView: View {
             }
             #endif
         } header: {
-            Text(String(localized: "settings.playerControls.progressBar.appearance"))
+            Text(AppLocalization.string("settings.playerControls.progressBar.appearance"))
         }
     }
 
@@ -71,7 +71,7 @@ struct ProgressBarSettingsView: View {
     private var chaptersSection: some View {
         Section {
             Toggle(
-                String(localized: "settings.playerControls.progressBar.showChapters"),
+                AppLocalization.string("settings.playerControls.progressBar.showChapters"),
                 isOn: $showChapters
             )
             .onChange(of: showChapters) { _, newValue in
@@ -79,9 +79,9 @@ struct ProgressBarSettingsView: View {
             }
             .disabled(!viewModel.canEditActivePreset)
         } header: {
-            Text(String(localized: "settings.playerControls.progressBar.chapters"))
+            Text(AppLocalization.string("settings.playerControls.progressBar.chapters"))
         } footer: {
-            Text(String(localized: "settings.playerControls.progressBar.chaptersFooter"))
+            Text(AppLocalization.string("settings.playerControls.progressBar.chaptersFooter"))
         }
     }
 
@@ -90,7 +90,7 @@ struct ProgressBarSettingsView: View {
     private var sponsorSegmentsSection: some View {
         Section {
             Toggle(
-                String(localized: "settings.playerControls.progressBar.showSponsorSegments"),
+                AppLocalization.string("settings.playerControls.progressBar.showSponsorSegments"),
                 isOn: $showSponsorSegments
             )
             .onChange(of: showSponsorSegments) { _, newValue in
@@ -100,7 +100,7 @@ struct ProgressBarSettingsView: View {
             }
             .disabled(!viewModel.canEditActivePreset)
         } header: {
-            Text(String(localized: "settings.playerControls.progressBar.sponsorSegments"))
+            Text(AppLocalization.string("settings.playerControls.progressBar.sponsorSegments"))
         }
     }
 
@@ -112,7 +112,7 @@ struct ProgressBarSettingsView: View {
                 categoryRow(for: category)
             }
         } header: {
-            Text(String(localized: "settings.playerControls.progressBar.segmentColors"))
+            Text(AppLocalization.string("settings.playerControls.progressBar.segmentColors"))
         }
     }
 

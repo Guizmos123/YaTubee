@@ -67,7 +67,7 @@ extension ExpandedPlayerSheet {
     func autoplayCountdownOverlay(nextVideo: QueuedVideo) -> some View {
         VStack(spacing: 16) {
             // Countdown text
-            Text(String(localized: "player.autoplay.playingIn \(autoplayCountdown)"))
+            Text(AppLocalization.string("player.autoplay.playingIn \(autoplayCountdown)"))
                 .font(.headline)
                 .monospacedDigit()
                 .foregroundStyle(.white)
@@ -85,7 +85,7 @@ extension ExpandedPlayerSheet {
             Button {
                 cancelAutoplay()
             } label: {
-                Text(String(localized: "player.autoplay.cancel"))
+                Text(AppLocalization.string("player.autoplay.cancel"))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.white.opacity(0.8))
                     .padding(.horizontal, 20)
@@ -114,7 +114,7 @@ extension ExpandedPlayerSheet {
             Button {
                 closeVideo()
             } label: {
-                Text(String(localized: "player.close"))
+                Text(AppLocalization.string("player.close"))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.white.opacity(0.8))
                     .padding(.horizontal, 20)
@@ -133,7 +133,7 @@ extension ExpandedPlayerSheet {
     func recommendedVideosOverlay(videos: [Video]) -> some View {
         VStack(spacing: 8) {
             // Header
-            Text(String(localized: "videoInfo.section.relatedVideos"))
+            Text(AppLocalization.string("videoInfo.section.relatedVideos"))
                 .font(.headline)
                 .foregroundStyle(.white)
 
@@ -148,7 +148,7 @@ extension ExpandedPlayerSheet {
                 Button {
                     restartPlayback()
                 } label: {
-                    Text(String(localized: "player.replay"))
+                    Text(AppLocalization.string("player.replay"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(.horizontal, 20)
@@ -160,7 +160,7 @@ extension ExpandedPlayerSheet {
                 Button {
                     closeVideo()
                 } label: {
-                    Text(String(localized: "player.close"))
+                    Text(AppLocalization.string("player.close"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(.horizontal, 20)

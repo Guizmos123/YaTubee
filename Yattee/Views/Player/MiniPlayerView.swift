@@ -64,7 +64,7 @@ struct MiniPlayerView: View {
         if let video = currentVideo, let deArrowTitle = deArrowProvider?.title(for: video) {
             return deArrowTitle
         }
-        return currentVideo?.title ?? String(localized: "player.notPlaying")
+        return currentVideo?.title ?? AppLocalization.string("player.notPlaying")
     }
 
     /// Thumbnail URLs to try in order, preferring DeArrow, then the quality chain.
@@ -323,7 +323,7 @@ struct MiniPlayerView: View {
                     Circle()
                         .fill(.red)
                         .frame(width: 6, height: 6)
-                    Text(String(localized: "player.live"))
+                    Text(AppLocalization.string("player.live"))
                         .font(font.weight(.semibold))
                         .foregroundStyle(.red)
                 }
@@ -709,7 +709,7 @@ private struct MiniPlayerContextMenuModifier: ViewModifier {
                 video: video,
                 customActions: [
                     VideoContextAction(
-                        String(localized: "player.close"),
+                        AppLocalization.string("player.close"),
                         systemImage: "xmark",
                         role: .destructive,
                         action: closeAction

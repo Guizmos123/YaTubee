@@ -243,7 +243,7 @@ final class LoggingService: Sendable {
 
     /// Export logs as text.
     func exportLogs() -> String {
-        let header = "Yattee Logs - Exported \(Date().formatted())\n"
+        let header = "YaTubee Logs - Exported \(Date().formatted())\n"
         let separator = String(repeating: "=", count: 60) + "\n"
 
         let logLines = entries.reversed().map { entry in

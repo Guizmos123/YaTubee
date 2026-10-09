@@ -38,7 +38,7 @@ struct PlaybackCommands: Commands {
     }
 
     var body: some Commands {
-        CommandMenu(String(localized: "menu.playback")) {
+        CommandMenu(AppLocalization.string("menu.playback")) {
             // Player visibility (existing)
             playerToggleButton
 
@@ -92,8 +92,8 @@ struct PlaybackCommands: Commands {
             togglePlayerExpanded()
         } label: {
             Text(isPlayerExpanded
-                ? String(localized: "menu.playback.hidePlayer")
-                : String(localized: "menu.playback.showPlayer"))
+                ? AppLocalization.string("menu.playback.hidePlayer")
+                : AppLocalization.string("menu.playback.showPlayer"))
         }
         .keyboardShortcut("p", modifiers: [.command, .shift])
         .disabled(!hasActiveVideo)
@@ -113,7 +113,7 @@ struct PlaybackCommands: Commands {
         Button {
             playerService.togglePlayPause()
         } label: {
-            Text(String(localized: "menu.playback.playPause"))
+            Text(AppLocalization.string("menu.playback.playPause"))
         }
         .keyboardShortcut("k", modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -135,7 +135,7 @@ struct PlaybackCommands: Commands {
         Button {
             playerService.seekBackward(by: TimeInterval(seekBackwardSeconds))
         } label: {
-            Text(String(localized: "menu.playback.seekBackward \(seekBackwardSeconds)"))
+            Text(AppLocalization.string("menu.playback.seekBackward \(seekBackwardSeconds)"))
         }
         .keyboardShortcut(.leftArrow, modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -145,7 +145,7 @@ struct PlaybackCommands: Commands {
         Button {
             playerService.seekForward(by: TimeInterval(seekForwardSeconds))
         } label: {
-            Text(String(localized: "menu.playback.seekForward \(seekForwardSeconds)"))
+            Text(AppLocalization.string("menu.playback.seekForward \(seekForwardSeconds)"))
         }
         .keyboardShortcut(.rightArrow, modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -163,7 +163,7 @@ struct PlaybackCommands: Commands {
         Button {
             playerService.seekBackward(by: TimeInterval(secondarySeekBackwardSeconds))
         } label: {
-            Text(String(localized: "menu.playback.seekBackward \(secondarySeekBackwardSeconds)"))
+            Text(AppLocalization.string("menu.playback.seekBackward \(secondarySeekBackwardSeconds)"))
         }
         .keyboardShortcut(.leftArrow, modifiers: [.command, .shift])
         .disabled(!hasActiveVideo)
@@ -173,7 +173,7 @@ struct PlaybackCommands: Commands {
         Button {
             playerService.seekForward(by: TimeInterval(secondarySeekForwardSeconds))
         } label: {
-            Text(String(localized: "menu.playback.seekForward \(secondarySeekForwardSeconds)"))
+            Text(AppLocalization.string("menu.playback.seekForward \(secondarySeekForwardSeconds)"))
         }
         .keyboardShortcut(.rightArrow, modifiers: [.command, .shift])
         .disabled(!hasActiveVideo)
@@ -187,7 +187,7 @@ struct PlaybackCommands: Commands {
                 await playerService.playPrevious()
             }
         } label: {
-            Text(String(localized: "menu.playback.previousVideo"))
+            Text(AppLocalization.string("menu.playback.previousVideo"))
         }
         .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
         .disabled(!hasActiveVideo || !state.hasPrevious)
@@ -199,7 +199,7 @@ struct PlaybackCommands: Commands {
                 await playerService.playNext()
             }
         } label: {
-            Text(String(localized: "menu.playback.nextVideo"))
+            Text(AppLocalization.string("menu.playback.nextVideo"))
         }
         .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
         .disabled(!hasActiveVideo || !state.hasNext)
@@ -211,7 +211,7 @@ struct PlaybackCommands: Commands {
         Button {
             cycleSpeedDown()
         } label: {
-            Text(String(localized: "menu.playback.slower"))
+            Text(AppLocalization.string("menu.playback.slower"))
         }
         .keyboardShortcut("[", modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -221,7 +221,7 @@ struct PlaybackCommands: Commands {
         Button {
             cycleSpeedUp()
         } label: {
-            Text(String(localized: "menu.playback.faster"))
+            Text(AppLocalization.string("menu.playback.faster"))
         }
         .keyboardShortcut("]", modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -232,7 +232,7 @@ struct PlaybackCommands: Commands {
             state.rate = .x1
             playerService.currentBackend?.rate = 1.0
         } label: {
-            Text(String(localized: "menu.playback.resetSpeed"))
+            Text(AppLocalization.string("menu.playback.resetSpeed"))
         }
         .keyboardShortcut("0", modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -266,7 +266,7 @@ struct PlaybackCommands: Commands {
             state.volume = newVolume
             playerService.currentBackend?.volume = newVolume
         } label: {
-            Text(String(localized: "menu.playback.volumeUp"))
+            Text(AppLocalization.string("menu.playback.volumeUp"))
         }
         .keyboardShortcut(.upArrow, modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -278,7 +278,7 @@ struct PlaybackCommands: Commands {
             state.volume = newVolume
             playerService.currentBackend?.volume = newVolume
         } label: {
-            Text(String(localized: "menu.playback.volumeDown"))
+            Text(AppLocalization.string("menu.playback.volumeDown"))
         }
         .keyboardShortcut(.downArrow, modifiers: [.command])
         .disabled(!hasActiveVideo)
@@ -289,7 +289,7 @@ struct PlaybackCommands: Commands {
             state.isMuted.toggle()
             playerService.currentBackend?.isMuted = state.isMuted
         } label: {
-            Text(String(localized: "menu.playback.mute"))
+            Text(AppLocalization.string("menu.playback.mute"))
         }
         .keyboardShortcut("m", modifiers: [.command, .shift])
         .disabled(!hasActiveVideo)
@@ -303,7 +303,7 @@ struct PlaybackCommands: Commands {
                 mpvBackend.togglePiP()
             }
         } label: {
-            Text(String(localized: "menu.playback.pip"))
+            Text(AppLocalization.string("menu.playback.pip"))
         }
         .keyboardShortcut("i", modifiers: [.command, .shift])
         .disabled(!hasActiveVideo || !state.isPiPPossible || state.currentStream?.isAudioOnly == true)
@@ -315,7 +315,7 @@ struct PlaybackCommands: Commands {
         Button {
             closeVideo()
         } label: {
-            Text(String(localized: "menu.playback.closeVideo"))
+            Text(AppLocalization.string("menu.playback.closeVideo"))
         }
         .keyboardShortcut(".", modifiers: [.command])
         .disabled(!hasActiveVideo)

@@ -93,9 +93,9 @@ extension NavigationDestination {
         case .downloads:
             #if os(tvOS)
             ContentUnavailableView {
-                Label(String(localized: "home.downloads.title"), systemImage: "arrow.down.circle")
+                Label(AppLocalization.string("home.downloads.title"), systemImage: "arrow.down.circle")
             } description: {
-                Text(String(localized: "home.downloads.notAvailable"))
+                Text(AppLocalization.string("home.downloads.notAvailable"))
             }
             #else
             DownloadsView()
@@ -103,9 +103,9 @@ extension NavigationDestination {
         case .downloadsStorage:
             #if os(tvOS)
             ContentUnavailableView {
-                Label(String(localized: "settings.downloads.storage.title"), systemImage: "arrow.down.circle")
+                Label(AppLocalization.string("settings.downloads.storage.title"), systemImage: "arrow.down.circle")
             } description: {
-                Text(String(localized: "home.downloads.notAvailable"))
+                Text(AppLocalization.string("home.downloads.notAvailable"))
             }
             #else
             DownloadsStorageView()
@@ -165,9 +165,9 @@ private struct MediaSourceByIDView: View {
             MediaBrowserView(source: source, path: "/")
         } else {
             ContentUnavailableView {
-                Label(String(localized: "navigation.sourceNotFound"), systemImage: "externaldrive.badge.exclamationmark")
+                Label(AppLocalization.string("navigation.sourceNotFound"), systemImage: "externaldrive.badge.exclamationmark")
             } description: {
-                Text(String(localized: "navigation.sourceNotFound.description"))
+                Text(AppLocalization.string("navigation.sourceNotFound.description"))
             }
         }
     }

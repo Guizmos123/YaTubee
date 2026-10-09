@@ -52,7 +52,7 @@ struct ExpandableText: View {
                 Button {
                     toggle()
                 } label: {
-                    Text(isExpanded ? String(localized: "common.less") : String(localized: "common.more"))
+                    Text(isExpanded ? AppLocalization.string("common.less") : AppLocalization.string("common.more"))
                         .fontWeight(.medium)
                 }
                 .buttonStyle(.plain)

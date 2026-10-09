@@ -26,7 +26,7 @@ struct ChaptersView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationTitle(String(localized: "player.chapters"))
+            .navigationTitle(AppLocalization.string("player.chapters"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif

@@ -18,7 +18,7 @@ struct AcknowledgementsView: View {
                 dependencyLink("Nuke", url: "https://github.com/kean/Nuke")
             }
         }
-        .navigationTitle(String(localized: "settings.acknowledgements.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.acknowledgements.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

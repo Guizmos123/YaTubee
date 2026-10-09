@@ -51,18 +51,18 @@ struct TapZoneActionPicker: View {
                     .buttonStyle(.plain)
                 }
             } header: {
-                Text(String(localized: "gestures.tap.selectAction", defaultValue: "Select Action"))
+                Text(AppLocalization.string("gestures.tap.selectAction", defaultValue: "Select Action"))
             }
 
             if selectedActionType.requiresSecondsParameter {
                 Section {
                     seekSecondsControl
                 } header: {
-                    Text(String(localized: "gestures.tap.seekDuration", defaultValue: "Seek Duration"))
+                    Text(AppLocalization.string("gestures.tap.seekDuration", defaultValue: "Seek Duration"))
                 }
             }
         }
-        .navigationTitle(position.displayName)
+        .reactiveNavigationTitle(position.displayName)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -72,7 +72,7 @@ struct TapZoneActionPicker: View {
     private var seekSecondsControl: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(String(localized: "gestures.tap.seconds", defaultValue: "Seconds"))
+                Text(AppLocalization.string("gestures.tap.seconds", defaultValue: "Seconds"))
                 Spacer()
                 Text("\(seekSeconds)s")
                     .foregroundStyle(.secondary)

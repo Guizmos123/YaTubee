@@ -33,12 +33,12 @@ struct SwipeActionsSettingsView: View {
                 }
                 .onMove(perform: moveAction)
             } header: {
-                Text(String(localized: "settings.swipeActions.header"))
+                Text(AppLocalization.string("settings.swipeActions.header"))
             } footer: {
-                Text(String(localized: "settings.swipeActions.footer"))
+                Text(AppLocalization.string("settings.swipeActions.footer"))
             }
         }
-        .navigationTitle(String(localized: "settings.swipeActions.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.swipeActions.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.editMode, .constant(.active))

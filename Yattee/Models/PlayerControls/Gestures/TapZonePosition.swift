@@ -37,29 +37,29 @@ enum TapZonePosition: String, Codable, CaseIterable, Sendable, Identifiable {
     var displayName: String {
         switch self {
         case .full:
-            String(localized: "gestures.zone.full", defaultValue: "Tap Zone")
+            AppLocalization.string("gestures.zone.full", defaultValue: "Tap Zone")
         case .left:
-            String(localized: "gestures.zone.left", defaultValue: "Left")
+            AppLocalization.string("gestures.zone.left", defaultValue: "Left")
         case .right:
-            String(localized: "gestures.zone.right", defaultValue: "Right")
+            AppLocalization.string("gestures.zone.right", defaultValue: "Right")
         case .top:
-            String(localized: "gestures.zone.top", defaultValue: "Top")
+            AppLocalization.string("gestures.zone.top", defaultValue: "Top")
         case .bottom:
-            String(localized: "gestures.zone.bottom", defaultValue: "Bottom")
+            AppLocalization.string("gestures.zone.bottom", defaultValue: "Bottom")
         case .leftThird:
-            String(localized: "gestures.zone.leftThird", defaultValue: "Left")
+            AppLocalization.string("gestures.zone.leftThird", defaultValue: "Left")
         case .center:
-            String(localized: "gestures.zone.center", defaultValue: "Center")
+            AppLocalization.string("gestures.zone.center", defaultValue: "Center")
         case .rightThird:
-            String(localized: "gestures.zone.rightThird", defaultValue: "Right")
+            AppLocalization.string("gestures.zone.rightThird", defaultValue: "Right")
         case .topLeft:
-            String(localized: "gestures.zone.topLeft", defaultValue: "Top-Left")
+            AppLocalization.string("gestures.zone.topLeft", defaultValue: "Top-Left")
         case .topRight:
-            String(localized: "gestures.zone.topRight", defaultValue: "Top-Right")
+            AppLocalization.string("gestures.zone.topRight", defaultValue: "Top-Right")
         case .bottomLeft:
-            String(localized: "gestures.zone.bottomLeft", defaultValue: "Bottom-Left")
+            AppLocalization.string("gestures.zone.bottomLeft", defaultValue: "Bottom-Left")
         case .bottomRight:
-            String(localized: "gestures.zone.bottomRight", defaultValue: "Bottom-Right")
+            AppLocalization.string("gestures.zone.bottomRight", defaultValue: "Bottom-Right")
         }
     }
 }

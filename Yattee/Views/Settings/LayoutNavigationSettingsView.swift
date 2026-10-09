@@ -26,7 +26,7 @@ struct LayoutNavigationSettingsView: View {
                 #endif
                 #if os(iOS)
                 if #available(iOS 26, *) {
-                    MiniPlayerMinimizeBehaviorSection(settings: settings)
+                    TabBarMinimizeBehaviorSection(settings: settings)
                 }
                 #endif
                 #if !os(tvOS)
@@ -35,7 +35,7 @@ struct LayoutNavigationSettingsView: View {
             }
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.layoutNavigation.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.layoutNavigation.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -53,13 +53,13 @@ private struct HapticsSection: View {
         if SettingsManager.deviceSupportsHaptics {
             SettingsFormSection {
                 Toggle(
-                    String(localized: "settings.haptics.title"),
+                    AppLocalization.string("settings.haptics.title"),
                     isOn: $settings.hapticFeedbackEnabled
                 )
 
                 if settings.hapticFeedbackEnabled {
                     Picker(
-                        String(localized: "settings.haptics.intensity"),
+                        AppLocalization.string("settings.haptics.intensity"),
                         selection: $settings.hapticFeedbackIntensity
                     ) {
                         ForEach(HapticFeedbackIntensity.allCases.filter { $0 != .off }, id: \.self) { intensity in
@@ -82,10 +82,10 @@ private struct CustomizationSection: View {
             NavigationLink {
                 TVSidebarDetailContainer(
                     systemImage: SidebarItem.home.systemImage,
-                    title: String(localized: "settings.appearance.home.customize")
+                    title: AppLocalization.string("settings.appearance.home.customize")
                 ) { HomeSettingsView() }
             } label: {
-                Label(String(localized: "settings.appearance.home.customize"), systemImage: SidebarItem.home.systemImage)
+                Label(AppLocalization.string("settings.appearance.home.customize"), systemImage: SidebarItem.home.systemImage)
             }
             #else
             SettingsNavigationRow("settings.appearance.home.customize", systemImage: SidebarItem.home.systemImage) {
@@ -114,10 +114,10 @@ private struct CustomizationSection: View {
             NavigationLink {
                 TVSidebarDetailContainer(
                     systemImage: "sidebar.leading",
-                    title: String(localized: "settings.sidebar.title")
+                    title: AppLocalization.string("settings.sidebar.title")
                 ) { SidebarSettingsView() }
             } label: {
-                Label(String(localized: "settings.sidebar.title"), systemImage: "sidebar.leading")
+                Label(AppLocalization.string("settings.sidebar.title"), systemImage: "sidebar.leading")
             }
             #endif
         }
@@ -132,7 +132,7 @@ private struct LinkActionSection: View {
     var body: some View {
         SettingsFormSection("settings.behavior.linkAction.header", footer: "settings.behavior.linkAction.footer") {
             Picker(
-                String(localized: "settings.behavior.linkAction"),
+                AppLocalization.string("settings.behavior.linkAction"),
                 selection: $settings.defaultLinkAction
             ) {
                 ForEach(DefaultLinkAction.allCases, id: \.self) { action in
@@ -151,7 +151,7 @@ private struct ClipboardSection: View {
     var body: some View {
         SettingsFormSection("settings.dataPrivacy.clipboard.header", footer: "settings.behavior.clipboardMonitoring.footer") {
             Toggle(
-                String(localized: "settings.behavior.clipboardMonitoring"),
+                AppLocalization.string("settings.behavior.clipboardMonitoring"),
                 isOn: $settings.clipboardURLDetectionEnabled
             )
         }
@@ -167,7 +167,7 @@ private struct VideoActionsSection: View {
     var body: some View {
         SettingsFormSection("settings.videoActions.header") {
             Picker(
-                String(localized: "settings.behavior.thumbnailTapAction"),
+                AppLocalization.string("settings.behavior.thumbnailTapAction"),
                 selection: $settings.thumbnailTapAction
             ) {
                 ForEach(VideoTapAction.allCases, id: \.self) { action in
@@ -176,7 +176,7 @@ private struct VideoActionsSection: View {
             }
 
             Picker(
-                String(localized: "settings.behavior.textAreaTapAction"),
+                AppLocalization.string("settings.behavior.textAreaTapAction"),
                 selection: $settings.textAreaTapAction
             ) {
                 ForEach(VideoTapAction.allCases, id: \.self) { action in
@@ -188,7 +188,7 @@ private struct VideoActionsSection: View {
             NavigationLink {
                 SwipeActionsSettingsView()
             } label: {
-                Label(String(localized: "settings.appearance.swipeActions"), systemImage: "hand.draw")
+                Label(AppLocalization.string("settings.appearance.swipeActions"), systemImage: "hand.draw")
             }
             #endif
         }
@@ -204,9 +204,9 @@ private struct TVVideoActionsSection: View {
 
     var body: some View {
         SettingsFormSection("settings.videoActions.header") {
-            LabeledContent(String(localized: "settings.behavior.tvOSVideoTapAction")) {
+            LabeledContent(AppLocalization.string("settings.behavior.tvOSVideoTapAction")) {
                 Picker(
-                    String(localized: "settings.behavior.tvOSVideoTapAction"),
+                    AppLocalization.string("settings.behavior.tvOSVideoTapAction"),
                     selection: $settings.tvOSVideoTapAction
                 ) {
                     Text(VideoTapAction.openInfo.displayName).tag(VideoTapAction.openInfo)
@@ -220,23 +220,22 @@ private struct TVVideoActionsSection: View {
 }
 #endif
 
-// MARK: - Mini Player Minimize Behavior Section (iOS 26+)
+// MARK: - Tab Bar Minimize Behavior Section (iOS 26+)
 
 #if os(iOS)
 @available(iOS 26, *)
-private struct MiniPlayerMinimizeBehaviorSection: View {
+private struct TabBarMinimizeBehaviorSection: View {
     @Bindable var settings: SettingsManager
 
     var body: some View {
-        SettingsFormSection("settings.behavior.miniPlayer.header", footer: "settings.behavior.miniPlayer.minimizeBehavior.footer") {
-            Picker(
-                String(localized: "settings.behavior.miniPlayer.minimizeBehavior"),
-                selection: $settings.miniPlayerMinimizeBehavior
-            ) {
-                ForEach(MiniPlayerMinimizeBehavior.allCases, id: \.self) { behavior in
-                    Text(behavior.displayName).tag(behavior)
-                }
-            }
+        SettingsFormSection(footer: "settings.behavior.miniPlayer.minimizeBehavior.footer") {
+            Toggle(
+                AppLocalization.string("settings.behavior.miniPlayer.minimizeBehavior"),
+                isOn: Binding(
+                    get: { settings.miniPlayerMinimizeBehavior == .onScrollDown },
+                    set: { settings.miniPlayerMinimizeBehavior = $0 ? .onScrollDown : .never }
+                )
+            )
         }
     }
 }
@@ -250,7 +249,7 @@ private struct HandoffSection: View {
     var body: some View {
         SettingsFormSection("settings.behavior.handoff.header", footer: "settings.behavior.handoff.footer") {
             Toggle(
-                String(localized: "settings.behavior.handoff"),
+                AppLocalization.string("settings.behavior.handoff"),
                 isOn: $settings.handoffEnabled
             )
         }

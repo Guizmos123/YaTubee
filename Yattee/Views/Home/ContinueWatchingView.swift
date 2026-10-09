@@ -25,6 +25,10 @@ struct ContinueWatchingView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     // UI state
     @State private var showViewOptions = false
     @State private var viewWidth: CGFloat = 0
@@ -65,7 +69,7 @@ struct ContinueWatchingView: View {
             VStack(spacing: 0) {
                 if !inProgressEntries.isEmpty {
                     HStack(spacing: 24) {
-                        Text(String(localized: "home.continueWatching.title"))
+                        Text(AppLocalization.string("home.continueWatching.title"))
                             .font(.title2)
                             .fontWeight(.semibold)
 
@@ -74,14 +78,14 @@ struct ContinueWatchingView: View {
                         Button {
                             showViewOptions = true
                         } label: {
-                            Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                            Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                         }
 
                         Menu {
                             Button(role: .destructive) {
                                 clearAllProgress()
                             } label: {
-                                Label(String(localized: "continueWatching.clearAll"), systemImage: "trash")
+                                Label(AppLocalization.string("continueWatching.clearAll"), systemImage: "trash")
                             }
                         } label: {
                             Image(systemName: "trash")
@@ -128,8 +132,9 @@ struct ContinueWatchingView: View {
             }
             #endif
         }
+        .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .navigationTitle(String(localized: "home.continueWatching.title"))
+        .navigationTitle(AppLocalization.string("home.continueWatching.title"))
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             if !inProgressEntries.isEmpty {
@@ -137,7 +142,7 @@ struct ContinueWatchingView: View {
                     Button {
                         showViewOptions = true
                     } label: {
-                        Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                        Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                     }
                     .liquidGlassTransitionSource(id: "continueWatchingViewOptions", in: sheetTransition)
                     #if os(macOS)
@@ -151,7 +156,7 @@ struct ContinueWatchingView: View {
                         Button(role: .destructive) {
                             clearAllProgress()
                         } label: {
-                            Label(String(localized: "continueWatching.clearAll"), systemImage: "trash")
+                            Label(AppLocalization.string("continueWatching.clearAll"), systemImage: "trash")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -188,9 +193,9 @@ struct ContinueWatchingView: View {
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label(String(localized: "home.continueWatching.title"), systemImage: "play.circle")
+            Label(AppLocalization.string("home.continueWatching.title"), systemImage: "play.circle")
         } description: {
-            Text(String(localized: "home.continueWatching.empty"))
+            Text(AppLocalization.string("home.continueWatching.empty"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -237,13 +242,13 @@ struct ContinueWatchingView: View {
             video: entry.toVideo(),
             style: rowStyle,
             watchProgress: entry.progress,
-            customMetadata: entry.isFinished || entry.isLive ? nil : String(localized: "home.history.remaining \(entry.remainingTime)")
+            customMetadata: entry.isFinished || entry.isLive ? nil : AppLocalization.string("home.history.remaining \(entry.remainingTime)")
         )
         .tappableVideo(
             entry.toVideo(),
             startTime: entry.watchedSeconds,
             queueSource: .manual,
-            sourceLabel: String(localized: "queue.source.continueWatching"),
+            sourceLabel: AppLocalization.string("queue.source.continueWatching"),
             videoList: inProgressEntries.map { $0.toVideo() },
             videoIndex: index,
             loadMoreVideos: loadMoreCallback
@@ -252,7 +257,7 @@ struct ContinueWatchingView: View {
             video: entry.toVideo(),
             customActions: [
                 VideoContextAction(
-                    String(localized: "continueWatching.remove"),
+                    AppLocalization.string("continueWatching.remove"),
                     systemImage: "xmark.circle",
                     role: .destructive,
                     action: { removeEntry(entry) }

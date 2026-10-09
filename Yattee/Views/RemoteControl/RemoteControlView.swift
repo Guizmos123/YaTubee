@@ -216,10 +216,10 @@ struct RemoteControlView: View {
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
 
-            Text(String(localized: "remoteControl.deviceOffline"))
+            Text(AppLocalization.string("remoteControl.deviceOffline"))
                 .font(.headline)
 
-            Text(String(localized: "remoteControl.deviceOfflineMessage"))
+            Text(AppLocalization.string("remoteControl.deviceOfflineMessage"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -227,7 +227,7 @@ struct RemoteControlView: View {
             Button {
                 Task { await connect() }
             } label: {
-                Label(String(localized: "remoteControl.tryReconnect"), systemImage: "arrow.clockwise")
+                Label(AppLocalization.string("remoteControl.tryReconnect"), systemImage: "arrow.clockwise")
             }
             .buttonStyle(.bordered)
         }
@@ -319,7 +319,7 @@ struct RemoteControlView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
-                    Text(String(localized: "common.retry"))
+                    Text(AppLocalization.string("common.retry"))
                         .font(.caption)
                 }
             }
@@ -340,7 +340,7 @@ struct RemoteControlView: View {
                         Image(systemName: "circle.fill")
                             .font(.system(size: 8))
                             .foregroundStyle(.orange)
-                        Text(String(localized: "remoteControl.status.offline"))
+                        Text(AppLocalization.string("remoteControl.status.offline"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -353,7 +353,7 @@ struct RemoteControlView: View {
                     Image(systemName: "antenna.radiowaves.left.and.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(String(localized: "remoteControl.status.discovered"))
+                    Text(AppLocalization.string("remoteControl.status.discovered"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -396,7 +396,7 @@ struct RemoteControlView: View {
                     // Video info - only show details if there's an active video
                     VStack(alignment: .leading, spacing: 4) {
                         if remoteState.videoID != nil {
-                            Text(remoteState.videoTitle ?? device.currentVideoTitle ?? String(localized: "remoteControl.noVideo"))
+                            Text(remoteState.videoTitle ?? device.currentVideoTitle ?? AppLocalization.string("remoteControl.noVideo"))
                                 .font(.headline)
                                 .lineLimit(2)
 
@@ -406,7 +406,7 @@ struct RemoteControlView: View {
                                     .foregroundStyle(.secondary)
                             }
                         } else {
-                            Text(String(localized: "remoteControl.noVideo"))
+                            Text(AppLocalization.string("remoteControl.noVideo"))
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
                         }
@@ -467,7 +467,7 @@ struct RemoteControlView: View {
                     dismiss()
                 }
             } label: {
-                Label(String(localized: "remoteControl.closeVideo"), systemImage: "xmark")
+                Label(AppLocalization.string("remoteControl.closeVideo"), systemImage: "xmark")
                     .labelStyle(.iconOnly)
                     .font(.caption)
             }
@@ -638,7 +638,7 @@ struct RemoteControlView: View {
     @ViewBuilder
     private var playbackRateControls: some View {
         HStack {
-            Label(String(localized: "player.quality.playbackSpeed"), systemImage: "gauge.with.needle")
+            Label(AppLocalization.string("player.quality.playbackSpeed"), systemImage: "gauge.with.needle")
                 .font(.headline)
 
             Spacer()
@@ -739,7 +739,7 @@ struct RemoteControlView: View {
                 Image(systemName: "circle.fill")
                     .font(.system(size: 8))
                     .foregroundStyle(.green)
-                Text(String(localized: "remoteControl.status.discoverable"))
+                Text(AppLocalization.string("remoteControl.status.discoverable"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -749,7 +749,7 @@ struct RemoteControlView: View {
                     Image(systemName: "circle.fill")
                         .font(.system(size: 8))
                         .foregroundStyle(.orange)
-                    Text(String(localized: "remoteControl.status.offline"))
+                    Text(AppLocalization.string("remoteControl.status.offline"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -762,7 +762,7 @@ struct RemoteControlView: View {
                 Image(systemName: "antenna.radiowaves.left.and.right")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(String(localized: "remoteControl.status.discovered"))
+                Text(AppLocalization.string("remoteControl.status.discovered"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -779,7 +779,7 @@ struct RemoteControlView: View {
                 dismiss()
             }
         } label: {
-            Label(String(localized: "remoteControl.closeVideo"), systemImage: "xmark")
+            Label(AppLocalization.string("remoteControl.closeVideo"), systemImage: "xmark")
                 .font(.subheadline.weight(.semibold))
         }
         .buttonStyle(TVRemoteCloseButtonStyle())

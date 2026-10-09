@@ -17,11 +17,11 @@ enum SourcesSortOption: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .name:
-            return String(localized: "sources.sort.name")
+            return AppLocalization.string("sources.sort.name")
         case .type:
-            return String(localized: "sources.sort.type")
+            return AppLocalization.string("sources.sort.type")
         case .dateAdded:
-            return String(localized: "sources.sort.dateAdded")
+            return AppLocalization.string("sources.sort.dateAdded")
         }
     }
 

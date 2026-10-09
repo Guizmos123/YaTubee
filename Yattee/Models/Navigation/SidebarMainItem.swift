@@ -89,19 +89,19 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
     /// Localized display title.
     var localizedTitle: String {
         switch self {
-        case .search: String(localized: "sidebar.mainItem.search")
-        case .home: String(localized: "sidebar.mainItem.home")
-        case .subscriptions: String(localized: "sidebar.mainItem.subscriptions")
-        case .bookmarks: String(localized: "sidebar.mainItem.bookmarks")
-        case .history: String(localized: "sidebar.mainItem.history")
-        case .downloads: String(localized: "sidebar.mainItem.downloads")
-        case .channels: String(localized: "sidebar.mainItem.channels")
-        case .playlists: String(localized: "sidebar.mainItem.playlists")
-        case .sources: String(localized: "sidebar.mainItem.sources")
-        case .settings: String(localized: "sidebar.mainItem.settings")
-        case .openURL: String(localized: "sidebar.mainItem.openURL")
-        case .remoteControl: String(localized: "sidebar.mainItem.remoteControl")
-        case .continueWatching: String(localized: "sidebar.mainItem.continueWatching")
+        case .search: AppLocalization.string("sidebar.mainItem.search")
+        case .home: AppLocalization.string("sidebar.mainItem.home")
+        case .subscriptions: AppLocalization.string("sidebar.mainItem.subscriptions")
+        case .bookmarks: AppLocalization.string("sidebar.mainItem.bookmarks")
+        case .history: AppLocalization.string("sidebar.mainItem.history")
+        case .downloads: AppLocalization.string("sidebar.mainItem.downloads")
+        case .channels: AppLocalization.string("sidebar.mainItem.channels")
+        case .playlists: AppLocalization.string("sidebar.mainItem.playlists")
+        case .sources: AppLocalization.string("sidebar.mainItem.sources")
+        case .settings: AppLocalization.string("sidebar.mainItem.settings")
+        case .openURL: AppLocalization.string("sidebar.mainItem.openURL")
+        case .remoteControl: AppLocalization.string("sidebar.mainItem.remoteControl")
+        case .continueWatching: AppLocalization.string("sidebar.mainItem.continueWatching")
         }
     }
 

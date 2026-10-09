@@ -34,7 +34,7 @@ struct AVSyncDiagnosticsView: View {
             // and put each control on its own row below.
             HStack {
                 Label(
-                    String(localized: "settings.playback.tvAudioDelay"),
+                    AppLocalization.string("settings.playback.tvAudioDelay"),
                     systemImage: "speaker.wave.2.bubble"
                 )
                 Spacer()
@@ -49,7 +49,7 @@ struct AVSyncDiagnosticsView: View {
                 adjust(by: -100)
             } label: {
                 Label(
-                    String(localized: "settings.playback.tvAudioDelay.minus100"),
+                    AppLocalization.string("settings.playback.tvAudioDelay.minus100"),
                     systemImage: "gobackward.minus"
                 )
             }
@@ -59,7 +59,7 @@ struct AVSyncDiagnosticsView: View {
                 adjust(by: -stepMs)
             } label: {
                 Label(
-                    String(localized: "settings.playback.tvAudioDelay.minus10"),
+                    AppLocalization.string("settings.playback.tvAudioDelay.minus10"),
                     systemImage: "minus"
                 )
             }
@@ -69,7 +69,7 @@ struct AVSyncDiagnosticsView: View {
                 adjust(by: stepMs)
             } label: {
                 Label(
-                    String(localized: "settings.playback.tvAudioDelay.plus10"),
+                    AppLocalization.string("settings.playback.tvAudioDelay.plus10"),
                     systemImage: "plus"
                 )
             }
@@ -79,7 +79,7 @@ struct AVSyncDiagnosticsView: View {
                 adjust(by: 100)
             } label: {
                 Label(
-                    String(localized: "settings.playback.tvAudioDelay.plus100"),
+                    AppLocalization.string("settings.playback.tvAudioDelay.plus100"),
                     systemImage: "goforward.plus"
                 )
             }
@@ -89,14 +89,14 @@ struct AVSyncDiagnosticsView: View {
                 set(to: 0)
             } label: {
                 Label(
-                    String(localized: "settings.playback.tvAudioDelay.reset"),
+                    AppLocalization.string("settings.playback.tvAudioDelay.reset"),
                     systemImage: "arrow.counterclockwise"
                 )
             }
             .disabled(settings.tvAudioDelayMs == 0)
 
             PlatformMenuPicker(
-                String(localized: "settings.playback.tvVideoSyncMode"),
+                AppLocalization.string("settings.playback.tvVideoSyncMode"),
                 selection: $settings.tvVideoSyncMode
             ) {
                     ForEach(TVVideoSyncMode.allCases, id: \.self) { mode in

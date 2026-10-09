@@ -20,7 +20,7 @@ struct PrivacySettingsView: View {
             searchSection
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.privacy.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.privacy.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -35,7 +35,7 @@ struct PrivacySettingsView: View {
             SettingsFormSection(footer: "settings.privacy.incognito.footer") {
                 Toggle(isOn: Bindable(settingsManager).incognitoModeEnabled) {
                     Label {
-                        Text(String(localized: "settings.behavior.incognitoMode"))
+                        Text(AppLocalization.string("settings.behavior.incognitoMode"))
                     } icon: {
                         #if os(macOS)
                         Image("incognito")
@@ -56,12 +56,12 @@ struct PrivacySettingsView: View {
         if let settingsManager = appEnvironment?.settingsManager {
             SettingsFormSection("settings.behavior.historyRetention.header", footer: "settings.behavior.historyRetention.footer") {
                 Toggle(
-                    String(localized: "settings.privacy.saveWatchHistory"),
+                    AppLocalization.string("settings.privacy.saveWatchHistory"),
                     isOn: Bindable(settingsManager).saveWatchHistory
                 )
 
                 PlatformMenuPicker(
-                    String(localized: "settings.behavior.historyRetention"),
+                    AppLocalization.string("settings.behavior.historyRetention"),
                     selection: Binding(
                         get: { settingsManager.historyRetentionDays },
                         set: { settingsManager.historyRetentionDays = $0 }
@@ -79,11 +79,11 @@ struct PrivacySettingsView: View {
     private func labelForHistoryRetentionDays(_ days: Int) -> String {
         switch days {
         case 0:
-            return String(localized: "settings.behavior.historyRetention.never")
+            return AppLocalization.string("settings.behavior.historyRetention.never")
         case 365:
-            return String(localized: "settings.behavior.historyRetention.year")
+            return AppLocalization.string("settings.behavior.historyRetention.year")
         default:
-            return String(localized: "settings.behavior.historyRetention.days \(days)")
+            return AppLocalization.string("settings.behavior.historyRetention.days \(days)")
         }
     }
 
@@ -92,29 +92,29 @@ struct PrivacySettingsView: View {
         if let settingsManager = appEnvironment?.settingsManager {
             SettingsFormSection("settings.behavior.searchHistoryLimit.header", footer: "settings.behavior.searchHistoryLimit.footer") {
                 Toggle(
-                    String(localized: "settings.privacy.saveRecentSearches"),
+                    AppLocalization.string("settings.privacy.saveRecentSearches"),
                     isOn: Bindable(settingsManager).saveRecentSearches
                 )
 
                 Toggle(
-                    String(localized: "settings.privacy.saveRecentChannels"),
+                    AppLocalization.string("settings.privacy.saveRecentChannels"),
                     isOn: Bindable(settingsManager).saveRecentChannels
                 )
 
                 Toggle(
-                    String(localized: "settings.privacy.saveRecentPlaylists"),
+                    AppLocalization.string("settings.privacy.saveRecentPlaylists"),
                     isOn: Bindable(settingsManager).saveRecentPlaylists
                 )
 
                 PlatformMenuPicker(
-                    String(localized: "settings.behavior.searchHistoryLimit"),
+                    AppLocalization.string("settings.behavior.searchHistoryLimit"),
                     selection: Binding(
                         get: { settingsManager.searchHistoryLimit },
                         set: { settingsManager.searchHistoryLimit = $0 }
                     )
                 ) {
                     ForEach(searchHistoryLimitOptions, id: \.self) { limit in
-                        Text(String(localized: "settings.behavior.searchHistoryLimit.queries \(limit)"))
+                        Text(AppLocalization.string("settings.behavior.searchHistoryLimit.queries \(limit)"))
                             .tag(limit)
                     }
                 }

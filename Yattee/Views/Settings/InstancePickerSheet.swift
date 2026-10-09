@@ -18,7 +18,7 @@ struct InstancePickerSheet: View {
             List {
                 if let instancesManager {
                     // Enabled instances
-                    Section(String(localized: "instance.enabled")) {
+                    Section(AppLocalization.string("instance.enabled")) {
                         ForEach(instancesManager.enabledInstances, id: \.url) { instance in
                             let isActive = instance.id == instancesManager.activeInstance?.id
                             PickerInstanceRow(instance: instance, isEnabled: true, isPrimary: isActive) {
@@ -30,7 +30,7 @@ struct InstancePickerSheet: View {
                     // Disabled instances
                     let disabledInstances = instancesManager.instances.filter { !$0.isEnabled }
                     if !disabledInstances.isEmpty {
-                        Section(String(localized: "instance.disabled")) {
+                        Section(AppLocalization.string("instance.disabled")) {
                             ForEach(disabledInstances, id: \.url) { instance in
                                 PickerInstanceRow(instance: instance, isEnabled: false, isPrimary: false) {
                                     instancesManager.toggleEnabled(instance)
@@ -44,12 +44,12 @@ struct InstancePickerSheet: View {
                         NavigationLink {
                             QuickAddInstanceView()
                         } label: {
-                            Label(String(localized: "instance.add"), systemImage: "plus.circle")
+                            Label(AppLocalization.string("instance.add"), systemImage: "plus.circle")
                         }
                     }
                 }
             }
-            .navigationTitle(String(localized: "instance.picker.title"))
+            .reactiveNavigationTitle(AppLocalization.string("instance.picker.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -147,7 +147,7 @@ private struct QuickAddInstanceView: View {
     var body: some View {
         Form {
             Section {
-                TextField(String(localized: "instance.url.placeholder"), text: $urlString)
+                TextField(AppLocalization.string("instance.url.placeholder"), text: $urlString)
                     .textContentType(.URL)
                     .autocorrectionDisabled()
                     #if os(iOS)
@@ -155,9 +155,9 @@ private struct QuickAddInstanceView: View {
                     .keyboardType(.URL)
                     #endif
             } header: {
-                Text(String(localized: "instance.url.header"))
+                Text(AppLocalization.string("instance.url.header"))
             } footer: {
-                Text(String(localized: "instance.url.footer"))
+                Text(AppLocalization.string("instance.url.footer"))
             }
 
             if let error = errorMessage {
@@ -170,7 +170,7 @@ private struct QuickAddInstanceView: View {
         #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
         #endif
-        .navigationTitle(String(localized: "instance.add"))
+        .reactiveNavigationTitle(AppLocalization.string("instance.add"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -183,7 +183,7 @@ private struct QuickAddInstanceView: View {
                         ProgressView()
                             .controlSize(.small)
                     } else {
-                        Text(String(localized: "common.add"))
+                        Text(AppLocalization.string("common.add"))
                     }
                 }
                 .disabled(urlString.isEmpty || isDetecting)
@@ -201,7 +201,7 @@ private struct QuickAddInstanceView: View {
         }
 
         guard let url = URL(string: normalizedURL) else {
-            errorMessage = String(localized: "instance.error.invalidURL")
+            errorMessage = AppLocalization.string("instance.error.invalidURL")
             return
         }
 
@@ -217,7 +217,7 @@ private struct QuickAddInstanceView: View {
                     appEnvironment.instancesManager.addInstance(instance)
                     dismiss()
                 } else {
-                    errorMessage = String(localized: "instance.error.detectionFailed")
+                    errorMessage = AppLocalization.string("instance.error.detectionFailed")
                     isDetecting = false
                 }
             }

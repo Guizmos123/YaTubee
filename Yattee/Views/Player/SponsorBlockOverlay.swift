@@ -26,7 +26,7 @@ struct SponsorBlockOverlay: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
 
-                Text(String(localized: "sponsorBlock.skipPrompt"))
+                Text(AppLocalization.string("sponsorBlock.skipPrompt"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -37,7 +37,7 @@ struct SponsorBlockOverlay: View {
             Button {
                 Task { await onSkip() }
             } label: {
-                Text(String(localized: "sponsorBlock.skip"))
+                Text(AppLocalization.string("sponsorBlock.skip"))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)

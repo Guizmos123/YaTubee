@@ -24,7 +24,7 @@ struct YouTubeEnhancementsSettingsView: View {
             }
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.youtubeEnhancements.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.youtubeEnhancements.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -44,8 +44,8 @@ private struct SponsorBlockSection: View {
                 systemImage: "forward",
                 trailing: {
                     Text(settings.sponsorBlockEnabled
-                         ? String(localized: "common.enabled")
-                         : String(localized: "common.disabled"))
+                         ? AppLocalization.string("common.enabled")
+                         : AppLocalization.string("common.disabled"))
                 }
             ) {
                 SponsorBlockSettingsView()
@@ -66,8 +66,8 @@ private struct ReturnYouTubeDislikeSection: View {
                 systemImage: "hand.thumbsdown",
                 trailing: {
                     Text(settings.returnYouTubeDislikeEnabled
-                         ? String(localized: "common.enabled")
-                         : String(localized: "common.disabled"))
+                         ? AppLocalization.string("common.enabled")
+                         : AppLocalization.string("common.disabled"))
                 }
             ) {
                 ReturnYouTubeDislikeSettingsView()
@@ -88,8 +88,8 @@ private struct DeArrowSection: View {
                 systemImage: "textformat",
                 trailing: {
                     Text(settings.deArrowEnabled
-                         ? String(localized: "common.enabled")
-                         : String(localized: "common.disabled"))
+                         ? AppLocalization.string("common.enabled")
+                         : AppLocalization.string("common.disabled"))
                 }
             ) {
                 DeArrowSettingsView()
@@ -106,7 +106,7 @@ private struct ResolveShortLinksSection: View {
     var body: some View {
         SettingsFormSection(footer: "settings.youtubeEnhancements.resolveShortLinks.footer") {
             Toggle(
-                String(localized: "settings.resolveShortLinks.title"),
+                AppLocalization.string("settings.resolveShortLinks.title"),
                 isOn: $settings.resolveShortLinksEnabled
             )
         }

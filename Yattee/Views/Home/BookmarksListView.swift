@@ -23,6 +23,10 @@ struct BookmarksListView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     // UI state
     @State private var showViewOptions = false
     @State private var viewWidth: CGFloat = 0
@@ -113,7 +117,7 @@ struct BookmarksListView: View {
                     Button {
                         showViewOptions = true
                     } label: {
-                        Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                        Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                     }
                 }
                 .focusSection()
@@ -157,10 +161,11 @@ struct BookmarksListView: View {
             }
             #endif
         }
+        .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .navigationTitle(String(localized: "home.bookmarks.title"))
+        .navigationTitle(AppLocalization.string("home.bookmarks.title"))
         .toolbarTitleDisplayMode(.inlineLarge)
-        .searchable(text: $searchText, prompt: Text(String(localized: "bookmarks.search.placeholder")))
+        .searchable(text: $searchText, prompt: Text(AppLocalization.string("bookmarks.search.placeholder")))
         .toolbar {
             #if os(macOS)
             // Pin the trailing group (search field + toolbar buttons) to the right edge,
@@ -173,7 +178,7 @@ struct BookmarksListView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "bookmarksViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -211,9 +216,9 @@ struct BookmarksListView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ContentUnavailableView {
-                Label(String(localized: "home.bookmarks.title"), systemImage: "bookmark")
+                Label(AppLocalization.string("home.bookmarks.title"), systemImage: "bookmark")
             } description: {
-                Text(String(localized: "home.bookmarks.empty"))
+                Text(AppLocalization.string("home.bookmarks.empty"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -267,7 +272,7 @@ struct BookmarksListView: View {
                     .tappableVideo(
                         bookmark.toVideo(),
                         queueSource: bookmarksQueueSource,
-                        sourceLabel: String(localized: "queue.source.bookmarks"),
+                        sourceLabel: AppLocalization.string("queue.source.bookmarks"),
                         videoList: filteredBookmarks.map { $0.toVideo() },
                         videoIndex: index,
                         loadMoreVideos: loadMoreBookmarksCallback
@@ -276,7 +281,7 @@ struct BookmarksListView: View {
                         video: bookmark.toVideo(),
                         customActions: [
                             VideoContextAction(
-                                String(localized: "home.bookmarks.remove"),
+                                AppLocalization.string("home.bookmarks.remove"),
                                 systemImage: "trash",
                                 role: .destructive,
                                 action: { removeBookmark(bookmark) }
@@ -302,7 +307,7 @@ struct BookmarksListView: View {
             watchProgress: watchProgress(for: bookmark),
             onRemove: { removeBookmark(bookmark) },
             queueSource: bookmarksQueueSource,
-            sourceLabel: String(localized: "queue.source.bookmarks"),
+            sourceLabel: AppLocalization.string("queue.source.bookmarks"),
             videoList: filteredBookmarks.map { $0.toVideo() },
             videoIndex: index,
             loadMoreVideos: loadMoreBookmarksCallback

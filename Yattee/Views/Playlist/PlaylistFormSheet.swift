@@ -41,14 +41,14 @@ struct PlaylistFormSheet: View {
 
     private var navigationTitle: String {
         isEditing
-            ? String(localized: "playlist.edit")
-            : String(localized: "playlist.new")
+            ? AppLocalization.string("playlist.edit")
+            : AppLocalization.string("playlist.new")
     }
 
     private var saveButtonTitle: String {
         isEditing
-            ? String(localized: "common.save")
-            : String(localized: "common.create")
+            ? AppLocalization.string("common.save")
+            : AppLocalization.string("common.create")
     }
 
     private var canSave: Bool {
@@ -67,7 +67,7 @@ struct PlaylistFormSheet: View {
                 #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "common.cancel")) {
+                        Button(AppLocalization.string("common.cancel")) {
                             dismiss()
                         }
                     }
@@ -101,9 +101,9 @@ struct PlaylistFormSheet: View {
         Form {
             Section {
                 TextField(
-                    String(localized: "playlist.name"),
+                    AppLocalization.string("playlist.name"),
                     text: $title,
-                    prompt: Text(String(localized: "playlist.name"))
+                    prompt: Text(AppLocalization.string("playlist.name"))
                 )
                 #if os(iOS)
                 .textInputAutocapitalization(.sentences)
@@ -112,7 +112,7 @@ struct PlaylistFormSheet: View {
                 .labelsHidden()
                 #endif
             } header: {
-                Text(String(localized: "playlist.name"))
+                Text(AppLocalization.string("playlist.name"))
             }
 
             Section {
@@ -124,10 +124,10 @@ struct PlaylistFormSheet: View {
                         }
                     }
             } header: {
-                Text(String(localized: "playlist.description"))
+                Text(AppLocalization.string("playlist.description"))
             } footer: {
                 HStack {
-                    Text(String(localized: "playlist.description.optional"))
+                    Text(AppLocalization.string("playlist.description.optional"))
                     Spacer()
                     Text("\(descriptionText.count)/\(maxDescriptionLength)")
                         .monospacedDigit()
@@ -158,23 +158,23 @@ struct PlaylistFormSheet: View {
             Form {
                 Section {
                     TVSettingsTextField(
-                        title: String(localized: "playlist.name"),
+                        title: AppLocalization.string("playlist.name"),
                         text: $title
                     )
                 } header: {
-                    Text(String(localized: "playlist.name"))
+                    Text(AppLocalization.string("playlist.name"))
                 }
 
                 Section {
                     TVSettingsTextField(
-                        title: String(localized: "playlist.description.placeholder"),
+                        title: AppLocalization.string("playlist.description.placeholder"),
                         text: $descriptionText
                     )
                 } header: {
-                    Text(String(localized: "playlist.description"))
+                    Text(AppLocalization.string("playlist.description"))
                 } footer: {
                     HStack {
-                        Text(String(localized: "playlist.description.optional"))
+                        Text(AppLocalization.string("playlist.description.optional"))
                         Spacer()
                         Text("\(descriptionText.count)/\(maxDescriptionLength)")
                             .monospacedDigit()

@@ -183,9 +183,9 @@ enum InstanceContentType: String, Codable, Sendable {
 
     var localizedTitle: String {
         switch self {
-        case .feed: return String(localized: "home.instanceContent.feed")
-        case .popular: return String(localized: "home.instanceContent.popular")
-        case .trending: return String(localized: "home.instanceContent.trending")
+        case .feed: return AppLocalization.string("home.instanceContent.feed")
+        case .popular: return AppLocalization.string("home.instanceContent.popular")
+        case .trending: return AppLocalization.string("home.instanceContent.trending")
         }
     }
 
@@ -278,15 +278,15 @@ enum HomeShortcutItem: Codable, Hashable, Identifiable, Sendable {
     /// Note: For .mediaSource, returns a placeholder. Views should look up the actual source name.
     var localizedTitle: String {
         switch self {
-        case .openURL: return String(localized: "home.shortcut.openURL")
-        case .remoteControl: return String(localized: "home.shortcut.remoteControl")
-        case .playlists: return String(localized: "home.shortcut.playlists")
-        case .bookmarks: return String(localized: "home.shortcut.bookmarks")
-        case .continueWatching: return String(localized: "home.shortcut.continueWatching")
-        case .history: return String(localized: "home.shortcut.history")
-        case .downloads: return String(localized: "home.shortcut.downloads")
-        case .channels: return String(localized: "home.shortcut.channels")
-        case .subscriptions: return String(localized: "home.shortcut.subscriptions")
+        case .openURL: return AppLocalization.string("home.shortcut.openURL")
+        case .remoteControl: return AppLocalization.string("home.shortcut.remoteControl")
+        case .playlists: return AppLocalization.string("home.shortcut.playlists")
+        case .bookmarks: return AppLocalization.string("home.shortcut.bookmarks")
+        case .continueWatching: return AppLocalization.string("home.shortcut.continueWatching")
+        case .history: return AppLocalization.string("home.shortcut.history")
+        case .downloads: return AppLocalization.string("home.shortcut.downloads")
+        case .channels: return AppLocalization.string("home.shortcut.channels")
+        case .subscriptions: return AppLocalization.string("home.shortcut.subscriptions")
         case .mediaSources: return "Media Sources"
         case .instanceContent(_, let contentType):
             return contentType.localizedTitle
@@ -494,11 +494,11 @@ enum HomeSectionItem: Codable, Hashable, Identifiable, Sendable {
     /// Note: For .mediaSource, returns a placeholder. Views should look up the actual source name.
     var localizedTitle: String {
         switch self {
-        case .continueWatching: return String(localized: "home.section.continueWatching")
-        case .feed: return String(localized: "home.section.feed")
-        case .bookmarks: return String(localized: "home.section.bookmarks")
-        case .history: return String(localized: "home.section.history")
-        case .downloads: return String(localized: "home.section.downloads")
+        case .continueWatching: return AppLocalization.string("home.section.continueWatching")
+        case .feed: return AppLocalization.string("home.section.feed")
+        case .bookmarks: return AppLocalization.string("home.section.bookmarks")
+        case .history: return AppLocalization.string("home.section.history")
+        case .downloads: return AppLocalization.string("home.section.downloads")
         case .instanceContent(_, let contentType):
             return contentType.localizedTitle
         case .mediaSource:

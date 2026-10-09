@@ -163,7 +163,7 @@ struct VideoThumbnailView: View {
     @ViewBuilder
     private var liveBadge: some View {
         if isLive {
-            Text(String(localized: "video.badge.live"))
+            Text(AppLocalization.string("video.badge.live"))
                 .font(.caption2)
                 .fontWeight(.bold)
                 .padding(.horizontal, 6)

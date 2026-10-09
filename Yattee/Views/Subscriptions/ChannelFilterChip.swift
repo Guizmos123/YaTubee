@@ -53,12 +53,12 @@ struct ChannelFilterChip: View {
         .contextMenu {
             if let onGoToChannel {
                 Button(action: onGoToChannel) {
-                    Label(String(localized: "subscriptions.goToChannel"), systemImage: "person.circle")
+                    Label(AppLocalization.string("subscriptions.goToChannel"), systemImage: "person.circle")
                 }
             }
             if let onUnsubscribe {
                 Button(role: .destructive, action: onUnsubscribe) {
-                    Label(String(localized: "channel.unsubscribe"), systemImage: "person.badge.minus")
+                    Label(AppLocalization.string("channel.unsubscribe"), systemImage: "person.badge.minus")
                 }
             }
         }

@@ -74,18 +74,18 @@ private struct EditRemoteServerContent: View {
         #else
         NavigationStack {
             formContent
-                .navigationTitle(String(localized: "sources.editSource"))
+                .reactiveNavigationTitle(AppLocalization.string("sources.editSource"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "common.cancel")) {
+                        Button(AppLocalization.string("common.cancel")) {
                             dismiss()
                         }
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "common.save")) {
+                        Button(AppLocalization.string("common.save")) {
                             saveChanges()
                         }
                     }
@@ -101,55 +101,55 @@ private struct EditRemoteServerContent: View {
     private var formContent: some View {
         Form {
             Section {
-                LabeledContent(String(localized: "sources.field.type"), value: instance.type.displayName)
-                LabeledContent(String(localized: "sources.field.url"), value: instance.displayURL)
+                LabeledContent(AppLocalization.string("sources.field.type"), value: instance.type.displayName)
+                LabeledContent(AppLocalization.string("sources.field.url"), value: instance.displayURL)
             }
 
             Section {
                 #if os(tvOS)
-                TVSettingsTextField(title: String(localized: "sources.field.name"), text: $name)
-                TVSettingsToggle(title: String(localized: "sources.field.enabled"), isOn: $isEnabled)
+                TVSettingsTextField(title: AppLocalization.string("sources.field.name"), text: $name)
+                TVSettingsToggle(title: AppLocalization.string("sources.field.enabled"), isOn: $isEnabled)
                 #elseif os(macOS)
-                LabeledContent(String(localized: "sources.field.name")) {
+                LabeledContent(AppLocalization.string("sources.field.name")) {
                     TextField("", text: $name)
                 }
-                Toggle(String(localized: "sources.field.enabled"), isOn: $isEnabled)
+                Toggle(AppLocalization.string("sources.field.enabled"), isOn: $isEnabled)
                 #else
-                TextField(String(localized: "sources.field.name"), text: $name)
-                Toggle(String(localized: "sources.field.enabled"), isOn: $isEnabled)
+                TextField(AppLocalization.string("sources.field.name"), text: $name)
+                Toggle(AppLocalization.string("sources.field.enabled"), isOn: $isEnabled)
                 #endif
             }
 
             if instance.supportsHTTPBasicAuthProxy {
                 Section {
                     #if os(tvOS)
-                    TVSettingsTextField(title: String(localized: "sources.field.username"), text: $basicAuthUsername)
-                    TVSettingsTextField(title: String(localized: "sources.field.password"), text: $basicAuthPassword, isSecure: true)
+                    TVSettingsTextField(title: AppLocalization.string("sources.field.username"), text: $basicAuthUsername)
+                    TVSettingsTextField(title: AppLocalization.string("sources.field.password"), text: $basicAuthPassword, isSecure: true)
                     #elseif os(macOS)
-                    LabeledContent(String(localized: "sources.field.username")) {
+                    LabeledContent(AppLocalization.string("sources.field.username")) {
                         TextField("", text: $basicAuthUsername)
                             .textContentType(.username)
                             .autocorrectionDisabled()
                     }
-                    LabeledContent(String(localized: "sources.field.password")) {
+                    LabeledContent(AppLocalization.string("sources.field.password")) {
                         SecureField("", text: $basicAuthPassword)
                             .textContentType(.password)
                     }
                     #else
-                    TextField(String(localized: "sources.field.username"), text: $basicAuthUsername)
+                    TextField(AppLocalization.string("sources.field.username"), text: $basicAuthUsername)
                         .textContentType(.username)
                         #if os(iOS)
                         .textInputAutocapitalization(.never)
                         #endif
                         .autocorrectionDisabled()
 
-                    SecureField(String(localized: "sources.field.password"), text: $basicAuthPassword)
+                    SecureField(AppLocalization.string("sources.field.password"), text: $basicAuthPassword)
                         .textContentType(.password)
                     #endif
                 } header: {
-                    Text(String(localized: instance.type == .yatteeServer ? "sources.header.auth" : "sources.header.basicAuth"))
+                    Text(AppLocalization.string(instance.type == .yatteeServer ? "sources.header.auth" : "sources.header.basicAuth"))
                 } footer: {
-                    Text(String(localized: instance.type == .yatteeServer ? "sources.footer.yatteeServerAuth" : "sources.footer.basicAuth"))
+                    Text(AppLocalization.string(instance.type == .yatteeServer ? "sources.footer.yatteeServerAuth" : "sources.footer.basicAuth"))
                 }
             }
 
@@ -160,23 +160,23 @@ private struct EditRemoteServerContent: View {
                         HStack {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "sources.serverInfo.loading"))
+                            Text(AppLocalization.string("sources.serverInfo.loading"))
                                 .foregroundStyle(.secondary)
                         }
                     } else if let info = serverInfo {
-                        LabeledContent(String(localized: "sources.field.serverVersion"), value: info.version ?? "—")
-                        LabeledContent(String(localized: "sources.field.ytdlp"), value: info.dependencies?.ytDlp ?? "—")
-                        LabeledContent(String(localized: "sources.field.ffmpeg"), value: info.dependencies?.ffmpeg ?? "—")
-                        LabeledContent(String(localized: "sources.field.invidiousInstance"), value: invidiousDisplayValue(info))
+                        LabeledContent(AppLocalization.string("sources.field.serverVersion"), value: info.version ?? "—")
+                        LabeledContent(AppLocalization.string("sources.field.ytdlp"), value: info.dependencies?.ytDlp ?? "—")
+                        LabeledContent(AppLocalization.string("sources.field.ffmpeg"), value: info.dependencies?.ffmpeg ?? "—")
+                        LabeledContent(AppLocalization.string("sources.field.invidiousInstance"), value: invidiousDisplayValue(info))
 
                         // Extractors section
                         if info.config?.allowAllSitesForExtraction == true {
-                            LabeledContent(String(localized: "sources.field.extractors"), value: String(localized: "sources.serverInfo.allSitesSupported"))
+                            LabeledContent(AppLocalization.string("sources.field.extractors"), value: AppLocalization.string("sources.serverInfo.allSitesSupported"))
                         } else if let sites = info.sites, !sites.isEmpty {
                             #if os(tvOS)
-                            LabeledContent(String(localized: "sources.field.extractors"), value: "\(sites.count)")
+                            LabeledContent(AppLocalization.string("sources.field.extractors"), value: "\(sites.count)")
                             #else
-                            DisclosureGroup(String(localized: "sources.serverInfo.enabledExtractors \(sites.count)")) {
+                            DisclosureGroup(AppLocalization.string("sources.serverInfo.enabledExtractors \(sites.count)")) {
                                 ForEach(sites, id: \.name) { site in
                                     Text(site.name)
                                         .foregroundStyle(.secondary)
@@ -184,14 +184,14 @@ private struct EditRemoteServerContent: View {
                             }
                             #endif
                         } else {
-                            LabeledContent(String(localized: "sources.field.extractors"), value: String(localized: "sources.serverInfo.noneConfigured"))
+                            LabeledContent(AppLocalization.string("sources.field.extractors"), value: AppLocalization.string("sources.serverInfo.noneConfigured"))
                         }
                     } else if let error = serverInfoError {
                         Label(error, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.orange)
                     }
                 } header: {
-                    Text(String(localized: "sources.header.serverInfo"))
+                    Text(AppLocalization.string("sources.header.serverInfo"))
                 }
             }
 
@@ -201,7 +201,7 @@ private struct EditRemoteServerContent: View {
                         Button(role: .destructive) {
                             logout()
                         } label: {
-                            Label(String(localized: "login.logout"), systemImage: "rectangle.portrait.and.arrow.forward")
+                            Label(AppLocalization.string("login.logout"), systemImage: "rectangle.portrait.and.arrow.forward")
                         }
                         #if os(tvOS)
                         .buttonStyle(TVSettingsButtonStyle())
@@ -210,19 +210,19 @@ private struct EditRemoteServerContent: View {
                         Button {
                             showLoginSheet = true
                         } label: {
-                            Label(String(localized: "login.loginToAccount"), systemImage: "person.badge.key")
+                            Label(AppLocalization.string("login.loginToAccount"), systemImage: "person.badge.key")
                         }
                         #if os(tvOS)
                         .buttonStyle(TVSettingsButtonStyle())
                         #endif
                     }
                 } header: {
-                    Text(String(localized: "login.header.account"))
+                    Text(AppLocalization.string("login.header.account"))
                 } footer: {
                     if isLoggedIn {
-                        Text(String(localized: "login.footer.loggedIn"))
+                        Text(AppLocalization.string("login.footer.loggedIn"))
                     } else {
-                        Text(String(localized: "login.footer.loginBenefits"))
+                        Text(AppLocalization.string("login.footer.loginBenefits"))
                     }
                 }
 
@@ -233,7 +233,7 @@ private struct EditRemoteServerContent: View {
                             #if os(tvOS)
                             TVSidebarDetailContainer(
                                 systemImage: "person.2",
-                                title: String(localized: "sources.import.subscriptions"),
+                                title: AppLocalization.string("sources.import.subscriptions"),
                                 showsDismissButton: true
                             ) {
                                 ImportSubscriptionsView(instance: instance)
@@ -242,7 +242,7 @@ private struct EditRemoteServerContent: View {
                             ImportSubscriptionsView(instance: instance)
                             #endif
                         } label: {
-                            Label(String(localized: "sources.import.subscriptions"), systemImage: "person.2")
+                            Label(AppLocalization.string("sources.import.subscriptions"), systemImage: "person.2")
                         }
                         .accessibilityIdentifier("sources.import.subscriptions")
 
@@ -250,7 +250,7 @@ private struct EditRemoteServerContent: View {
                             #if os(tvOS)
                             TVSidebarDetailContainer(
                                 systemImage: "list.bullet.rectangle",
-                                title: String(localized: "sources.import.playlists"),
+                                title: AppLocalization.string("sources.import.playlists"),
                                 showsDismissButton: true
                             ) {
                                 ImportPlaylistsView(instance: instance)
@@ -259,11 +259,11 @@ private struct EditRemoteServerContent: View {
                             ImportPlaylistsView(instance: instance)
                             #endif
                         } label: {
-                            Label(String(localized: "sources.import.playlists"), systemImage: "list.bullet.rectangle")
+                            Label(AppLocalization.string("sources.import.playlists"), systemImage: "list.bullet.rectangle")
                         }
                         .accessibilityIdentifier("sources.import.playlists")
                     } header: {
-                        Text(String(localized: "sources.header.import"))
+                        Text(AppLocalization.string("sources.header.import"))
                     }
                 }
             }
@@ -271,32 +271,32 @@ private struct EditRemoteServerContent: View {
             Section {
                 #if os(tvOS)
                 TVSettingsToggle(
-                    title: String(localized: "sources.field.allowInvalidCertificates"),
+                    title: AppLocalization.string("sources.field.allowInvalidCertificates"),
                     isOn: $allowInvalidCertificates
                 )
                 #else
-                Toggle(String(localized: "sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
+                Toggle(AppLocalization.string("sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
                 #endif
             } header: {
-                Text(String(localized: "sources.header.security"))
+                Text(AppLocalization.string("sources.header.security"))
             } footer: {
-                Text(String(localized: "sources.footer.allowInvalidCertificates"))
+                Text(AppLocalization.string("sources.footer.allowInvalidCertificates"))
             }
 
             if instance.supportsVideoProxying {
                 Section {
                     #if os(tvOS)
                     TVSettingsToggle(
-                        title: String(localized: "sources.field.proxiesVideos"),
+                        title: AppLocalization.string("sources.field.proxiesVideos"),
                         isOn: $proxiesVideos
                     )
                     #else
-                    Toggle(String(localized: "sources.field.proxiesVideos"), isOn: $proxiesVideos)
+                    Toggle(AppLocalization.string("sources.field.proxiesVideos"), isOn: $proxiesVideos)
                     #endif
                 } header: {
-                    Text(String(localized: "sources.header.proxy"))
+                    Text(AppLocalization.string("sources.header.proxy"))
                 } footer: {
-                    Text(String(localized: "sources.footer.proxiesVideos"))
+                    Text(AppLocalization.string("sources.footer.proxiesVideos"))
                 }
             }
 
@@ -305,7 +305,7 @@ private struct EditRemoteServerContent: View {
                 Button {
                     saveChanges()
                 } label: {
-                    Label(String(localized: "common.save"), systemImage: "checkmark.circle")
+                    Label(AppLocalization.string("common.save"), systemImage: "checkmark.circle")
                 }
                 .buttonStyle(TVSettingsButtonStyle())
             }
@@ -315,7 +315,7 @@ private struct EditRemoteServerContent: View {
                 Button(role: .destructive) {
                     showingDeleteConfirmation = true
                 } label: {
-                    Label(String(localized: "sources.deleteSource"), systemImage: "trash")
+                    Label(AppLocalization.string("sources.deleteSource"), systemImage: "trash")
                 }
                 #if os(tvOS)
                 .buttonStyle(TVSettingsButtonStyle())
@@ -330,15 +330,15 @@ private struct EditRemoteServerContent: View {
         #endif
         .opaqueSettingsFormBackground()
         .confirmationDialog(
-            String(localized: "sources.delete.confirmation.single \(instance.displayName)"),
+            AppLocalization.string("sources.delete.confirmation.single \(instance.displayName)"),
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "common.delete"), role: .destructive) {
+            Button(AppLocalization.string("common.delete"), role: .destructive) {
                 appEnvironment?.instancesManager.remove(instance)
                 dismiss()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         }
         .presentationCompactAdaptation(.sheet)
         #if os(tvOS)
@@ -372,17 +372,17 @@ private struct EditRemoteServerContent: View {
             await loadServerInfo()
         }
         .confirmationDialog(
-            String(localized: "sources.yatteeServer.warning.title"),
+            AppLocalization.string("sources.yatteeServer.warning.title"),
             isPresented: $showingYatteeServerWarning,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "sources.yatteeServer.warning.disableOthers"), role: .destructive) {
+            Button(AppLocalization.string("sources.yatteeServer.warning.disableOthers"), role: .destructive) {
                 appEnvironment?.instancesManager.disableOtherYatteeServerInstances(except: instance.id)
                 performSave()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "sources.yatteeServer.warning.message"))
+            Text(AppLocalization.string("sources.yatteeServer.warning.message"))
         }
         .presentationCompactAdaptation(.sheet)
     }
@@ -395,10 +395,10 @@ private struct EditRemoteServerContent: View {
 
     private func invidiousDisplayValue(_ info: InstanceDetectorModels.YatteeServerFullInfo) -> String {
         guard let invidiousInstance = info.config?.invidiousInstance else {
-            return String(localized: "sources.serverInfo.notConfigured")
+            return AppLocalization.string("sources.serverInfo.notConfigured")
         }
         if invidiousInstance == "not configured" || invidiousInstance.isEmpty {
-            return String(localized: "sources.serverInfo.notConfigured")
+            return AppLocalization.string("sources.serverInfo.notConfigured")
         }
         // Extract just the host from the URL for cleaner display
         if let url = URL(string: invidiousInstance), let host = url.host {
@@ -424,7 +424,7 @@ private struct EditRemoteServerContent: View {
         do {
             serverInfo = try await appEnvironment.contentService.yatteeServerInfo(for: instance)
         } catch {
-            serverInfoError = String(localized: "sources.serverInfo.loadError")
+            serverInfoError = AppLocalization.string("sources.serverInfo.loadError")
         }
 
         isLoadingServerInfo = false
@@ -517,19 +517,19 @@ private struct EditFileSourceContent: View {
         #else
         NavigationStack {
             formContent
-                .navigationTitle(String(localized: "sources.editSource"))
+                .reactiveNavigationTitle(AppLocalization.string("sources.editSource"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "common.cancel")) {
+                        Button(AppLocalization.string("common.cancel")) {
                             dismiss()
                         }
                     }
 
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "common.save")) {
+                        Button(AppLocalization.string("common.save")) {
                             saveChanges()
                         }
                         .disabled(name.isEmpty)
@@ -550,24 +550,24 @@ private struct EditFileSourceContent: View {
         Form {
             Section {
                 #if os(tvOS)
-                TVSettingsTextField(title: String(localized: "sources.field.name"), text: $name)
-                TVSettingsToggle(title: String(localized: "sources.field.enabled"), isOn: $isEnabled)
+                TVSettingsTextField(title: AppLocalization.string("sources.field.name"), text: $name)
+                TVSettingsToggle(title: AppLocalization.string("sources.field.enabled"), isOn: $isEnabled)
                 #elseif os(macOS)
-                LabeledContent(String(localized: "sources.field.name")) {
+                LabeledContent(AppLocalization.string("sources.field.name")) {
                     TextField("", text: $name)
                 }
-                Toggle(String(localized: "sources.field.enabled"), isOn: $isEnabled)
+                Toggle(AppLocalization.string("sources.field.enabled"), isOn: $isEnabled)
                 #else
-                TextField(String(localized: "sources.field.name"), text: $name)
-                Toggle(String(localized: "sources.field.enabled"), isOn: $isEnabled)
+                TextField(AppLocalization.string("sources.field.name"), text: $name)
+                Toggle(AppLocalization.string("sources.field.enabled"), isOn: $isEnabled)
                 #endif
             } header: {
-                Text(String(localized: "sources.header.general"))
+                Text(AppLocalization.string("sources.header.general"))
             }
 
             Section {
                 HStack {
-                    Text(String(localized: "sources.field.type"))
+                    Text(AppLocalization.string("sources.field.type"))
                     Spacer()
                     Label(source.type.displayName, systemImage: source.type.systemImage)
                         .foregroundStyle(.secondary)
@@ -578,7 +578,7 @@ private struct EditFileSourceContent: View {
 
                 #if os(macOS)
                 HStack {
-                    Text(String(localized: "sources.field.url"))
+                    Text(AppLocalization.string("sources.field.url"))
                     Spacer()
                     Text(source.url.absoluteString)
                         .foregroundStyle(.secondary)
@@ -587,7 +587,7 @@ private struct EditFileSourceContent: View {
                 #else
                 if source.type != .localFolder {
                     HStack {
-                        Text(String(localized: "sources.field.url"))
+                        Text(AppLocalization.string("sources.field.url"))
                         Spacer()
                         Text(source.url.absoluteString)
                             .foregroundStyle(.secondary)
@@ -600,31 +600,31 @@ private struct EditFileSourceContent: View {
             if source.type == .webdav || source.type == .smb {
                 Section {
                     #if os(tvOS)
-                    TVSettingsTextField(title: String(localized: "sources.field.username"), text: $username)
+                    TVSettingsTextField(title: AppLocalization.string("sources.field.username"), text: $username)
                     TVSettingsTextField(
                         title: hasExistingPassword
-                            ? String(localized: "sources.field.passwordKeep")
-                            : String(localized: "sources.field.passwordRequired"),
+                            ? AppLocalization.string("sources.field.passwordKeep")
+                            : AppLocalization.string("sources.field.passwordRequired"),
                         text: $password,
                         isSecure: true
                     )
                     #elseif os(macOS)
-                    LabeledContent(String(localized: "sources.field.username")) {
+                    LabeledContent(AppLocalization.string("sources.field.username")) {
                         TextField("", text: $username)
                             .textContentType(.username)
                             .autocorrectionDisabled()
                     }
-                    LabeledContent(String(localized: "sources.field.password")) {
+                    LabeledContent(AppLocalization.string("sources.field.password")) {
                         SecureField(
                             hasExistingPassword
-                                ? String(localized: "sources.field.passwordKeep")
-                                : String(localized: "sources.field.passwordRequired"),
+                                ? AppLocalization.string("sources.field.passwordKeep")
+                                : AppLocalization.string("sources.field.passwordRequired"),
                             text: $password
                         )
                         .textContentType(.password)
                     }
                     #else
-                    TextField(String(localized: "sources.field.username"), text: $username)
+                    TextField(AppLocalization.string("sources.field.username"), text: $username)
                         .textContentType(.username)
                         #if os(iOS)
                         .textInputAutocapitalization(.never)
@@ -633,28 +633,28 @@ private struct EditFileSourceContent: View {
 
                     SecureField(
                         hasExistingPassword
-                            ? String(localized: "sources.field.passwordKeep")
-                            : String(localized: "sources.field.passwordRequired"),
+                            ? AppLocalization.string("sources.field.passwordKeep")
+                            : AppLocalization.string("sources.field.passwordRequired"),
                         text: $password
                     )
                     .textContentType(.password)
                     #endif
                 } header: {
-                    Text(String(localized: "sources.header.auth"))
+                    Text(AppLocalization.string("sources.header.auth"))
                 }
             }
 
             if source.type == .smb {
                 Section {
-                    Picker(String(localized: "sources.field.smbProtocol"), selection: $smbProtocolVersion) {
+                    Picker(AppLocalization.string("sources.field.smbProtocol"), selection: $smbProtocolVersion) {
                         ForEach(SMBProtocol.allCases, id: \.self) { proto in
                             Text(proto.displayName).tag(proto)
                         }
                     }
                 } header: {
-                    Text(String(localized: "sources.header.advanced"))
+                    Text(AppLocalization.string("sources.header.advanced"))
                 } footer: {
-                    Text(String(localized: "sources.footer.smbProtocol"))
+                    Text(AppLocalization.string("sources.footer.smbProtocol"))
                 }
             }
 
@@ -662,16 +662,16 @@ private struct EditFileSourceContent: View {
                 Section {
                     #if os(tvOS)
                     TVSettingsToggle(
-                        title: String(localized: "sources.field.allowInvalidCertificates"),
+                        title: AppLocalization.string("sources.field.allowInvalidCertificates"),
                         isOn: $allowInvalidCertificates
                     )
                     #else
-                    Toggle(String(localized: "sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
+                    Toggle(AppLocalization.string("sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
                     #endif
                 } header: {
-                    Text(String(localized: "sources.header.security"))
+                    Text(AppLocalization.string("sources.header.security"))
                 } footer: {
-                    Text(String(localized: "sources.footer.allowInvalidCertificates"))
+                    Text(AppLocalization.string("sources.footer.allowInvalidCertificates"))
                 }
             }
 
@@ -680,7 +680,7 @@ private struct EditFileSourceContent: View {
                 Button {
                     saveChanges()
                 } label: {
-                    Label(String(localized: "common.save"), systemImage: "checkmark.circle")
+                    Label(AppLocalization.string("common.save"), systemImage: "checkmark.circle")
                 }
                 .disabled(name.isEmpty)
                 .buttonStyle(TVSettingsButtonStyle())
@@ -691,7 +691,7 @@ private struct EditFileSourceContent: View {
                 Button(role: .destructive) {
                     showingDeleteConfirmation = true
                 } label: {
-                    Label(String(localized: "sources.deleteSource"), systemImage: "trash")
+                    Label(AppLocalization.string("sources.deleteSource"), systemImage: "trash")
                         .foregroundStyle(.red)
                 }
                 #if os(tvOS)
@@ -707,14 +707,14 @@ private struct EditFileSourceContent: View {
         #endif
         .opaqueSettingsFormBackground()
         .confirmationDialog(
-            String(localized: "sources.delete.confirmation.single \(source.name)"),
+            AppLocalization.string("sources.delete.confirmation.single \(source.name)"),
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "common.delete"), role: .destructive) {
+            Button(AppLocalization.string("common.delete"), role: .destructive) {
                 deleteSource()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         }
         .presentationCompactAdaptation(.sheet)
     }

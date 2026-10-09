@@ -17,7 +17,7 @@ struct ICloudSyncProgressView: View {
             ProgressView()
                 .controlSize(.large)
 
-            Text(String(localized: "onboarding.cloud.syncing.title"))
+            Text(AppLocalization.string("onboarding.cloud.syncing.title"))
                 .font(.title2)
                 .fontWeight(.semibold)
 
@@ -39,7 +39,7 @@ struct ICloudSyncProgressView: View {
         if let upload = cloudKitSync?.uploadProgress {
             return upload.displayText
         }
-        return String(localized: "onboarding.cloud.syncing.preparing")
+        return AppLocalization.string("onboarding.cloud.syncing.preparing")
     }
 }
 

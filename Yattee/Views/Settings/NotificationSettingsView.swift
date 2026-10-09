@@ -37,7 +37,7 @@ struct NotificationSettingsView: View {
                 }
             }
         }
-        .navigationTitle(String(localized: "settings.notifications.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.notifications.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -58,7 +58,7 @@ private struct EnableSection: View {
     var body: some View {
         SettingsFormSection(footer: "settings.notifications.footer") {
             Toggle(
-                String(localized: "settings.notifications.enable"),
+                AppLocalization.string("settings.notifications.enable"),
                 isOn: Binding(
                     get: { settings.backgroundNotificationsEnabled },
                     set: { newValue in
@@ -97,16 +97,16 @@ private struct PermissionSection: View {
     var body: some View {
         SettingsFormSection {
             HStack {
-                Text(String(localized: "settings.notifications.permission"))
+                Text(AppLocalization.string("settings.notifications.permission"))
                 Spacer()
                 if notificationManager.isAuthorized {
                     HStack(spacing: 4) {
-                        Text(String(localized: "settings.notifications.permission.granted"))
+                        Text(AppLocalization.string("settings.notifications.permission.granted"))
                         Image(systemName: "checkmark.circle.fill")
                     }
                     .foregroundStyle(.green)
                 } else {
-                    Button(String(localized: "settings.notifications.openSettings")) {
+                    Button(AppLocalization.string("settings.notifications.openSettings")) {
                         notificationManager.openNotificationSettings()
                     }
                 }
@@ -123,7 +123,7 @@ private struct DefaultsSection: View {
     var body: some View {
         SettingsFormSection("settings.notifications.defaults.header", footer: "settings.notifications.defaultForNew.footer") {
             Toggle(
-                String(localized: "settings.notifications.defaultForNew"),
+                AppLocalization.string("settings.notifications.defaultForNew"),
                 isOn: $settings.defaultNotificationsForNewChannels
             )
         }
@@ -139,14 +139,14 @@ private struct ManageChannelsSection: View {
             NavigationLink {
                 TVSidebarDetailContainer(
                     systemImage: "bell.badge",
-                    title: String(localized: "settings.notifications.manageChannels"),
+                    title: AppLocalization.string("settings.notifications.manageChannels"),
                     showsDismissButton: true
                 ) {
                     ManageChannelNotificationsView()
                 }
             } label: {
                 Label(
-                    String(localized: "settings.notifications.manageChannels"),
+                    AppLocalization.string("settings.notifications.manageChannels"),
                     systemImage: "bell.badge"
                 )
             }
@@ -182,7 +182,7 @@ struct ManageChannelNotificationsView: View {
             } else if let errorMessage {
                 ContentUnavailableView {
                     Label(
-                        String(localized: "settings.notifications.loadError.title"),
+                        AppLocalization.string("settings.notifications.loadError.title"),
                         systemImage: "exclamationmark.triangle"
                     )
                 } description: {
@@ -192,11 +192,11 @@ struct ManageChannelNotificationsView: View {
             } else if subscriptions.isEmpty {
                 ContentUnavailableView {
                     Label(
-                        String(localized: "settings.notifications.noSubscriptions.title"),
+                        AppLocalization.string("settings.notifications.noSubscriptions.title"),
                         systemImage: "person.2.slash"
                     )
                 } description: {
-                    Text(String(localized: "settings.notifications.noSubscriptions.description"))
+                    Text(AppLocalization.string("settings.notifications.noSubscriptions.description"))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -210,7 +210,7 @@ struct ManageChannelNotificationsView: View {
                 }
             }
         }
-        .navigationTitle(String(localized: "settings.notifications.manageChannels.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.notifications.manageChannels.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -221,12 +221,12 @@ struct ManageChannelNotificationsView: View {
                         Button {
                             setAllNotifications(enabled: true)
                         } label: {
-                            Label(String(localized: "settings.notifications.enableAll"), systemImage: "bell.fill")
+                            Label(AppLocalization.string("settings.notifications.enableAll"), systemImage: "bell.fill")
                         }
                         Button {
                             setAllNotifications(enabled: false)
                         } label: {
-                            Label(String(localized: "settings.notifications.disableAll"), systemImage: "bell.slash")
+                            Label(AppLocalization.string("settings.notifications.disableAll"), systemImage: "bell.slash")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")

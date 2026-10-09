@@ -63,7 +63,7 @@ struct MediaBrowserViewOptionsSheet: View {
     @ViewBuilder
     private var sharedOptions: some View {
         Toggle("mediaBrowser.viewOptions.showOnlyPlayable", isOn: $showOnlyPlayable)
-        PlatformMenuPicker(String(localized: "mediaBrowser.viewOptions.sortBy"), selection: $sortOrder) {
+        PlatformMenuPicker(AppLocalization.string("mediaBrowser.viewOptions.sortBy"), selection: $sortOrder) {
             ForEach(availableSortOptions) { order in
                 Label(order.displayName, systemImage: order.systemImage)
                     .tag(order)
@@ -71,9 +71,9 @@ struct MediaBrowserViewOptionsSheet: View {
         }
 
         Picker("mediaBrowser.viewOptions.order", selection: $sortAscending) {
-            Label(String(localized: "mediaBrowser.viewOptions.ascending"), systemImage: "arrow.up")
+            Label(AppLocalization.string("mediaBrowser.viewOptions.ascending"), systemImage: "arrow.up")
                 .tag(true)
-            Label(String(localized: "mediaBrowser.viewOptions.descending"), systemImage: "arrow.down")
+            Label(AppLocalization.string("mediaBrowser.viewOptions.descending"), systemImage: "arrow.down")
                 .tag(false)
         }
         .pickerStyle(.segmented)

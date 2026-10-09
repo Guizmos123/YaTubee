@@ -65,19 +65,19 @@ enum SubscriptionProviderError: Error, LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return String(localized: "subscription.error.notAuthenticated")
+            return AppLocalization.string("subscription.error.notAuthenticated")
         case .networkError(let message):
-            return String(localized: "subscription.error.network \(message)")
+            return AppLocalization.string("subscription.error.network \(message)")
         case .channelNotFound:
-            return String(localized: "subscription.error.channelNotFound")
+            return AppLocalization.string("subscription.error.channelNotFound")
         case .alreadySubscribed:
-            return String(localized: "subscription.error.alreadySubscribed")
+            return AppLocalization.string("subscription.error.alreadySubscribed")
         case .notSubscribed:
-            return String(localized: "subscription.error.notSubscribed")
+            return AppLocalization.string("subscription.error.notSubscribed")
         case .instanceNotConfigured:
-            return String(localized: "subscription.error.instanceNotConfigured")
+            return AppLocalization.string("subscription.error.instanceNotConfigured")
         case .operationFailed(let message):
-            return String(localized: "subscription.error.operationFailed \(message)")
+            return AppLocalization.string("subscription.error.operationFailed \(message)")
         }
     }
 }

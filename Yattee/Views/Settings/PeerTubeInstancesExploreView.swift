@@ -74,12 +74,12 @@ struct PeerTubeInstancesExploreView: View {
             #else
             NavigationStack {
                 content
-                    .navigationTitle(String(localized: "peertube.explore.title"))
+                    .reactiveNavigationTitle(AppLocalization.string("peertube.explore.title"))
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
                     #endif
                     .toolbar { toolbarContent }
-                    .searchable(text: $searchText, prompt: Text(String(localized: "peertube.explore.search")))
+                    .searchable(text: $searchText, prompt: Text(AppLocalization.string("peertube.explore.search")))
                     .onChange(of: searchText) { _, _ in
                         // Reset display limit when search changes
                         displayLimit = pageSize
@@ -135,11 +135,11 @@ struct PeerTubeInstancesExploreView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = errorMessage, allInstances.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+                Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error)
             } actions: {
-                Button(String(localized: "common.retry")) {
+                Button(AppLocalization.string("common.retry")) {
                     Task {
                         await loadAllInstances()
                     }
@@ -149,9 +149,9 @@ struct PeerTubeInstancesExploreView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if displayedInstances.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "peertube.explore.noResults"), systemImage: "magnifyingglass")
+                Label(AppLocalization.string("peertube.explore.noResults"), systemImage: "magnifyingglass")
             } description: {
-                Text(String(localized: "peertube.explore.noResults.description"))
+                Text(AppLocalization.string("peertube.explore.noResults.description"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -166,7 +166,7 @@ struct PeerTubeInstancesExploreView: View {
             TextField(
                 "",
                 text: $searchText,
-                prompt: Text(String(localized: "peertube.explore.search"))
+                prompt: Text(AppLocalization.string("peertube.explore.search"))
             )
             .textFieldStyle(.plain)
             .focusSection()
@@ -175,7 +175,7 @@ struct PeerTubeInstancesExploreView: View {
                 showFiltersSheet = true
             } label: {
                 Label(
-                    String(localized: "peertube.explore.filters"),
+                    AppLocalization.string("peertube.explore.filters"),
                     systemImage: filters.isDefault ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill"
                 )
             }
@@ -202,7 +202,7 @@ struct PeerTubeInstancesExploreView: View {
             if hasMore {
                 HStack {
                     Spacer()
-                    Button(String(localized: "common.loadMore")) {
+                    Button(AppLocalization.string("common.loadMore")) {
                         loadMore()
                     }
                     .buttonStyle(.borderless)
@@ -236,7 +236,7 @@ struct PeerTubeInstancesExploreView: View {
                 showFiltersSheet = true
             } label: {
                 Label(
-                    String(localized: "peertube.explore.filters"),
+                    AppLocalization.string("peertube.explore.filters"),
                     systemImage: filters.isDefault ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill"
                 )
             }

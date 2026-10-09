@@ -298,7 +298,7 @@ extension QualitySelectorView {
                 .trimmingCharacters(in: .whitespaces)
             language = shortenRegionName(cleaned)
         } else {
-            language = String(localized: "stream.audio.default")
+            language = AppLocalization.string("stream.audio.default")
         }
 
         return AudioTrackInfo(language: language, trackType: trackType)

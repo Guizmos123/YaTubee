@@ -17,11 +17,11 @@ enum DownloadSortOption: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .name:
-            return String(localized: "downloads.sort.name")
+            return AppLocalization.string("downloads.sort.name")
         case .downloadDate:
-            return String(localized: "downloads.sort.downloadDate")
+            return AppLocalization.string("downloads.sort.downloadDate")
         case .fileSize:
-            return String(localized: "downloads.sort.fileSize")
+            return AppLocalization.string("downloads.sort.fileSize")
         }
     }
 

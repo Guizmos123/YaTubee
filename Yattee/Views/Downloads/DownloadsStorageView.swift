@@ -64,7 +64,7 @@ struct DownloadsStorageView: View {
                 downloadsList
             }
         }
-        .navigationTitle(String(localized: "settings.downloads.storage.title"))
+        .navigationTitle(AppLocalization.string("settings.downloads.storage.title"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -74,31 +74,31 @@ struct DownloadsStorageView: View {
             }
         }
         .confirmationDialog(
-            String(localized: "settings.downloads.storage.deleteWatched"),
+            AppLocalization.string("settings.downloads.storage.deleteWatched"),
             isPresented: $showingDeleteWatchedConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.downloads.storage.deleteWatched"), role: .destructive) {
+            Button(AppLocalization.string("settings.downloads.storage.deleteWatched"), role: .destructive) {
                 Task {
                     await downloadManager?.deleteWatchedDownloads(watchedVideoIDs: watchedVideoIDs)
                 }
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
             Text("settings.downloads.storage.deleteWatched.message \(watchedDownloads.count) \(formatBytes(watchedDownloadsSize))")
         }
         .presentationCompactAdaptation(.sheet)
         .confirmationDialog(
-            String(localized: "settings.downloads.storage.deleteAll"),
+            AppLocalization.string("settings.downloads.storage.deleteAll"),
             isPresented: $showingDeleteAllConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.downloads.storage.deleteAll"), role: .destructive) {
+            Button(AppLocalization.string("settings.downloads.storage.deleteAll"), role: .destructive) {
                 Task {
                     await downloadManager?.deleteAllCompleted()
                 }
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
             Text("settings.downloads.storage.deleteAll.message \(completedDownloads.count) \(formatBytes(allDownloadsSize))")
         }
@@ -115,7 +115,7 @@ struct DownloadsStorageView: View {
                     showingDeleteWatchedConfirmation = true
                 } label: {
                     Label(
-                        String(localized: "settings.downloads.storage.deleteWatched") + " (\(watchedDownloads.count), \(formatBytes(watchedDownloadsSize)))",
+                        AppLocalization.string("settings.downloads.storage.deleteWatched") + " (\(watchedDownloads.count), \(formatBytes(watchedDownloadsSize)))",
                         systemImage: "eye.fill"
                     )
                 }
@@ -125,12 +125,12 @@ struct DownloadsStorageView: View {
                 showingDeleteAllConfirmation = true
             } label: {
                 Label(
-                    String(localized: "settings.downloads.storage.deleteAll") + " (\(completedDownloads.count), \(formatBytes(allDownloadsSize)))",
+                    AppLocalization.string("settings.downloads.storage.deleteAll") + " (\(completedDownloads.count), \(formatBytes(allDownloadsSize)))",
                     systemImage: "trash"
                 )
             }
         } label: {
-            Label(String(localized: "common.delete"), systemImage: "trash")
+            Label(AppLocalization.string("common.delete"), systemImage: "trash")
         }
     }
 
@@ -218,7 +218,7 @@ struct DownloadsStorageView: View {
             Button(role: .destructive) {
                 Task { await downloadManager?.delete(download) }
             } label: {
-                Label(String(localized: "common.delete"), systemImage: "trash")
+                Label(AppLocalization.string("common.delete"), systemImage: "trash")
             }
         }
     }
@@ -228,9 +228,9 @@ struct DownloadsStorageView: View {
     @ViewBuilder
     private var emptyStateView: some View {
         ContentUnavailableView {
-            Label(String(localized: "settings.downloads.storage.empty"), systemImage: "arrow.down.circle")
+            Label(AppLocalization.string("settings.downloads.storage.empty"), systemImage: "arrow.down.circle")
         } description: {
-            Text(String(localized: "settings.downloads.storage.empty.description"))
+            Text(AppLocalization.string("settings.downloads.storage.empty.description"))
         }
     }
 

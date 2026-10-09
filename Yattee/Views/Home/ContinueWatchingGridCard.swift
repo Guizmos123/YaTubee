@@ -21,13 +21,13 @@ struct TappableContinueWatchingGridCard: View {
                 video,
                 startTime: entry.watchedSeconds,
                 queueSource: .manual,
-                sourceLabel: String(localized: "queue.source.continueWatching")
+                sourceLabel: AppLocalization.string("queue.source.continueWatching")
             )
             .videoContextMenu(
                 video: video,
                 customActions: [
                     VideoContextAction(
-                        String(localized: "continueWatching.remove"),
+                        AppLocalization.string("continueWatching.remove"),
                         systemImage: "xmark.circle",
                         role: .destructive,
                         action: onRemove
@@ -51,7 +51,7 @@ struct ContinueWatchingGridCard: View {
         VideoCardView(
             video: video,
             watchProgress: entry.progress,
-            customMetadata: entry.isFinished || entry.isLive ? nil : String(localized: "home.history.remaining \(entry.remainingTime)"),
+            customMetadata: entry.isFinished || entry.isLive ? nil : AppLocalization.string("home.history.remaining \(entry.remainingTime)"),
             // Live streams have no remaining time - fall back to the LIVE badge
             customDuration: entry.isLive ? nil : entry.remainingTime
         )

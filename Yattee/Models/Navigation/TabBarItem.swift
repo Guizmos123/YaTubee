@@ -49,15 +49,15 @@ enum TabBarItem: String, CaseIterable, Codable, Identifiable, Sendable {
     /// Localized display title.
     var localizedTitle: String {
         switch self {
-        case .subscriptions: String(localized: "tabBar.item.subscriptions")
-        case .channels: String(localized: "tabBar.item.channels")
-        case .bookmarks: String(localized: "tabBar.item.bookmarks")
-        case .playlists: String(localized: "tabBar.item.playlists")
-        case .history: String(localized: "tabBar.item.history")
-        case .downloads: String(localized: "tabBar.item.downloads")
-        case .sources: String(localized: "tabBar.item.sources")
-        case .settings: String(localized: "tabBar.item.settings")
-        case .continueWatching: String(localized: "tabBar.item.continueWatching")
+        case .subscriptions: AppLocalization.string("tabBar.item.subscriptions")
+        case .channels: AppLocalization.string("tabBar.item.channels")
+        case .bookmarks: AppLocalization.string("tabBar.item.bookmarks")
+        case .playlists: AppLocalization.string("tabBar.item.playlists")
+        case .history: AppLocalization.string("tabBar.item.history")
+        case .downloads: AppLocalization.string("tabBar.item.downloads")
+        case .sources: AppLocalization.string("tabBar.item.sources")
+        case .settings: AppLocalization.string("tabBar.item.settings")
+        case .continueWatching: AppLocalization.string("tabBar.item.continueWatching")
         }
     }
 }

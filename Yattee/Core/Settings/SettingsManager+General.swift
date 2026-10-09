@@ -14,6 +14,19 @@ import AppKit
 #endif
 
 extension SettingsManager {
+    // MARK: - Language
+
+    var appLanguage: AppLanguage {
+        get {
+            if let cached = _appLanguage { return cached }
+            return AppLanguage(rawValue: string(for: .appLanguage) ?? "") ?? .english
+        }
+        set {
+            _appLanguage = newValue
+            set(newValue.rawValue, for: .appLanguage)
+        }
+    }
+
     // MARK: - Theme Settings
 
     var theme: AppTheme {

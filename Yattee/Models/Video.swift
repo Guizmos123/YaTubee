@@ -285,7 +285,7 @@ struct Author: Codable, Hashable, Sendable {
 
     var formattedSubscriberCount: String? {
         guard let subscriberCount else { return nil }
-        return CountFormatter.compact(subscriberCount) + " " + String(localized: "channel.subscribers")
+        return CountFormatter.compact(subscriberCount) + " " + AppLocalization.string("channel.subscribers")
     }
 }
 

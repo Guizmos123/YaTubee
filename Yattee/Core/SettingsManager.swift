@@ -26,6 +26,7 @@ final class SettingsManager {
     // Internal access for extension use.
 
     // Theme
+    var _appLanguage: AppLanguage?
     var _theme: AppTheme?
     var _accentColor: AccentColor?
     var _customAccentColor: String?
@@ -420,6 +421,7 @@ final class SettingsManager {
 
     /// Clears cached values to force re-read from storage
     func clearCache() {
+        _appLanguage = nil
         _theme = nil
         _accentColor = nil
         _customAccentColor = nil

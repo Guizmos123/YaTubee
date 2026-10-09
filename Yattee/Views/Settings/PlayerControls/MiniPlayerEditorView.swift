@@ -27,7 +27,7 @@ struct MiniPlayerEditorView: View {
             buttonsSection
             addButtonSection
         }
-        .navigationTitle(String(localized: "settings.playerControls.miniPlayer"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.miniPlayer"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #elseif os(macOS)
@@ -47,7 +47,7 @@ struct MiniPlayerEditorView: View {
     private var videoSection: some View {
         Section {
             Toggle(
-                String(localized: "settings.behavior.miniPlayer.showVideo"),
+                AppLocalization.string("settings.behavior.miniPlayer.showVideo"),
                 isOn: $showVideo
             )
             .disabled(!viewModel.canEditActivePreset)
@@ -58,7 +58,7 @@ struct MiniPlayerEditorView: View {
 
             if showVideo {
                 Picker(
-                    String(localized: "settings.behavior.miniPlayer.videoTapAction"),
+                    AppLocalization.string("settings.behavior.miniPlayer.videoTapAction"),
                     selection: $videoTapAction
                 ) {
                     ForEach(MiniPlayerVideoTapAction.allCases, id: \.self) { action in
@@ -72,9 +72,9 @@ struct MiniPlayerEditorView: View {
                 }
             }
         } header: {
-            Text(String(localized: "settings.behavior.miniPlayer.video.header"))
+            Text(AppLocalization.string("settings.behavior.miniPlayer.video.header"))
         } footer: {
-            Text(String(localized: "settings.behavior.miniPlayer.showVideo.footer"))
+            Text(AppLocalization.string("settings.behavior.miniPlayer.showVideo.footer"))
         }
     }
 
@@ -83,7 +83,7 @@ struct MiniPlayerEditorView: View {
     private var buttonsSection: some View {
         Section {
             if viewModel.miniPlayerButtons.isEmpty {
-                Text(String(localized: "miniPlayer.buttons.empty"))
+                Text(AppLocalization.string("miniPlayer.buttons.empty"))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(Array(viewModel.miniPlayerButtons.enumerated()), id: \.element.id) { _, config in
@@ -97,9 +97,9 @@ struct MiniPlayerEditorView: View {
                 }
             }
         } header: {
-            Text(String(localized: "miniPlayer.buttons.header"))
+            Text(AppLocalization.string("miniPlayer.buttons.header"))
         } footer: {
-            Text(String(localized: "miniPlayer.buttons.footer"))
+            Text(AppLocalization.string("miniPlayer.buttons.footer"))
         }
         .disabled(!viewModel.canEditActivePreset)
     }
@@ -127,7 +127,7 @@ struct MiniPlayerEditorView: View {
                 }
             } label: {
                 Label(
-                    String(localized: "settings.playerControls.delete"),
+                    AppLocalization.string("settings.playerControls.delete"),
                     systemImage: "trash"
                 )
             }
@@ -186,7 +186,7 @@ struct MiniPlayerEditorView: View {
                 }
             }
         } header: {
-            Text(String(localized: "miniPlayer.addButton.header"))
+            Text(AppLocalization.string("miniPlayer.addButton.header"))
         }
         .disabled(!viewModel.canEditActivePreset)
     }
@@ -288,7 +288,7 @@ struct MiniPlayerButtonConfigurationView: View {
                     typeSpecificSettings(for: config)
                 }
             }
-            .navigationTitle(config.buttonType.displayName)
+            .reactiveNavigationTitle(config.buttonType.displayName)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #elseif os(macOS)
@@ -300,7 +300,7 @@ struct MiniPlayerButtonConfigurationView: View {
             }
         } else {
             ContentUnavailableView(
-                String(localized: "settings.playerControls.buttonNotFound"),
+                AppLocalization.string("settings.playerControls.buttonNotFound"),
                 systemImage: "exclamationmark.triangle"
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -338,7 +338,7 @@ struct MiniPlayerButtonConfigurationView: View {
         Section {
             // Direction picker
             Picker(
-                String(localized: "settings.playerControls.seek.direction"),
+                AppLocalization.string("settings.playerControls.seek.direction"),
                 selection: $seekDirection
             ) {
                 ForEach(SeekDirection.allCases, id: \.self) { direction in
@@ -351,7 +351,7 @@ struct MiniPlayerButtonConfigurationView: View {
 
             #if !os(tvOS)
             HStack {
-                Text(String(localized: "settings.playerControls.seek.seconds"))
+                Text(AppLocalization.string("settings.playerControls.seek.seconds"))
                 Spacer()
                 Text("\(Int(seekSeconds))s")
                     .foregroundStyle(.secondary)
@@ -379,7 +379,7 @@ struct MiniPlayerButtonConfigurationView: View {
                 }
             }
         } header: {
-            Text(String(localized: "settings.playerControls.seek.header"))
+            Text(AppLocalization.string("settings.playerControls.seek.header"))
         }
     }
 

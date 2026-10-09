@@ -31,7 +31,7 @@ struct AddSourceView: View {
             .navigationDestination(isPresented: $navigateToWebDAV) {
                 TVSidebarDetailContainer(
                     systemImage: "externaldrive.connected.to.line.below",
-                    title: String(localized: "sources.addWebDAV")
+                    title: AppLocalization.string("sources.addWebDAV")
                 ) {
                     AddWebDAVView(
                         prefillURL: discoveredWebDAVURL,
@@ -43,7 +43,7 @@ struct AddSourceView: View {
             .navigationDestination(isPresented: $navigateToSMB) {
                 TVSidebarDetailContainer(
                     systemImage: "server.rack",
-                    title: String(localized: "sources.addSMB")
+                    title: AppLocalization.string("sources.addSMB")
                 ) {
                     AddSMBView(
                         prefillServer: discoveredSMBServer,
@@ -59,7 +59,7 @@ struct AddSourceView: View {
         #else
         NavigationStack {
             listContent
-                .navigationTitle(String(localized: "sources.newSource"))
+                .reactiveNavigationTitle(AppLocalization.string("sources.newSource"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
@@ -101,7 +101,7 @@ struct AddSourceView: View {
                         #if os(tvOS)
                         TVSidebarDetailContainer(
                             systemImage: "person.badge.key",
-                            title: String(localized: "migration.accounts.title")
+                            title: AppLocalization.string("migration.accounts.title")
                         ) {
                             LegacyAccountsImportView(showsDoneButton: false)
                         }
@@ -109,13 +109,13 @@ struct AddSourceView: View {
                         LegacyAccountsImportView(showsDoneButton: false)
                         #endif
                     } label: {
-                        Label(String(localized: "migration.accounts.addSourcesLink"), systemImage: "person.badge.key")
+                        Label(AppLocalization.string("migration.accounts.addSourcesLink"), systemImage: "person.badge.key")
                         #if os(tvOS)
                             .labelStyle(TVSourceRowLabelStyle())
                         #endif
                     }
                 } footer: {
-                    Text(String(localized: "migration.accounts.addSourcesFooter"))
+                    Text(AppLocalization.string("migration.accounts.addSourcesFooter"))
                 }
             }
 
@@ -124,7 +124,7 @@ struct AddSourceView: View {
                 NavigationLink {
                     AddLocalFolderView(dismissSheet: dismiss)
                 } label: {
-                    Label(String(localized: "sources.addLocalFolder"), systemImage: "folder")
+                    Label(AppLocalization.string("sources.addLocalFolder"), systemImage: "folder")
                 }
                 #endif
 
@@ -132,7 +132,7 @@ struct AddSourceView: View {
                     #if os(tvOS)
                     TVSidebarDetailContainer(
                         systemImage: "externaldrive.connected.to.line.below",
-                        title: String(localized: "sources.addWebDAV")
+                        title: AppLocalization.string("sources.addWebDAV")
                     ) {
                         AddWebDAVView()
                     }
@@ -140,7 +140,7 @@ struct AddSourceView: View {
                     AddWebDAVView(dismissSheet: dismiss)
                     #endif
                 } label: {
-                    Label(String(localized: "sources.addWebDAV"), systemImage: "externaldrive.connected.to.line.below")
+                    Label(AppLocalization.string("sources.addWebDAV"), systemImage: "externaldrive.connected.to.line.below")
                     #if os(tvOS)
                         .labelStyle(TVSourceRowLabelStyle())
                     #endif
@@ -150,7 +150,7 @@ struct AddSourceView: View {
                     #if os(tvOS)
                     TVSidebarDetailContainer(
                         systemImage: "server.rack",
-                        title: String(localized: "sources.addSMB")
+                        title: AppLocalization.string("sources.addSMB")
                     ) {
                         AddSMBView()
                     }
@@ -158,7 +158,7 @@ struct AddSourceView: View {
                     AddSMBView(dismissSheet: dismiss)
                     #endif
                 } label: {
-                    Label(String(localized: "sources.addSMB"), systemImage: "server.rack")
+                    Label(AppLocalization.string("sources.addSMB"), systemImage: "server.rack")
                     #if os(tvOS)
                         .labelStyle(TVSourceRowLabelStyle())
                     #endif
@@ -168,7 +168,7 @@ struct AddSourceView: View {
                     #if os(tvOS)
                     TVSidebarDetailContainer(
                         systemImage: "globe",
-                        title: String(localized: "sources.addRemoteServer")
+                        title: AppLocalization.string("sources.addRemoteServer")
                     ) {
                         AddRemoteServerView()
                     }
@@ -176,7 +176,7 @@ struct AddSourceView: View {
                     AddRemoteServerView(dismissSheet: dismiss)
                     #endif
                 } label: {
-                    Label(String(localized: "sources.addRemoteServer"), systemImage: "globe")
+                    Label(AppLocalization.string("sources.addRemoteServer"), systemImage: "globe")
                     #if os(tvOS)
                         .labelStyle(TVSourceRowLabelStyle())
                     #endif
@@ -186,7 +186,7 @@ struct AddSourceView: View {
                     #if os(tvOS)
                     TVSidebarDetailContainer(
                         systemImage: "globe",
-                        title: String(localized: "sources.browsePeerTube")
+                        title: AppLocalization.string("sources.browsePeerTube")
                     ) {
                         if let appEnvironment {
                             PeerTubeInstancesExploreView()
@@ -201,7 +201,7 @@ struct AddSourceView: View {
                     #endif
                 } label: {
                     Label {
-                        Text(String(localized: "sources.browsePeerTube"))
+                        Text(AppLocalization.string("sources.browsePeerTube"))
                     } icon: {
                         Image("peertube")
                             .resizable()
@@ -219,7 +219,7 @@ struct AddSourceView: View {
                     selectedShareType = nil
                     showingNetworkDiscovery = true
                 } label: {
-                    Label(String(localized: "discovery.scanNetwork"), systemImage: "wifi")
+                    Label(AppLocalization.string("discovery.scanNetwork"), systemImage: "wifi")
                     #if os(tvOS)
                         .labelStyle(TVSourceRowLabelStyle())
                     #endif
@@ -228,7 +228,7 @@ struct AddSourceView: View {
                 .buttonStyle(TVFormRowButtonStyle())
                 #endif
             } footer: {
-                Text(String(localized: "sources.footer.discovery"))
+                Text(AppLocalization.string("sources.footer.discovery"))
             }
         }
         .task {

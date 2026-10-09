@@ -611,7 +611,7 @@ struct ControlsSectionRenderer: View {
                     Circle()
                         .fill(.red)
                         .frame(width: 6, height: 6)
-                    Text(String(localized: "player.live"))
+                    Text(AppLocalization.string("player.live"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.red)
                 }

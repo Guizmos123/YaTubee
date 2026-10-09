@@ -24,11 +24,11 @@ enum VisibilityMode: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .both:
-            return String(localized: "controls.visibility.both")
+            return AppLocalization.string("controls.visibility.both")
         case .portraitOnly:
-            return String(localized: "controls.visibility.portraitOnly")
+            return AppLocalization.string("controls.visibility.portraitOnly")
         case .wideOnly:
-            return String(localized: "controls.visibility.wideOnly")
+            return AppLocalization.string("controls.visibility.wideOnly")
         }
     }
 

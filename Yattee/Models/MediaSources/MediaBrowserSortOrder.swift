@@ -17,11 +17,11 @@ enum MediaBrowserSortOrder: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .name:
-            String(localized: "mediaBrowser.sort.name")
+            AppLocalization.string("mediaBrowser.sort.name")
         case .dateModified:
-            String(localized: "mediaBrowser.sort.dateModified")
+            AppLocalization.string("mediaBrowser.sort.dateModified")
         case .dateCreated:
-            String(localized: "mediaBrowser.sort.dateCreated")
+            AppLocalization.string("mediaBrowser.sort.dateCreated")
         }
     }
 

@@ -404,7 +404,7 @@ final class RemoteControlCoordinator {
             rcLog("REMOTEPLAY", "[\(device.name)] Connection verification FAILED", isError: true)
             toastManager?.show(
                 category: .remoteControl,
-                title: String(localized: "toast.remote.connectionFailed.title"),
+                title: AppLocalization.string("toast.remote.connectionFailed.title"),
                 subtitle: device.name,
                 icon: "exclamationmark.triangle.fill",
                 iconColor: .orange,
@@ -418,7 +418,7 @@ final class RemoteControlCoordinator {
         // Show persistent toast for sending status
         let toastID = toastManager?.show(
             category: .remoteControl,
-            title: String(localized: "toast.remote.playingOn.title"),
+            title: AppLocalization.string("toast.remote.playingOn.title"),
             subtitle: device.name,
             icon: nil, // Shows ProgressView for remoteControl category
             iconColor: nil,
@@ -626,7 +626,7 @@ final class RemoteControlCoordinator {
             if let deviceName = controllingDevice?.name {
                 toastManager?.show(
                     category: .remoteControl,
-                    title: String(localized: "toast.remote.openingVideo.title"),
+                    title: AppLocalization.string("toast.remote.openingVideo.title"),
                     subtitle: deviceName,
                     icon: "arrow.down.circle.fill",
                     iconColor: .blue,
@@ -713,7 +713,7 @@ final class RemoteControlCoordinator {
                         // Update toast to success
                         toastManager?.update(
                             id: toastID,
-                            title: String(localized: "toast.remote.playingOnSuccess.title"),
+                            title: AppLocalization.string("toast.remote.playingOnSuccess.title"),
                             subtitle: deviceName,
                             icon: "checkmark.circle.fill",
                             iconColor: .green,
@@ -729,7 +729,7 @@ final class RemoteControlCoordinator {
                         rcLog("REMOTEPLAY", "[\(deviceName)] Video started playing SUCCESS")
                         toastManager?.update(
                             id: toastID,
-                            title: String(localized: "toast.remote.playingOnSuccess.title"),
+                            title: AppLocalization.string("toast.remote.playingOnSuccess.title"),
                             subtitle: deviceName,
                             icon: "checkmark.circle.fill",
                             iconColor: .green,

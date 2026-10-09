@@ -55,7 +55,7 @@ struct ViewOptionsSheet: View {
                     .pickerStyle(.segmented)
 
                     if layout == .list {
-                        PlatformMenuPicker(String(localized: "viewOptions.rowSize"), selection: $rowStyle) {
+                        PlatformMenuPicker(AppLocalization.string("viewOptions.rowSize"), selection: $rowStyle) {
                             Text("viewOptions.rowSize.compact").tag(VideoRowStyle.compact)
                             Text("viewOptions.rowSize.regular").tag(VideoRowStyle.regular)
                             Text("viewOptions.rowSize.large").tag(VideoRowStyle.large)
@@ -76,7 +76,7 @@ struct ViewOptionsSheet: View {
                     }
 
                     if let channelStripSize = channelStripSize {
-                        PlatformMenuPicker(String(localized: "viewOptions.channelStrip"), selection: channelStripSize) {
+                        PlatformMenuPicker(AppLocalization.string("viewOptions.channelStrip"), selection: channelStripSize) {
                             ForEach(ChannelStripSize.allCases, id: \.self) { size in
                                 Text(size.displayName).tag(size)
                             }
@@ -112,7 +112,7 @@ struct ViewOptionsSheet: View {
 
                 // List-specific options
                 if layout == .list {
-                    PlatformMenuPicker(String(localized: "viewOptions.rowSize"), selection: $rowStyle) {
+                    PlatformMenuPicker(AppLocalization.string("viewOptions.rowSize"), selection: $rowStyle) {
                         Text("viewOptions.rowSize.compact").tag(VideoRowStyle.compact)
                         Text("viewOptions.rowSize.regular").tag(VideoRowStyle.regular)
                         Text("viewOptions.rowSize.large").tag(VideoRowStyle.large)
@@ -143,7 +143,7 @@ struct ViewOptionsSheet: View {
 
                 // Channel Strip (subscriptions only)
                 if let channelStripSize = channelStripSize {
-                    PlatformMenuPicker(String(localized: "viewOptions.channelStrip"), selection: channelStripSize) {
+                    PlatformMenuPicker(AppLocalization.string("viewOptions.channelStrip"), selection: channelStripSize) {
                         ForEach(ChannelStripSize.allCases, id: \.self) { size in
                             Text(size.displayName).tag(size)
                         }

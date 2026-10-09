@@ -43,14 +43,14 @@ struct SourcesListView: View {
             #if os(tvOS)
             TVSidebarDetailContainer(
                 systemImage: "server.rack",
-                title: String(localized: "sources.title")
+                title: AppLocalization.string("sources.title")
             ) {
                 VStack(spacing: 0) {
                     HStack(spacing: 24) {
                         Button {
                             showingAddSheet = true
                         } label: {
-                            Label(String(localized: "sources.addSource"), systemImage: "plus")
+                            Label(AppLocalization.string("sources.addSource"), systemImage: "plus")
                         }
                         .accessibilityIdentifier("sources.addButton")
                         Spacer()
@@ -79,7 +79,7 @@ struct SourcesListView: View {
             #endif
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "sources.title"))
+        .reactiveNavigationTitle(AppLocalization.string("sources.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -91,7 +91,7 @@ struct SourcesListView: View {
                     Button {
                         showingAddSheet = true
                     } label: {
-                        Label(String(localized: "sources.addSource"), systemImage: "plus")
+                        Label(AppLocalization.string("sources.addSource"), systemImage: "plus")
                     }
                     .accessibilityIdentifier("sources.addButton")
                 }
@@ -100,7 +100,7 @@ struct SourcesListView: View {
         #endif
         #if os(tvOS)
         .navigationDestination(isPresented: $showingAddSheet) {
-            TVSidebarDetailContainer(systemImage: "plus.circle", title: String(localized: "sources.newSource")) { AddSourceView() }
+            TVSidebarDetailContainer(systemImage: "plus.circle", title: AppLocalization.string("sources.newSource")) { AddSourceView() }
         }
         #else
         .sheet(isPresented: $showingAddSheet) {
@@ -109,7 +109,7 @@ struct SourcesListView: View {
         #endif
         #if os(tvOS)
         .navigationDestination(item: $sourceToEdit) { source in
-            TVSidebarDetailContainer(systemImage: "pencil.circle", title: String(localized: "sources.editSource")) { EditSourceView(source: source) }
+            TVSidebarDetailContainer(systemImage: "pencil.circle", title: AppLocalization.string("sources.editSource")) { EditSourceView(source: source) }
         }
         #else
         .sheet(item: $sourceToEdit) { source in
@@ -121,10 +121,10 @@ struct SourcesListView: View {
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "common.delete"), role: .destructive) {
+            Button(AppLocalization.string("common.delete"), role: .destructive) {
                 confirmDelete()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
                 pendingDeleteInstance = nil
                 pendingDeleteSource = nil
             }
@@ -164,7 +164,7 @@ struct SourcesListView: View {
                 Button {
                     showingAddSheet = true
                 } label: {
-                    Label(String(localized: "sources.addSource"), systemImage: "plus")
+                    Label(AppLocalization.string("sources.addSource"), systemImage: "plus")
                 }
                 .accessibilityIdentifier("sources.addButton")
             }
@@ -188,11 +188,11 @@ struct SourcesListView: View {
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label(String(localized: "sources.empty.title"), systemImage: "server.rack")
+            Label(AppLocalization.string("sources.empty.title"), systemImage: "server.rack")
         } description: {
-            Text(String(localized: "sources.empty.description"))
+            Text(AppLocalization.string("sources.empty.description"))
         } actions: {
-            Button(String(localized: "sources.addSource")) {
+            Button(AppLocalization.string("sources.addSource")) {
                 showingAddSheet = true
             }
             .buttonStyle(.borderedProminent)
@@ -287,7 +287,7 @@ struct SourcesListView: View {
     @ViewBuilder
     private var remoteServersSection: some View {
         if let manager = instancesManager, !manager.instances.isEmpty {
-            sectionHeader(String(localized: "sources.section.remoteServers"))
+            sectionHeader(AppLocalization.string("sources.section.remoteServers"))
 
             let instances = manager.instances.sorted { $0.dateAdded < $1.dateAdded }
 
@@ -340,14 +340,14 @@ struct SourcesListView: View {
             Button {
                 sourceToEdit = .remoteServer(instance)
             } label: {
-                Label(String(localized: "common.edit"), systemImage: "pencil")
+                Label(AppLocalization.string("common.edit"), systemImage: "pencil")
             }
 
             Button(role: .destructive) {
                 pendingDeleteInstance = instance
                 showingDeleteConfirmation = true
             } label: {
-                Label(String(localized: "common.delete"), systemImage: "trash")
+                Label(AppLocalization.string("common.delete"), systemImage: "trash")
             }
         }
         #endif
@@ -412,17 +412,17 @@ struct SourcesListView: View {
     @ViewBuilder
     private func instanceStatusView(for instance: Instance) -> some View {
         if needsCredentials(instance) {
-            Label(String(localized: "sources.status.authRequired"), systemImage: "key.fill")
+            Label(AppLocalization.string("sources.status.authRequired"), systemImage: "key.fill")
                 .font(.caption2)
                 .foregroundStyle(.orange)
         } else if let status = instancesManager?.status(for: instance) {
             switch status {
             case .authFailed:
-                Label(String(localized: "sources.status.authFailed"), systemImage: "exclamationmark.triangle.fill")
+                Label(AppLocalization.string("sources.status.authFailed"), systemImage: "exclamationmark.triangle.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
             case .authRequired:
-                Label(String(localized: "sources.status.authRequired"), systemImage: "key.fill")
+                Label(AppLocalization.string("sources.status.authRequired"), systemImage: "key.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
             default:
@@ -438,7 +438,7 @@ struct SourcesListView: View {
         let allFileSources = allMediaSources
         let noRemoteServers = instancesManager?.instances.isEmpty ?? true
         if !allFileSources.isEmpty {
-            sectionHeader(String(localized: "sources.section.fileSources"))
+            sectionHeader(AppLocalization.string("sources.section.fileSources"))
 
             sectionCard {
                 ForEach(Array(allFileSources.enumerated()), id: \.element.id) { index, source in
@@ -502,14 +502,14 @@ struct SourcesListView: View {
             Button {
                 sourceToEdit = .fileSource(source)
             } label: {
-                Label(String(localized: "common.edit"), systemImage: "pencil")
+                Label(AppLocalization.string("common.edit"), systemImage: "pencil")
             }
 
             Button(role: .destructive) {
                 pendingDeleteSource = source
                 showingDeleteConfirmation = true
             } label: {
-                Label(String(localized: "common.delete"), systemImage: "trash")
+                Label(AppLocalization.string("common.delete"), systemImage: "trash")
             }
         }
         #endif
@@ -552,7 +552,7 @@ struct SourcesListView: View {
                     .foregroundStyle(.secondary)
 
                 if needsPassword {
-                    Label(String(localized: "sources.status.authRequired"), systemImage: "key.fill")
+                    Label(AppLocalization.string("sources.status.authRequired"), systemImage: "key.fill")
                         .font(.caption2)
                         .foregroundStyle(.orange)
                 }
@@ -572,7 +572,7 @@ struct SourcesListView: View {
     // MARK: - Disabled Badge
 
     private var disabledBadge: some View {
-        Text(String(localized: "sources.status.disabled"))
+        Text(AppLocalization.string("sources.status.disabled"))
             .font(.caption)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 6)
@@ -597,11 +597,11 @@ struct SourcesListView: View {
 
     private var deleteConfirmationMessage: String {
         if let instance = pendingDeleteInstance {
-            return String(localized: "sources.delete.confirmation.single \(instance.displayName)")
+            return AppLocalization.string("sources.delete.confirmation.single \(instance.displayName)")
         } else if let source = pendingDeleteSource {
-            return String(localized: "sources.delete.confirmation.single \(source.name)")
+            return AppLocalization.string("sources.delete.confirmation.single \(source.name)")
         }
-        return String(localized: "sources.delete.confirmation")
+        return AppLocalization.string("sources.delete.confirmation")
     }
 }
 

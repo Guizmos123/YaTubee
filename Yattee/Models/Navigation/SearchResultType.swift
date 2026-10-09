@@ -18,10 +18,10 @@ enum SearchResultType: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: return String(localized: "search.filter.all")
-        case .videos: return String(localized: "search.filter.videos")
-        case .channels: return String(localized: "search.filter.channels")
-        case .playlists: return String(localized: "search.filter.playlists")
+        case .all: return AppLocalization.string("search.filter.all")
+        case .videos: return AppLocalization.string("search.filter.videos")
+        case .channels: return AppLocalization.string("search.filter.channels")
+        case .playlists: return AppLocalization.string("search.filter.playlists")
         }
     }
 }

@@ -11,6 +11,7 @@ import Foundation
 /// Used internally by SettingsManager for persistence.
 enum SettingsKey: String, CaseIterable {
     // General
+    case appLanguage
     case theme
     case accentColor
     case customAccentColor
@@ -176,7 +177,8 @@ enum SettingsKey: String, CaseIterable {
     /// Used for device-specific settings like custom device name for remote control.
     var isLocalOnly: Bool {
         switch self {
-        case .remoteControlCustomDeviceName, .remoteControlHideWhenBackgrounded,
+        case .appLanguage,
+             .remoteControlCustomDeviceName, .remoteControlHideWhenBackgrounded,
              .activeControlsPresetID,  // Per-device preset selection
              .onboardingCompleted:  // Per-device onboarding state
             return true

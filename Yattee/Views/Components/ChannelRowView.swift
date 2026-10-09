@@ -71,7 +71,7 @@ struct ChannelRowView: View {
 
                 if let subscribers = channel.formattedSubscriberCount {
                     HStack(spacing: 4) {
-                        Text(String(localized: "channel.subscriberCount \(subscribers)"))
+                        Text(AppLocalization.string("channel.subscriberCount \(subscribers)"))
                             .font(subscriberFont)
                             .foregroundStyle(.secondary)
                         

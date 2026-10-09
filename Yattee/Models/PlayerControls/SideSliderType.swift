@@ -25,11 +25,11 @@ enum SideSliderType: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .disabled:
-            String(localized: "sideSlider.disabled")
+            AppLocalization.string("sideSlider.disabled")
         case .volume:
-            String(localized: "sideSlider.volume")
+            AppLocalization.string("sideSlider.volume")
         case .brightness:
-            String(localized: "sideSlider.brightness")
+            AppLocalization.string("sideSlider.brightness")
         }
     }
 

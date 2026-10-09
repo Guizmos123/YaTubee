@@ -29,7 +29,7 @@ struct PillButtonConfigurationView: View {
                     typeSpecificSettings(for: config)
                 }
             }
-            .navigationTitle(config.buttonType.displayName)
+            .reactiveNavigationTitle(config.buttonType.displayName)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -39,7 +39,7 @@ struct PillButtonConfigurationView: View {
             }
         } else {
             ContentUnavailableView(
-                String(localized: "settings.playerControls.buttonNotFound"),
+                AppLocalization.string("settings.playerControls.buttonNotFound"),
                 systemImage: "exclamationmark.triangle"
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,7 +77,7 @@ struct PillButtonConfigurationView: View {
         Section {
             // Direction picker
             Picker(
-                String(localized: "settings.playerControls.seek.direction"),
+                AppLocalization.string("settings.playerControls.seek.direction"),
                 selection: $seekDirection
             ) {
                 ForEach(SeekDirection.allCases, id: \.self) { direction in
@@ -90,7 +90,7 @@ struct PillButtonConfigurationView: View {
 
             #if !os(tvOS)
             HStack {
-                Text(String(localized: "settings.playerControls.seek.seconds"))
+                Text(AppLocalization.string("settings.playerControls.seek.seconds"))
                 Spacer()
                 Text("\(Int(seekSeconds))s")
                     .foregroundStyle(.secondary)
@@ -118,7 +118,7 @@ struct PillButtonConfigurationView: View {
                 }
             }
         } header: {
-            Text(String(localized: "settings.playerControls.seek.header"))
+            Text(AppLocalization.string("settings.playerControls.seek.header"))
         }
     }
 

@@ -158,7 +158,7 @@ final class Bookmark {
 
     /// Formatted duration string.
     var formattedDuration: String {
-        guard !isLive else { return String(localized: "video.badge.live") }
+        guard !isLive else { return AppLocalization.string("video.badge.live") }
         guard duration > 0 else { return "" }
 
         let hours = Int(duration) / 3600

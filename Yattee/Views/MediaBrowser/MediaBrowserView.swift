@@ -93,7 +93,7 @@ struct MediaBrowserView: View {
                         Button {
                             Task { await loadFiles() }
                         } label: {
-                            Label(String(localized: "common.refresh"), systemImage: "arrow.clockwise")
+                            Label(AppLocalization.string("common.refresh"), systemImage: "arrow.clockwise")
                         }
                     }
                 }
@@ -102,7 +102,7 @@ struct MediaBrowserView: View {
                         showViewOptions = true
                     } label: {
                         Label(
-                            String(localized: "viewOptions.title"),
+                            AppLocalization.string("viewOptions.title"),
                             systemImage: showOnlyPlayable
                                 ? "line.3.horizontal.decrease.circle.fill"
                                 : "line.3.horizontal.decrease.circle"
@@ -159,13 +159,13 @@ struct MediaBrowserView: View {
                         Button {
                             Task { await loadFiles() }
                         } label: {
-                            Label(String(localized: "common.refresh"), systemImage: "arrow.clockwise")
+                            Label(AppLocalization.string("common.refresh"), systemImage: "arrow.clockwise")
                         }
                         Button {
                             showViewOptions = true
                         } label: {
                             Label(
-                                String(localized: "viewOptions.title"),
+                                AppLocalization.string("viewOptions.title"),
                                 systemImage: showOnlyPlayable
                                     ? "line.3.horizontal.decrease.circle.fill"
                                     : "line.3.horizontal.decrease.circle"
@@ -195,11 +195,11 @@ struct MediaBrowserView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error {
                 ContentUnavailableView {
-                    Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+                    Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(error.localizedDescription)
                 } actions: {
-                    Button(String(localized: "common.retry")) {
+                    Button(AppLocalization.string("common.retry")) {
                         Task { await loadFiles() }
                     }
                     .buttonStyle(.borderedProminent)
@@ -207,9 +207,9 @@ struct MediaBrowserView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if files.isEmpty {
                 ContentUnavailableView {
-                    Label(String(localized: "mediaBrowser.emptyFolder"), systemImage: "folder")
+                    Label(AppLocalization.string("mediaBrowser.emptyFolder"), systemImage: "folder")
                 } description: {
-                    Text(String(localized: "mediaBrowser.emptyFolder.description"))
+                    Text(AppLocalization.string("mediaBrowser.emptyFolder.description"))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -279,16 +279,16 @@ struct MediaBrowserView: View {
         fileListBackground
             .overlay(fileListScrollView)
             .alert(
-                String(localized: "mediaBrowser.unsupportedFile.title"),
+                AppLocalization.string("mediaBrowser.unsupportedFile.title"),
                 isPresented: Binding(
                     get: { unsupportedFile != nil },
                     set: { if !$0 { unsupportedFile = nil } }
                 ),
                 presenting: unsupportedFile
             ) { _ in
-                Button(String(localized: "common.ok"), role: .cancel) { unsupportedFile = nil }
+                Button(AppLocalization.string("common.ok"), role: .cancel) { unsupportedFile = nil }
             } message: { file in
-                Text(String(localized: "mediaBrowser.unsupportedFile.message \(file.name)"))
+                Text(AppLocalization.string("mediaBrowser.unsupportedFile.message \(file.name)"))
             }
         #else
         fileListBackground

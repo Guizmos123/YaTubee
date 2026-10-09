@@ -20,11 +20,11 @@ enum CommentsPillMode: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .pill:
-            return String(localized: "commentsPill.mode.pill")
+            return AppLocalization.string("commentsPill.mode.pill")
         case .button:
-            return String(localized: "commentsPill.mode.button")
+            return AppLocalization.string("commentsPill.mode.button")
         case .disabled:
-            return String(localized: "commentsPill.mode.disabled")
+            return AppLocalization.string("commentsPill.mode.disabled")
         }
     }
 
@@ -52,13 +52,13 @@ enum PillVisibility: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .portraitOnly:
-            return String(localized: "pill.visibility.portraitOnly")
+            return AppLocalization.string("pill.visibility.portraitOnly")
         case .landscapeOnly:
-            return String(localized: "pill.visibility.landscapeOnly")
+            return AppLocalization.string("pill.visibility.landscapeOnly")
         case .both:
-            return String(localized: "pill.visibility.both")
+            return AppLocalization.string("pill.visibility.both")
         case .never:
-            return String(localized: "pill.visibility.never")
+            return AppLocalization.string("pill.visibility.never")
         }
     }
 

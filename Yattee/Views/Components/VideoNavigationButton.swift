@@ -28,8 +28,8 @@ struct VideoNavigationButton: View {
         
         var accessibilityLabel: String {
             switch self {
-            case .previous: return String(localized: "video.navigation.previous")
-            case .next: return String(localized: "video.navigation.next")
+            case .previous: return AppLocalization.string("video.navigation.previous")
+            case .next: return AppLocalization.string("video.navigation.next")
             }
         }
     }

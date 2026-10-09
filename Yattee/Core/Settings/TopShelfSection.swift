@@ -11,9 +11,9 @@ enum TopShelfSection: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var localizedTitle: String {
         switch self {
-        case .continueWatching: return String(localized: "home.section.continueWatching")
-        case .recentFeed: return String(localized: "home.section.feed")
-        case .recentBookmarks: return String(localized: "home.section.bookmarks")
+        case .continueWatching: return AppLocalization.string("home.section.continueWatching")
+        case .recentFeed: return AppLocalization.string("home.section.feed")
+        case .recentBookmarks: return AppLocalization.string("home.section.bookmarks")
         }
     }
 

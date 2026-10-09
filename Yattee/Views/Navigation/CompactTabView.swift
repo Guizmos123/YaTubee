@@ -14,7 +14,6 @@ struct CompactTabView: View {
 
     // Navigation paths for fixed tabs
     @State private var homePath = NavigationPath()
-    @State private var searchPath = NavigationPath()
 
     // Navigation paths for dynamic tabs
     @State private var subscriptionsPath = NavigationPath()
@@ -31,9 +30,6 @@ struct CompactTabView: View {
     // Initial value is a placeholder; actual startup tab is applied in onAppear
     @State private var selectedTab: String = "home"
     @State private var hasAppliedStartupTab = false
-
-    // Search text state (iOS 26+ TabView .searchable integration)
-    @State private var searchText = ""
 
     // Zoom transition namespace (local to this tab view)
     @Namespace private var zoomTransition
@@ -61,6 +57,10 @@ struct CompactTabView: View {
         appEnvironment?.settingsManager.zoomTransitionsEnabled ?? true
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             // Fixed: Home (first)
@@ -70,7 +70,7 @@ struct CompactTabView: View {
                         .withNavigationDestinations()
                 }
             } label: {
-                Label(String(localized: "tabs.home"), systemImage: "house.fill")
+                Label("tabs.home", systemImage: "house.fill")
             }
             .accessibilityIdentifier("tab.home")
 
@@ -83,17 +83,8 @@ struct CompactTabView: View {
                 }
             }
 
-            // Fixed: Search (last) - with role: .search
-            Tab(value: "search", role: .search) {
-                NavigationStack(path: $searchPath) {
-                    SearchView(searchText: $searchText)
-                        .withNavigationDestinations()
-                }
-            } label: {
-                Label(String(localized: "tabs.search"), systemImage: "magnifyingglass")
-            }
-            .accessibilityIdentifier("tab.search")
         }
+        .environment(\.locale, localizationLocale)
         .zoomTransitionNamespace(zoomTransition)
         .zoomTransitionsEnabled(zoomTransitionsEnabled)
         .iOS26TabFeatures(shouldShowAccessory: shouldShowAccessory, settingsManager: settingsManager)
@@ -120,7 +111,12 @@ struct CompactTabView: View {
         hasAppliedStartupTab = true
 
         let startupTab = settingsManager?.effectiveStartupTabForTabBar() ?? .home
-        selectedTab = startupTab.compactTabValue
+        if startupTab == .search {
+            selectedTab = "home"
+            homePath.append(NavigationDestination.search(""))
+        } else {
+            selectedTab = startupTab.compactTabValue
+        }
     }
 
     // MARK: - Handoff
@@ -133,9 +129,6 @@ struct CompactTabView: View {
         case "home":
             // Home tab - use playlists as default (matches HomeView's primary content)
             destination = .playlists
-        case "search":
-            // Search updates handoff when a search is performed
-            destination = nil
         case TabBarItem.subscriptions.rawValue:
             destination = .subscriptionsFeed
         case TabBarItem.channels.rawValue:
@@ -185,9 +178,7 @@ struct CompactTabView: View {
                 pushSubscriptionsOnCurrentStack()
             }
         case .search:
-            if selectedTab != "search" {
-                selectedTab = "search"
-            }
+            pushSearchOnCurrentStack()
         #if os(tvOS)
         case .settings:
             break
@@ -204,8 +195,6 @@ struct CompactTabView: View {
         switch tab {
         case "home":
             appTab = .home
-        case "search":
-            appTab = .search
         case TabBarItem.subscriptions.rawValue:
             appTab = .subscriptions
         default:
@@ -226,8 +215,35 @@ struct CompactTabView: View {
         switch selectedTab {
         case "home":
             homePath.append(destination)
-        case "search":
-            searchPath.append(destination)
+        case TabBarItem.channels.rawValue:
+            channelsPath.append(destination)
+        case TabBarItem.bookmarks.rawValue:
+            bookmarksPath.append(destination)
+        case TabBarItem.playlists.rawValue:
+            playlistsPath.append(destination)
+        case TabBarItem.history.rawValue:
+            historyPath.append(destination)
+        case TabBarItem.downloads.rawValue:
+            downloadsPath.append(destination)
+        case TabBarItem.sources.rawValue:
+            sourcesPath.append(destination)
+        case TabBarItem.settings.rawValue:
+            settingsPath.append(destination)
+        case TabBarItem.continueWatching.rawValue:
+            continueWatchingPath.append(destination)
+        default:
+            homePath.append(destination)
+        }
+    }
+
+    /// Pushes Search onto the selected tab while preserving its navigation state.
+    private func pushSearchOnCurrentStack() {
+        let destination = NavigationDestination.search("")
+        switch selectedTab {
+        case "home":
+            homePath.append(destination)
+        case TabBarItem.subscriptions.rawValue:
+            subscriptionsPath.append(destination)
         case TabBarItem.channels.rawValue:
             channelsPath.append(destination)
         case TabBarItem.bookmarks.rawValue:
@@ -311,8 +327,6 @@ struct CompactTabView: View {
         switch selectedTab {
         case "home":
             homePath.append(destination)
-        case "search":
-            searchPath.append(destination)
         case TabBarItem.subscriptions.rawValue:
             subscriptionsPath.append(destination)
         case TabBarItem.channels.rawValue:

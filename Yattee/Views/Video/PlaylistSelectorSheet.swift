@@ -29,7 +29,7 @@ struct PlaylistSelectorSheet: View {
                 if video.isFromLocalFolder {
                     Section {
                         Label {
-                            Text(String(localized: "playlist.localFileWarning"))
+                            Text(AppLocalization.string("playlist.localFileWarning"))
                         } icon: {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.orange)
@@ -45,7 +45,7 @@ struct PlaylistSelectorSheet: View {
                             showingNewPlaylist = true
                         } label: {
                             Label(
-                                String(localized: "playlist.new"),
+                                AppLocalization.string("playlist.new"),
                                 systemImage: "plus.circle"
                             )
                         }
@@ -68,11 +68,11 @@ struct PlaylistSelectorSheet: View {
                         Section {
                             ContentUnavailableView {
                                 Label(
-                                    String(localized: "playlist.empty.title"),
+                                    AppLocalization.string("playlist.empty.title"),
                                     systemImage: "music.note.list"
                                 )
                             } description: {
-                                Text(String(localized: "playlist.empty.description"))
+                                Text(AppLocalization.string("playlist.empty.description"))
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
@@ -84,7 +84,7 @@ struct PlaylistSelectorSheet: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 24)
             #else
-            .navigationTitle(String(localized: "playlist.addTo"))
+            .navigationTitle(AppLocalization.string("playlist.addTo"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -183,7 +183,7 @@ private struct PlaylistSelectionRow: View {
                         .font(.body)
                         .foregroundStyle(.primary)
 
-                    Text(String(localized: "playlist.videoCount \(playlist.videoCount)"))
+                    Text(AppLocalization.string("playlist.videoCount \(playlist.videoCount)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -195,7 +195,7 @@ private struct PlaylistSelectionRow: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                 } else if playlist.contains(videoID: video.id.videoID) {
-                    Text(String(localized: "playlist.alreadyAdded"))
+                    Text(AppLocalization.string("playlist.alreadyAdded"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {

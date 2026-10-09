@@ -27,7 +27,7 @@ struct BatchDownloadQualitySheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker(String(localized: "batchDownload.quality"), selection: $selectedQuality) {
+                    Picker(AppLocalization.string("batchDownload.quality"), selection: $selectedQuality) {
                         ForEach(qualityOptions, id: \.self) { quality in
                             Text(quality.displayName).tag(quality)
                         }
@@ -37,7 +37,7 @@ struct BatchDownloadQualitySheet: View {
                 }
 
                 Section {
-                    Toggle(String(localized: "batchDownload.includeSubtitles"), isOn: $includeSubtitles)
+                    Toggle(AppLocalization.string("batchDownload.includeSubtitles"), isOn: $includeSubtitles)
                 }
             }
             #if os(macOS)
@@ -45,19 +45,19 @@ struct BatchDownloadQualitySheet: View {
             #else
             .background(Color(.systemGroupedBackground))
             #endif
-            .navigationTitle(String(localized: "batchDownload.title"))
+            .navigationTitle(AppLocalization.string("batchDownload.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "common.cancel")) {
+                    Button(AppLocalization.string("common.cancel")) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "batchDownload.start")) {
+                    Button(AppLocalization.string("batchDownload.start")) {
                         onConfirm(selectedQuality, includeSubtitles)
                         dismiss()
                     }

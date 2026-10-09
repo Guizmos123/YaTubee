@@ -42,20 +42,20 @@ struct AdvancedSettingsView: View {
             developerSection
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.advanced.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.advanced.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .confirmationDialog(
-            String(localized: "settings.advanced.data.clearCache.confirmation"),
+            AppLocalization.string("settings.advanced.data.clearCache.confirmation"),
             isPresented: $showingClearDataConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.advanced.data.clearCache"), role: .destructive) {
+            Button(AppLocalization.string("settings.advanced.data.clearCache"), role: .destructive) {
                 clearCache()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         }
         .presentationCompactAdaptation(.sheet)
         .onAppear {
@@ -66,26 +66,26 @@ struct AdvancedSettingsView: View {
         }
         #if !os(tvOS)
         .confirmationDialog(
-            String(localized: "settings.advanced.storage.deleteOrphaned.title"),
+            AppLocalization.string("settings.advanced.storage.deleteOrphaned.title"),
             isPresented: $showingOrphanCleanupConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.advanced.storage.deleteOrphaned.action \(orphanedFilesCount)"), role: .destructive) {
+            Button(AppLocalization.string("settings.advanced.storage.deleteOrphaned.action \(orphanedFilesCount)"), role: .destructive) {
                 deleteOrphanedFiles()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "settings.advanced.storage.deleteOrphaned.message \(orphanedFilesCount) \(formatBytes(orphanedFilesSize))"))
+            Text(AppLocalization.string("settings.advanced.storage.deleteOrphaned.message \(orphanedFilesCount) \(formatBytes(orphanedFilesSize))"))
         }
         .presentationCompactAdaptation(.sheet)
         .alert(
-            String(localized: "settings.advanced.storage.cleanupComplete"),
+            AppLocalization.string("settings.advanced.storage.cleanupComplete"),
             isPresented: $showingOrphanCleanupResult
         ) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+            Button(AppLocalization.string("common.ok"), role: .cancel) {}
         } message: {
             if let result = orphanCleanupResult {
-                Text(String(localized: "settings.advanced.storage.cleanupResult \(result.deleted) \(formatBytes(result.freed))"))
+                Text(AppLocalization.string("settings.advanced.storage.cleanupResult \(result.deleted) \(formatBytes(result.freed))"))
             }
         }
         #endif
@@ -113,15 +113,15 @@ struct AdvancedSettingsView: View {
                     Text(option.label).tag(option.minutes)
                 }
             } label: {
-                Label(String(localized: "settings.advanced.feed.cacheValidity"), systemImage: "clock")
+                Label(AppLocalization.string("settings.advanced.feed.cacheValidity"), systemImage: "clock")
             }
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "settings.advanced.feed.footer"))
+                Text(AppLocalization.string("settings.advanced.feed.footer"))
                 if let lastCheck = settingsManager.lastBackgroundCheck {
-                    Text(String(localized: "settings.advanced.feed.lastBackgroundRefresh \(lastCheck.formatted(date: .abbreviated, time: .shortened))"))
+                    Text(AppLocalization.string("settings.advanced.feed.lastBackgroundRefresh \(lastCheck.formatted(date: .abbreviated, time: .shortened))"))
                 } else {
-                    Text(String(localized: "settings.advanced.feed.lastBackgroundRefresh.never"))
+                    Text(AppLocalization.string("settings.advanced.feed.lastBackgroundRefresh.never"))
                 }
             }
         }
@@ -137,12 +137,12 @@ struct AdvancedSettingsView: View {
                     appEnvironment?.updateUserAgent()
                 }
             )) {
-                Label(String(localized: "settings.advanced.userAgent.randomizePerRequest"), systemImage: "shuffle")
+                Label(AppLocalization.string("settings.advanced.userAgent.randomizePerRequest"), systemImage: "shuffle")
             }
 
             if !settingsManager.randomizeUserAgentPerRequest {
                 TextField(
-                    String(localized: "settings.advanced.userAgent.placeholder"),
+                    AppLocalization.string("settings.advanced.userAgent.placeholder"),
                     text: $userAgentText,
                     axis: .vertical
                 )
@@ -164,7 +164,7 @@ struct AdvancedSettingsView: View {
                     userAgentText = settingsManager.customUserAgent
                     appEnvironment?.updateUserAgent()
                 } label: {
-                    Label(String(localized: "settings.advanced.userAgent.randomize"), systemImage: "arrow.trianglehead.2.clockwise")
+                    Label(AppLocalization.string("settings.advanced.userAgent.randomize"), systemImage: "arrow.trianglehead.2.clockwise")
                 }
             }
         }
@@ -178,7 +178,7 @@ struct AdvancedSettingsView: View {
                     get: { settingsManager.showAdvancedStreamDetails },
                     set: { settingsManager.showAdvancedStreamDetails = $0 }
                 )) {
-                    Label(String(localized: "settings.advanced.stream.showDetails"), systemImage: "list.bullet.rectangle")
+                    Label(AppLocalization.string("settings.advanced.stream.showDetails"), systemImage: "list.bullet.rectangle")
                 }
             }
         }
@@ -196,26 +196,26 @@ struct AdvancedSettingsView: View {
                         Text(formatBufferOption(seconds)).tag(seconds)
                     }
                 } label: {
-                    Label(String(localized: "settings.advanced.mpv.buffer"), systemImage: "hourglass")
+                    Label(AppLocalization.string("settings.advanced.mpv.buffer"), systemImage: "hourglass")
                 }
 
                 Toggle(isOn: Binding(
                     get: { settingsManager.mpvUseEDLStreams },
                     set: { settingsManager.mpvUseEDLStreams = $0 }
                 )) {
-                    Label(String(localized: "settings.advanced.mpv.edl"), systemImage: "arrow.trianglehead.merge")
+                    Label(AppLocalization.string("settings.advanced.mpv.edl"), systemImage: "arrow.trianglehead.merge")
                 }
 
                 #if os(tvOS)
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "slider.horizontal.3",
-                        title: String(localized: "settings.advanced.mpv.options")
+                        title: AppLocalization.string("settings.advanced.mpv.options")
                     ) {
                         MPVOptionsSettingsView()
                     }
                 } label: {
-                    Label(String(localized: "settings.advanced.mpv.options"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("settings.advanced.mpv.options"), systemImage: "slider.horizontal.3")
                 }
                 #else
                 SettingsNavigationRow("settings.advanced.mpv.options", systemImage: "slider.horizontal.3") {
@@ -234,12 +234,12 @@ struct AdvancedSettingsView: View {
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "wave.3.right",
-                        title: String(localized: "settings.playback.tvSyncDiagnostics.header")
+                        title: AppLocalization.string("settings.playback.tvSyncDiagnostics.header")
                     ) {
                         AVSyncDiagnosticsView(settings: settings)
                     }
                 } label: {
-                    Label(String(localized: "settings.playback.tvSyncDiagnostics.row"), systemImage: "wave.3.right")
+                    Label(AppLocalization.string("settings.playback.tvSyncDiagnostics.row"), systemImage: "wave.3.right")
                 }
             }
         }
@@ -250,9 +250,9 @@ struct AdvancedSettingsView: View {
 
     private func formatBufferOption(_ seconds: Double) -> String {
         if seconds == 1.0 {
-            return String(localized: "settings.advanced.mpv.bufferSecond")
+            return AppLocalization.string("settings.advanced.mpv.bufferSecond")
         } else {
-            return String(localized: "settings.advanced.mpv.bufferSeconds \(Int(seconds))")
+            return AppLocalization.string("settings.advanced.mpv.bufferSeconds \(Int(seconds))")
         }
     }
 
@@ -265,7 +265,7 @@ struct AdvancedSettingsView: View {
                 Button {
                     runStorageDiagnostics()
                 } label: {
-                    Label(String(localized: "settings.advanced.storage.scan"), systemImage: "internaldrive")
+                    Label(AppLocalization.string("settings.advanced.storage.scan"), systemImage: "internaldrive")
                 }
                 .disabled(isScanningStorage)
 
@@ -299,7 +299,7 @@ struct AdvancedSettingsView: View {
                 Button(role: .destructive) {
                     showingClearDataConfirmation = true
                 } label: {
-                    Label(String(localized: "settings.advanced.data.clearCache"), systemImage: "trash")
+                    Label(AppLocalization.string("settings.advanced.data.clearCache"), systemImage: "trash")
                 }
                 Spacer()
             }
@@ -309,7 +309,7 @@ struct AdvancedSettingsView: View {
                 Button(role: .destructive) {
                     showingOrphanCleanupConfirmation = true
                 } label: {
-                    Label(String(localized: "settings.advanced.storage.deleteOrphaned"), systemImage: "trash")
+                    Label(AppLocalization.string("settings.advanced.storage.deleteOrphaned"), systemImage: "trash")
                 }
                 .disabled(orphanedFilesCount == 0 || isScanning)
 
@@ -322,13 +322,13 @@ struct AdvancedSettingsView: View {
             }
         } footer: {
             if isScanning {
-                Text(String(localized: "settings.advanced.storage.scanning"))
+                Text(AppLocalization.string("settings.advanced.storage.scanning"))
             } else if orphanedFilesCount > 0 {
-                Text(String(localized: "settings.advanced.storage.foundOrphaned \(orphanedFilesCount) \(formatBytes(orphanedFilesSize))"))
+                Text(AppLocalization.string("settings.advanced.storage.foundOrphaned \(orphanedFilesCount) \(formatBytes(orphanedFilesSize))"))
             } else if storageDiagnostics != nil {
-                Text(String(localized: "settings.advanced.storage.noOrphaned"))
+                Text(AppLocalization.string("settings.advanced.storage.noOrphaned"))
             } else {
-                Text(String(localized: "settings.advanced.storage.tapToScan"))
+                Text(AppLocalization.string("settings.advanced.storage.tapToScan"))
             }
         }
     }
@@ -358,14 +358,14 @@ struct AdvancedSettingsView: View {
                     get: { settingsManager.remoteControlHideWhenBackgrounded },
                     set: { settingsManager.remoteControlHideWhenBackgrounded = $0 }
                 )) {
-                    Label(String(localized: "remoteControl.hideWhenBackgrounded"), systemImage: "moon.fill")
+                    Label(AppLocalization.string("remoteControl.hideWhenBackgrounded"), systemImage: "moon.fill")
                 }
                 #endif
             } footer: {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "settings.advanced.remoteControl.footer"))
+                    Text(AppLocalization.string("settings.advanced.remoteControl.footer"))
                     #if os(iOS) || os(tvOS)
-                    Text(String(localized: "settings.advanced.remoteControl.hideWhenBackgrounded.footer"))
+                    Text(AppLocalization.string("settings.advanced.remoteControl.hideWhenBackgrounded.footer"))
                     #endif
                 }
             }
@@ -382,12 +382,12 @@ struct AdvancedSettingsView: View {
                 get: { AppUpdater.shared.wantsBetaChannel },
                 set: { AppUpdater.shared.wantsBetaChannel = $0 }
             )) {
-                Label(String(localized: "settings.updates.receiveBeta"), systemImage: "testtube.2")
+                Label(AppLocalization.string("settings.updates.receiveBeta"), systemImage: "testtube.2")
             }
             Button {
                 AppUpdater.shared.checkForUpdates()
             } label: {
-                Label(String(localized: "menu.app.checkForUpdates"), systemImage: "arrow.triangle.2.circlepath")
+                Label(AppLocalization.string("menu.app.checkForUpdates"), systemImage: "arrow.triangle.2.circlepath")
             }
             .disabled(!AppUpdater.shared.canCheckForUpdates)
         }
@@ -401,7 +401,7 @@ struct AdvancedSettingsView: View {
             NavigationLink {
                 DeveloperSettingsView()
             } label: {
-                Label(String(localized: "settings.developer.title"), systemImage: "hammer")
+                Label(AppLocalization.string("settings.developer.title"), systemImage: "hammer")
             }
             #else
             SettingsNavigationRow("settings.developer.title", systemImage: "hammer") {
@@ -414,12 +414,12 @@ struct AdvancedSettingsView: View {
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "person.badge.key",
-                        title: String(localized: "migration.accounts.title")
+                        title: AppLocalization.string("migration.accounts.title")
                     ) {
                         LegacyDataImportView()
                     }
                 } label: {
-                    Label(String(localized: "migration.accounts.title"), systemImage: "person.badge.key")
+                    Label(AppLocalization.string("migration.accounts.title"), systemImage: "person.badge.key")
                 }
                 #else
                 SettingsNavigationRow("migration.accounts.title", systemImage: "person.badge.key") {
@@ -439,14 +439,14 @@ struct AdvancedSettingsView: View {
     // MARK: - Feed Cache Options
 
     private static let feedCacheValidityOptions: [(minutes: Int, label: String)] = [
-        (5, String(localized: "settings.advanced.feed.cacheValidity.5min")),
-        (15, String(localized: "settings.advanced.feed.cacheValidity.15min")),
-        (30, String(localized: "settings.advanced.feed.cacheValidity.30min")),
-        (60, String(localized: "settings.advanced.feed.cacheValidity.1hour")),
-        (120, String(localized: "settings.advanced.feed.cacheValidity.2hours")),
-        (360, String(localized: "settings.advanced.feed.cacheValidity.6hours")),
-        (720, String(localized: "settings.advanced.feed.cacheValidity.12hours")),
-        (1440, String(localized: "settings.advanced.feed.cacheValidity.24hours")),
+        (5, AppLocalization.string("settings.advanced.feed.cacheValidity.5min")),
+        (15, AppLocalization.string("settings.advanced.feed.cacheValidity.15min")),
+        (30, AppLocalization.string("settings.advanced.feed.cacheValidity.30min")),
+        (60, AppLocalization.string("settings.advanced.feed.cacheValidity.1hour")),
+        (120, AppLocalization.string("settings.advanced.feed.cacheValidity.2hours")),
+        (360, AppLocalization.string("settings.advanced.feed.cacheValidity.6hours")),
+        (720, AppLocalization.string("settings.advanced.feed.cacheValidity.12hours")),
+        (1440, AppLocalization.string("settings.advanced.feed.cacheValidity.24hours")),
     ]
 
     // MARK: - Actions

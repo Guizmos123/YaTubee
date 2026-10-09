@@ -16,7 +16,7 @@ extension QualitySelectorView {
             Spacer()
             ProgressView()
                 .controlSize(.large)
-            Text(String(localized: "player.quality.loading"))
+            Text(AppLocalization.string("player.quality.loading"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -27,9 +27,9 @@ extension QualitySelectorView {
     @ViewBuilder
     var emptyContent: some View {
         ContentUnavailableView(
-            String(localized: "player.quality.unavailable"),
+            AppLocalization.string("player.quality.unavailable"),
             systemImage: "film.stack",
-            description: Text(String(localized: "player.quality.unavailable.description"))
+            description: Text(AppLocalization.string("player.quality.unavailable.description"))
         )
     }
 
@@ -92,7 +92,7 @@ extension QualitySelectorView {
         VStack(spacing: 8) {
             mediaSelectionRow(
                 destination: .video,
-                label: String(localized: "player.quality.video"),
+                label: AppLocalization.string("player.quality.video"),
                 systemImage: "film",
                 value: currentVideoDisplayValue
             )
@@ -100,7 +100,7 @@ extension QualitySelectorView {
             if availableTabs.contains(.audio) {
                 mediaSelectionRow(
                     destination: .audio,
-                    label: String(localized: "stream.audio"),
+                    label: AppLocalization.string("stream.audio"),
                     systemImage: "speaker.wave.2",
                     value: currentAudioDisplayValue
                 )
@@ -108,7 +108,7 @@ extension QualitySelectorView {
             if availableTabs.contains(.subtitles) {
                 mediaSelectionRow(
                     destination: .subtitles,
-                    label: String(localized: "stream.subtitles"),
+                    label: AppLocalization.string("stream.subtitles"),
                     systemImage: "captions.bubble",
                     value: currentSubtitlesDisplayValue
                 )
@@ -118,7 +118,7 @@ extension QualitySelectorView {
         VStack(spacing: 0) {
             mediaSelectionRow(
                 destination: .video,
-                label: String(localized: "player.quality.video"),
+                label: AppLocalization.string("player.quality.video"),
                 systemImage: "film",
                 value: currentVideoDisplayValue
             )
@@ -126,7 +126,7 @@ extension QualitySelectorView {
                 Divider()
                 mediaSelectionRow(
                     destination: .audio,
-                    label: String(localized: "stream.audio"),
+                    label: AppLocalization.string("stream.audio"),
                     systemImage: "speaker.wave.2",
                     value: currentAudioDisplayValue
                 )
@@ -135,7 +135,7 @@ extension QualitySelectorView {
                 Divider()
                 mediaSelectionRow(
                     destination: .subtitles,
-                    label: String(localized: "stream.subtitles"),
+                    label: AppLocalization.string("stream.subtitles"),
                     systemImage: "captions.bubble",
                     value: currentSubtitlesDisplayValue
                 )
@@ -178,7 +178,7 @@ extension QualitySelectorView {
 
     private var currentVideoDisplayValue: String {
         guard let stream = currentStream else {
-            return String(localized: "stream.subtitles.none")
+            return AppLocalization.string("stream.subtitles.none")
         }
         let format = StreamFormat.detect(from: stream)
         if format == .hls || format == .dash {
@@ -194,12 +194,12 @@ extension QualitySelectorView {
             return track.displayName
         }
         if isCurrentStreamMuxed {
-            return String(localized: "player.quality.audioFromVideo.short")
+            return AppLocalization.string("player.quality.audioFromVideo.short")
         }
         if let audio = selectedAudioStream ?? currentAudioStream {
             return parseAudioTrackName(audio).language
         }
-        return String(localized: "stream.audio.default")
+        return AppLocalization.string("stream.audio.default")
     }
 
     private var currentSubtitlesDisplayValue: String {
@@ -207,14 +207,14 @@ extension QualitySelectorView {
            let track = embeddedSubtitleTracks.first(where: { $0.trackID == trackID }) {
             return track.displayName
         }
-        return currentCaption?.displayName ?? String(localized: "stream.subtitles.off")
+        return currentCaption?.displayName ?? AppLocalization.string("stream.subtitles.off")
     }
 
     // MARK: - Detail Content Views
 
     @ViewBuilder
     var videoDetailContent: some View {
-        detailContent(title: String(localized: "player.quality.video")) {
+        detailContent(title: AppLocalization.string("player.quality.video")) {
             if !adaptiveStreams.isEmpty {
                 adaptiveSectionContent
             }
@@ -226,14 +226,14 @@ extension QualitySelectorView {
 
     @ViewBuilder
     var audioDetailContent: some View {
-        detailContent(title: String(localized: "stream.audio")) {
+        detailContent(title: AppLocalization.string("stream.audio")) {
             audioSectionContent
         }
     }
 
     @ViewBuilder
     var subtitlesDetailContent: some View {
-        detailContent(title: String(localized: "stream.subtitles")) {
+        detailContent(title: AppLocalization.string("stream.subtitles")) {
             subtitlesSectionContent
         }
     }
@@ -357,7 +357,7 @@ extension QualitySelectorView {
     @ViewBuilder
     private var playbackSpeedRow: some View {
         HStack {
-            Label(String(localized: "player.quality.playbackSpeed"), systemImage: "gauge.with.needle")
+            Label(AppLocalization.string("player.quality.playbackSpeed"), systemImage: "gauge.with.needle")
                 .font(.headline)
 
             Spacer()
@@ -432,12 +432,12 @@ extension QualitySelectorView {
             onAudioModeToggled?(!isAudioMode)
         } label: {
             HStack {
-                Label(String(localized: "player.quality.audioMode"), systemImage: "music.note")
+                Label(AppLocalization.string("player.quality.audioMode"), systemImage: "music.note")
                     .font(.headline)
 
                 Spacer()
 
-                Text(isAudioMode ? String(localized: "common.on") : String(localized: "common.off"))
+                Text(isAudioMode ? AppLocalization.string("common.on") : AppLocalization.string("common.off"))
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 14)
@@ -448,7 +448,7 @@ extension QualitySelectorView {
         .buttonStyle(TVSettingsRowButtonStyle())
         #else
         HStack {
-            Label(String(localized: "player.quality.audioMode"), systemImage: "music.note")
+            Label(AppLocalization.string("player.quality.audioMode"), systemImage: "music.note")
                 .font(.headline)
 
             Spacer()
@@ -468,7 +468,7 @@ extension QualitySelectorView {
     @ViewBuilder
     private var lockControlsRow: some View {
         HStack {
-            Label(String(localized: "player.quality.lockControls"), systemImage: "lock")
+            Label(AppLocalization.string("player.quality.lockControls"), systemImage: "lock")
                 .font(.headline)
 
             Spacer()
@@ -491,7 +491,7 @@ extension QualitySelectorView {
         if let download = currentDownload {
             // Video section
             VStack(alignment: .leading, spacing: 8) {
-                Label(String(localized: "player.quality.video"), systemImage: "film")
+                Label(AppLocalization.string("player.quality.video"), systemImage: "film")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
@@ -506,7 +506,7 @@ extension QualitySelectorView {
             // Audio section (if separate audio track)
             if download.localAudioPath != nil {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label(String(localized: "stream.audio"), systemImage: "speaker.wave.2")
+                    Label(AppLocalization.string("stream.audio"), systemImage: "speaker.wave.2")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -522,7 +522,7 @@ extension QualitySelectorView {
             // Subtitles section (if downloaded)
             if download.localCaptionPath != nil {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label(String(localized: "stream.subtitles"), systemImage: "captions.bubble")
+                    Label(AppLocalization.string("stream.subtitles"), systemImage: "captions.bubble")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -569,7 +569,7 @@ extension QualitySelectorView {
                 } else {
                     Image(systemName: "arrow.clockwise")
                 }
-                Text(String(localized: "player.quality.loadOnline"))
+                Text(AppLocalization.string("player.quality.loadOnline"))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -583,7 +583,7 @@ extension QualitySelectorView {
     @ViewBuilder
     var adaptiveSectionContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(String(localized: "stream.adaptive"), systemImage: "antenna.radiowaves.left.and.right")
+            Label(AppLocalization.string("stream.adaptive"), systemImage: "antenna.radiowaves.left.and.right")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
 
@@ -638,7 +638,7 @@ extension QualitySelectorView {
             // Recommended section
             if !recommendedVideoStreams.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label(String(localized: "player.quality.recommended"), systemImage: "bolt.fill")
+                    Label(AppLocalization.string("player.quality.recommended"), systemImage: "bolt.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -667,7 +667,7 @@ extension QualitySelectorView {
             // Other section (software decode)
             if showAdvancedStreamDetails && !otherVideoStreams.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label(String(localized: "player.quality.other"), systemImage: "cpu")
+                    Label(AppLocalization.string("player.quality.other"), systemImage: "cpu")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -792,7 +792,7 @@ extension QualitySelectorView {
                 HStack {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                    Text(String(localized: "player.quality.audioFromVideo"))
+                    Text(AppLocalization.string("player.quality.audioFromVideo"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Spacer()

@@ -35,9 +35,9 @@ private func sheetCloseButton(
 ) -> some View {
     let button = Button(role: .cancel, action: action) {
         #if os(macOS)
-        Text(String(localized: titleKey))
+        Text(AppLocalization.stringResource(titleKey))
         #else
-        Label(String(localized: titleKey), systemImage: "xmark")
+        Label(AppLocalization.stringResource(titleKey), systemImage: "xmark")
             .labelStyle(.iconOnly)
         #endif
     }

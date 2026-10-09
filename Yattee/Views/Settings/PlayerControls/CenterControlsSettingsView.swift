@@ -54,20 +54,20 @@ struct CenterControlsSettingsView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
             } header: {
-                Text(String(localized: "settings.playerControls.preview"))
+                Text(AppLocalization.string("settings.playerControls.preview"))
             }
 
             // Play/Pause toggle
             Section {
                 Toggle(
-                    String(localized: "settings.playerControls.center.showPlayPause"),
+                    AppLocalization.string("settings.playerControls.center.showPlayPause"),
                     isOn: $showPlayPause
                 )
                 .onChange(of: showPlayPause) { _, newValue in
                     viewModel.updateCenterSettingsSync { $0.showPlayPause = newValue }
                 }
             } header: {
-                Text(String(localized: "settings.playerControls.center.playback"))
+                Text(AppLocalization.string("settings.playerControls.center.playback"))
             }
             #endif
 
@@ -75,7 +75,7 @@ struct CenterControlsSettingsView: View {
             Section {
                 #if os(iOS)
                 Toggle(
-                    String(localized: "settings.playerControls.center.showSeekBackward"),
+                    AppLocalization.string("settings.playerControls.center.showSeekBackward"),
                     isOn: $showSeekBackward
                 )
                 .onChange(of: showSeekBackward) { _, newValue in
@@ -86,7 +86,7 @@ struct CenterControlsSettingsView: View {
                 if seekBackwardControlsVisible {
                     #if !os(tvOS)
                     HStack {
-                        Text(String(localized: "settings.playerControls.center.seekBackwardTime"))
+                        Text(AppLocalization.string("settings.playerControls.center.seekBackwardTime"))
                         Spacer()
                         Text("\(Int(seekBackwardSeconds))s")
                             .foregroundStyle(.secondary)
@@ -150,14 +150,14 @@ struct CenterControlsSettingsView: View {
                     #endif
                 }
             } header: {
-                Text(String(localized: "settings.playerControls.center.seekBackward"))
+                Text(AppLocalization.string("settings.playerControls.center.seekBackward"))
             }
 
             // Seek forward settings
             Section {
                 #if os(iOS)
                 Toggle(
-                    String(localized: "settings.playerControls.center.showSeekForward"),
+                    AppLocalization.string("settings.playerControls.center.showSeekForward"),
                     isOn: $showSeekForward
                 )
                 .onChange(of: showSeekForward) { _, newValue in
@@ -168,7 +168,7 @@ struct CenterControlsSettingsView: View {
                 if seekForwardControlsVisible {
                     #if !os(tvOS)
                     HStack {
-                        Text(String(localized: "settings.playerControls.center.seekForwardTime"))
+                        Text(AppLocalization.string("settings.playerControls.center.seekForwardTime"))
                         Spacer()
                         Text("\(Int(seekForwardSeconds))s")
                             .foregroundStyle(.secondary)
@@ -232,7 +232,7 @@ struct CenterControlsSettingsView: View {
                     #endif
                 }
             } header: {
-                Text(String(localized: "settings.playerControls.center.seekForward"))
+                Text(AppLocalization.string("settings.playerControls.center.seekForward"))
             } footer: {
                 #if os(macOS)
                 Text(String(
@@ -246,7 +246,7 @@ struct CenterControlsSettingsView: View {
             // Side sliders section (iOS only)
             Section {
                 Picker(
-                    String(localized: "settings.playerControls.center.leftSlider"),
+                    AppLocalization.string("settings.playerControls.center.leftSlider"),
                     selection: $leftSlider
                 ) {
                     ForEach(SideSliderType.allCases, id: \.self) { type in
@@ -258,7 +258,7 @@ struct CenterControlsSettingsView: View {
                 }
 
                 Picker(
-                    String(localized: "settings.playerControls.center.rightSlider"),
+                    AppLocalization.string("settings.playerControls.center.rightSlider"),
                     selection: $rightSlider
                 ) {
                     ForEach(SideSliderType.allCases, id: \.self) { type in
@@ -269,17 +269,17 @@ struct CenterControlsSettingsView: View {
                     viewModel.updateCenterSettingsSync { $0.rightSlider = newValue }
                 }
             } header: {
-                Text(String(localized: "settings.playerControls.center.sliders"))
+                Text(AppLocalization.string("settings.playerControls.center.sliders"))
             } footer: {
-                Text(String(localized: "settings.playerControls.center.slidersFooter"))
+                Text(AppLocalization.string("settings.playerControls.center.slidersFooter"))
             }
             #endif
         }
         #if os(macOS)
         .formStyle(.grouped)
-        .navigationTitle(String(localized: "settings.playerControls.seekDurations", defaultValue: "Seek Durations"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.seekDurations", defaultValue: "Seek Durations"))
         #else
-        .navigationTitle(String(localized: "settings.playerControls.centerControls"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.centerControls"))
         #endif
         .opaqueSettingsFormBackground()
         #if os(iOS)

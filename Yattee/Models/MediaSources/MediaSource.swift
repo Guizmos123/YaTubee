@@ -16,11 +16,11 @@ enum MediaSourceType: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .webdav:
-            return String(localized: "sources.type.webdav")
+            return AppLocalization.string("sources.type.webdav")
         case .localFolder:
-            return String(localized: "sources.type.localFolder")
+            return AppLocalization.string("sources.type.localFolder")
         case .smb:
-            return String(localized: "sources.type.smb")
+            return AppLocalization.string("sources.type.smb")
         }
     }
 

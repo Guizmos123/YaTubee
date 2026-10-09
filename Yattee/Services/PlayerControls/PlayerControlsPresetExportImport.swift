@@ -26,13 +26,13 @@ enum LayoutPresetImportError: LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .invalidData:
-            return String(localized: "settings.playerControls.import.error.invalidData")
+            return AppLocalization.string("settings.playerControls.import.error.invalidData")
         case .emptyFile:
-            return String(localized: "settings.playerControls.import.error.emptyFile")
+            return AppLocalization.string("settings.playerControls.import.error.emptyFile")
         case .parsingFailed(let details):
-            return String(localized: "settings.playerControls.import.error.parsingFailed \(details)")
+            return AppLocalization.string("settings.playerControls.import.error.parsingFailed \(details)")
         case .wrongDeviceClass(_, let found):
-            return String(localized: "settings.playerControls.import.error.wrongDeviceClass \(found.displayName)")
+            return AppLocalization.string("settings.playerControls.import.error.wrongDeviceClass \(found.displayName)")
         }
     }
 }

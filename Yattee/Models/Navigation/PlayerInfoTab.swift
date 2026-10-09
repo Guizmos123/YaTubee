@@ -13,8 +13,8 @@ enum PlayerInfoTab: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .description: return String(localized: "player.description")
-        case .comments: return String(localized: "player.comments")
+        case .description: return AppLocalization.string("player.description")
+        case .comments: return AppLocalization.string("player.comments")
         }
     }
 }

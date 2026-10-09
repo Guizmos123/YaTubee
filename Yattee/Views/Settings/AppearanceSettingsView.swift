@@ -41,7 +41,7 @@ struct AppearanceSettingsView: View {
             }
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.appearance.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.appearance.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -57,7 +57,7 @@ private struct ThemeSection: View {
     var body: some View {
         SettingsFormSection("settings.appearance.theme.header") {
             Picker(
-                String(localized: "settings.appearance.theme"),
+                AppLocalization.string("settings.appearance.theme"),
                 selection: $settings.theme
             ) {
                 ForEach(AppTheme.allCases, id: \.self) { theme in
@@ -133,7 +133,7 @@ private struct AppIconPickerView: View {
                 .buttonStyle(.plain)
             }
         }
-        .navigationTitle(String(localized: "settings.appearance.appIcon.header"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.appearance.appIcon.header"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -154,17 +154,17 @@ private struct AccentColorSection: View {
         SettingsFormSection("settings.appearance.accentColor.header") {
             #if !os(tvOS)
             Toggle(isOn: $settings.useSeparateDarkAccentColor) {
-                Text(String(localized: "settings.appearance.accentColor.separateColors"))
+                Text(AppLocalization.string("settings.appearance.accentColor.separateColors"))
             }
             #endif
 
             if settings.useSeparateDarkAccentColor {
-                Text(String(localized: "settings.appearance.accentColor.light"))
+                Text(AppLocalization.string("settings.appearance.accentColor.light"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 AccentColorGrid(settings: settings, target: .light)
 
-                Text(String(localized: "settings.appearance.accentColor.dark"))
+                Text(AppLocalization.string("settings.appearance.accentColor.dark"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 AccentColorGrid(settings: settings, target: .dark)
@@ -217,7 +217,7 @@ private struct ListStyleSection: View {
                     Text(style.displayName).tag(style)
                 }
             } label: {
-                Label(String(localized: "settings.appearance.listStyle"), systemImage: "list.bullet")
+                Label(AppLocalization.string("settings.appearance.listStyle"), systemImage: "list.bullet")
             }
         }
     }
@@ -231,7 +231,7 @@ private struct ThumbnailSection: View {
     var body: some View {
         SettingsFormSection("settings.appearance.thumbnails.header") {
             Toggle(isOn: $settings.showWatchedCheckmark) {
-                Label(String(localized: "settings.appearance.showWatchedCheckmark"),
+                Label(AppLocalization.string("settings.appearance.showWatchedCheckmark"),
                       systemImage: "checkmark.circle.fill")
             }
         }
@@ -309,7 +309,7 @@ private struct CustomAccentColorButton: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "settings.appearance.accentColor.custom"))
+        .accessibilityLabel(AppLocalization.string("settings.appearance.accentColor.custom"))
     }
     #else
     private var pickedColor: Binding<Color> {
@@ -330,7 +330,7 @@ private struct CustomAccentColorButton: View {
                 .opacity(isSelected ? 1 : 0)
 
             ColorPicker(
-                String(localized: "settings.appearance.accentColor.custom"),
+                AppLocalization.string("settings.appearance.accentColor.custom"),
                 selection: pickedColor,
                 supportsOpacity: false
             )
@@ -343,7 +343,7 @@ private struct CustomAccentColorButton: View {
                     .allowsHitTesting(false)
             }
         }
-        .accessibilityLabel(String(localized: "settings.appearance.accentColor.custom"))
+        .accessibilityLabel(AppLocalization.string("settings.appearance.accentColor.custom"))
     }
     #endif
 }
@@ -378,9 +378,9 @@ private final class ColorPanelBridge: NSObject {
 extension AppTheme {
     var displayName: String {
         switch self {
-        case .system: return String(localized: "settings.appearance.theme.system")
-        case .light: return String(localized: "settings.appearance.theme.light")
-        case .dark: return String(localized: "settings.appearance.theme.dark")
+        case .system: return AppLocalization.string("settings.appearance.theme.system")
+        case .light: return AppLocalization.string("settings.appearance.theme.light")
+        case .dark: return AppLocalization.string("settings.appearance.theme.dark")
         }
     }
 }
@@ -392,17 +392,17 @@ extension AppTheme {
 extension AccentColor {
     var displayName: String {
         switch self {
-        case .default: return String(localized: "settings.appearance.accentColor.default")
-        case .red: return String(localized: "settings.appearance.accentColor.red")
-        case .pink: return String(localized: "settings.appearance.accentColor.pink")
-        case .orange: return String(localized: "settings.appearance.accentColor.orange")
-        case .yellow: return String(localized: "settings.appearance.accentColor.yellow")
-        case .green: return String(localized: "settings.appearance.accentColor.green")
-        case .teal: return String(localized: "settings.appearance.accentColor.teal")
-        case .blue: return String(localized: "settings.appearance.accentColor.blue")
-        case .purple: return String(localized: "settings.appearance.accentColor.purple")
-        case .indigo: return String(localized: "settings.appearance.accentColor.indigo")
-        case .custom: return String(localized: "settings.appearance.accentColor.custom")
+        case .default: return AppLocalization.string("settings.appearance.accentColor.default")
+        case .red: return AppLocalization.string("settings.appearance.accentColor.red")
+        case .pink: return AppLocalization.string("settings.appearance.accentColor.pink")
+        case .orange: return AppLocalization.string("settings.appearance.accentColor.orange")
+        case .yellow: return AppLocalization.string("settings.appearance.accentColor.yellow")
+        case .green: return AppLocalization.string("settings.appearance.accentColor.green")
+        case .teal: return AppLocalization.string("settings.appearance.accentColor.teal")
+        case .blue: return AppLocalization.string("settings.appearance.accentColor.blue")
+        case .purple: return AppLocalization.string("settings.appearance.accentColor.purple")
+        case .indigo: return AppLocalization.string("settings.appearance.accentColor.indigo")
+        case .custom: return AppLocalization.string("settings.appearance.accentColor.custom")
         }
     }
 }

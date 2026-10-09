@@ -108,7 +108,7 @@ final class NotificationManager: NSObject {
             )
         } else if totalCount <= 3 {
             // 2-3 videos: List each video as "Author: Title" on separate lines
-            content.title = String(localized: "notification.newVideos.title")
+            content.title = AppLocalization.string("notification.newVideos.title")
             let videoLines = videos.map { item in
                 String(
                     format: NSLocalizedString("notification.videoItem %@ %@", comment: "Video item: Author: Title"),
@@ -124,7 +124,7 @@ final class NotificationManager: NSObject {
 
             if channelCount == 1, let (channelName, channelVideos) = groupedByChannel.first {
                 // Multiple videos from one channel: "4 new videos from X"
-                content.title = String(localized: "notification.newVideos.title")
+                content.title = AppLocalization.string("notification.newVideos.title")
                 content.body = String(
                     format: NSLocalizedString("notification.multipleVideosOneChannel %lld %@", comment: "Multiple videos from one channel"),
                     channelVideos.count,
@@ -132,7 +132,7 @@ final class NotificationManager: NSObject {
                 )
             } else {
                 // Multiple channels
-                content.title = String(localized: "notification.newVideos.title")
+                content.title = AppLocalization.string("notification.newVideos.title")
 
                 let channelNames = groupedByChannel
                     .sorted { $0.value.count > $1.value.count }
@@ -222,7 +222,7 @@ final class NotificationManager: NSObject {
     func registerNotificationCategories() {
         let watchAction = UNNotificationAction(
             identifier: Self.watchActionIdentifier,
-            title: String(localized: "notification.action.watch"),
+            title: AppLocalization.string("notification.action.watch"),
             options: [.foreground]
         )
 

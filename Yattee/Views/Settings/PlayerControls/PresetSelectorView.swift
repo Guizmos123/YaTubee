@@ -64,7 +64,7 @@ struct PresetSelectorView: View {
     var body: some View {
         presetList
             .opaqueSettingsFormBackground()
-            .navigationTitle(String(localized: "settings.playerControls.presets"))
+            .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.presets"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -77,23 +77,23 @@ struct PresetSelectorView: View {
             #endif
             #if !os(tvOS)
             .alert(
-                String(localized: "settings.playerControls.import.error.title"),
+                AppLocalization.string("settings.playerControls.import.error.title"),
                 isPresented: $showingImportError
             ) {
-                Button(String(localized: "settings.playerControls.ok")) {}
+                Button(AppLocalization.string("settings.playerControls.ok")) {}
             } message: {
                 if let error = importError {
                     Text(error)
                 }
             }
             .alert(
-                String(localized: "settings.playerControls.import.success.title"),
+                AppLocalization.string("settings.playerControls.import.success.title"),
                 isPresented: $showingImportSuccess
             ) {
-                Button(String(localized: "settings.playerControls.ok")) {}
+                Button(AppLocalization.string("settings.playerControls.ok")) {}
             } message: {
                 if let name = importedPresetName {
-                    Text(String(localized: "settings.playerControls.import.success.message \(name)"))
+                    Text(AppLocalization.string("settings.playerControls.import.success.message \(name)"))
                 }
             }
             #endif
@@ -151,7 +151,7 @@ struct PresetSelectorView: View {
                 )
             }
         } header: {
-            Text(String(localized: "settings.playerControls.builtInPresets"))
+            Text(AppLocalization.string("settings.playerControls.builtInPresets"))
         }
     }
 
@@ -163,7 +163,7 @@ struct PresetSelectorView: View {
                     customPresetRow(preset)
                 }
             } header: {
-                Text(String(localized: "settings.playerControls.customPresets"))
+                Text(AppLocalization.string("settings.playerControls.customPresets"))
             }
         }
     }
@@ -200,7 +200,7 @@ struct PresetSelectorView: View {
                     showCreateSheet = true
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.newPreset"),
+                        AppLocalization.string("settings.playerControls.newPreset"),
                         systemImage: "plus"
                     )
                 }
@@ -211,14 +211,14 @@ struct PresetSelectorView: View {
                     showImportPicker()
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.importPreset"),
+                        AppLocalization.string("settings.playerControls.importPreset"),
                         systemImage: "square.and.arrow.down"
                     )
                 }
                 .disabled(isImporting)
             } label: {
                 Label(
-                    String(localized: "settings.playerControls.newPreset"),
+                    AppLocalization.string("settings.playerControls.newPreset"),
                     systemImage: "plus"
                 )
             }
@@ -229,7 +229,7 @@ struct PresetSelectorView: View {
                 showCreateSheet = true
             } label: {
                 Label(
-                    String(localized: "settings.playerControls.newPreset"),
+                    AppLocalization.string("settings.playerControls.newPreset"),
                     systemImage: "plus"
                 )
             }
@@ -285,7 +285,7 @@ struct PresetSelectorView: View {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.message = String(localized: "settings.playerControls.import.panel.message")
+        panel.message = AppLocalization.string("settings.playerControls.import.panel.message")
 
         if panel.runModal() == .OK, let url = panel.url {
             handleImportedFile(url)
@@ -365,7 +365,7 @@ private struct PresetRow: View {
                         .foregroundStyle(.primary)
 
                     if preset.isBuiltIn {
-                        Text(String(localized: "settings.playerControls.builtIn"))
+                        Text(AppLocalization.string("settings.playerControls.builtIn"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -388,7 +388,7 @@ private struct PresetRow: View {
                     onDelete()
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.delete"),
+                        AppLocalization.string("settings.playerControls.delete"),
                         systemImage: "trash"
                     )
                 }
@@ -399,7 +399,7 @@ private struct PresetRow: View {
                     onRename()
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.rename"),
+                        AppLocalization.string("settings.playerControls.rename"),
                         systemImage: "pencil"
                     )
                 }
@@ -411,7 +411,7 @@ private struct PresetRow: View {
                     onExport()
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.exportPreset"),
+                        AppLocalization.string("settings.playerControls.exportPreset"),
                         systemImage: "square.and.arrow.up"
                     )
                 }
@@ -425,7 +425,7 @@ private struct PresetRow: View {
                     onRename()
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.rename"),
+                        AppLocalization.string("settings.playerControls.rename"),
                         systemImage: "pencil"
                     )
                 }
@@ -436,7 +436,7 @@ private struct PresetRow: View {
                     onExport()
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.exportPreset"),
+                        AppLocalization.string("settings.playerControls.exportPreset"),
                         systemImage: "square.and.arrow.up"
                     )
                 }
@@ -448,7 +448,7 @@ private struct PresetRow: View {
                     onDelete()
                 } label: {
                     Label(
-                        String(localized: "settings.playerControls.delete"),
+                        AppLocalization.string("settings.playerControls.delete"),
                         systemImage: "trash"
                     )
                 }

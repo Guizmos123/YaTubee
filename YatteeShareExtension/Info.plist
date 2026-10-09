@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Open in Yattee</string>
+	<string>Open in YaTubee</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>

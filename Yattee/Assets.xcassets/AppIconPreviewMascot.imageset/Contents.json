@@ -1,19 +1,20 @@
 {
   "images" : [
     {
-      "filename" : "AppIconPreviewMascot.png",
+      "filename" : "YaTubee-Mascot-Light.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "AppIconPreviewMascot@2x.png",
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "YaTubee-Mascot-Dark.png",
       "idiom" : "universal",
-      "scale" : "2x"
-    },
-    {
-      "filename" : "AppIconPreviewMascot@3x.png",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "scale" : "1x"
     }
   ],
   "info" : {

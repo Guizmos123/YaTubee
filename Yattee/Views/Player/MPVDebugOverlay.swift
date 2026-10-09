@@ -106,11 +106,11 @@ struct MPVDebugOverlay: View {
             // Header with close button (non-tvOS only - tvOS has button at bottom)
             HStack(spacing: 4) {
                 #if os(tvOS)
-                Text(String(localized: "player.debug.stats"))
+                Text(AppLocalization.string("player.debug.stats"))
                     .font(.system(size: headerSize, weight: .semibold, design: .monospaced))
                     .foregroundStyle(primaryTextColor)
                 #else
-                Text(String(localized: isLandscape ? "player.debug.title" : "player.debug.titleShort"))
+                Text(AppLocalization.string(isLandscape ? "player.debug.title" : "player.debug.titleShort"))
                     .font(.system(size: headerSize, weight: .semibold, design: .monospaced))
                     .foregroundStyle(primaryTextColor)
 

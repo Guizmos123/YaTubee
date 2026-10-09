@@ -17,11 +17,11 @@ enum QualitySelectorTab: String, CaseIterable, Sendable {
     var label: String {
         switch self {
         case .video:
-            String(localized: "player.quality.video")
+            AppLocalization.string("player.quality.video")
         case .audio:
-            String(localized: "stream.audio")
+            AppLocalization.string("stream.audio")
         case .subtitles:
-            String(localized: "stream.subtitles")
+            AppLocalization.string("stream.subtitles")
         }
     }
 }

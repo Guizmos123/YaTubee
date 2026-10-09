@@ -29,57 +29,57 @@ struct DeveloperSettingsView: View {
             testingSection
             dataSection
         }
-        .navigationTitle(String(localized: "settings.developer.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.developer.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .confirmationDialog(
-            String(localized: "settings.advanced.data.removeDuplicates.title"),
+            AppLocalization.string("settings.advanced.data.removeDuplicates.title"),
             isPresented: $showingDeduplicateConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.advanced.data.removeDuplicates.action"), role: .destructive) {
+            Button(AppLocalization.string("settings.advanced.data.removeDuplicates.action"), role: .destructive) {
                 deduplicateData()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "settings.advanced.data.removeDuplicates.message"))
+            Text(AppLocalization.string("settings.advanced.data.removeDuplicates.message"))
         }
         .presentationCompactAdaptation(.sheet)
         .alert(
-            String(localized: "settings.advanced.data.deduplicationComplete"),
+            AppLocalization.string("settings.advanced.data.deduplicationComplete"),
             isPresented: $showingDeduplicationResult
         ) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+            Button(AppLocalization.string("common.ok"), role: .cancel) {}
         } message: {
             if let result = deduplicationResult {
                 if result.totalRemoved > 0 {
                     Text(result.summary)
                 } else {
-                    Text(String(localized: "settings.advanced.data.noDuplicates"))
+                    Text(AppLocalization.string("settings.advanced.data.noDuplicates"))
                 }
             }
         }
         .confirmationDialog(
-            String(localized: "settings.advanced.data.resetICloud.title"),
+            AppLocalization.string("settings.advanced.data.resetICloud.title"),
             isPresented: $showingResetiCloudConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.advanced.data.resetICloud.action"), role: .destructive) {
+            Button(AppLocalization.string("settings.advanced.data.resetICloud.action"), role: .destructive) {
                 resetiCloudData()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "settings.advanced.data.resetICloud.message"))
+            Text(AppLocalization.string("settings.advanced.data.resetICloud.message"))
         }
         .presentationCompactAdaptation(.sheet)
         .alert(
-            String(localized: "settings.advanced.data.iCloudReset"),
+            AppLocalization.string("settings.advanced.data.iCloudReset"),
             isPresented: $showingResetiCloudComplete
         ) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+            Button(AppLocalization.string("common.ok"), role: .cancel) {}
         } message: {
-            Text(String(localized: "settings.advanced.data.iCloudResetMessage"))
+            Text(AppLocalization.string("settings.advanced.data.iCloudResetMessage"))
         }
     }
 
@@ -89,7 +89,7 @@ struct DeveloperSettingsView: View {
     private var loggingSection: some View {
         SettingsFormSection("settings.advanced.logging.sectionTitle", footer: "settings.advanced.logging.footer") {
             Toggle(isOn: $loggingEnabled) {
-                Label(String(localized: "settings.advanced.logging.enable"), systemImage: "doc.text")
+                Label(AppLocalization.string("settings.advanced.logging.enable"), systemImage: "doc.text")
             }
             .onChange(of: loggingEnabled) { _, newValue in
                 loggingService.isEnabled = newValue
@@ -101,7 +101,7 @@ struct DeveloperSettingsView: View {
                     LogViewerView()
                 } label: {
                     HStack {
-                        Label(String(localized: "settings.advanced.logging.viewLogs"), systemImage: "list.bullet.rectangle")
+                        Label(AppLocalization.string("settings.advanced.logging.viewLogs"), systemImage: "list.bullet.rectangle")
                         Spacer()
                         Text("\(loggingService.entries.count)")
                             .foregroundStyle(.secondary)
@@ -128,14 +128,14 @@ struct DeveloperSettingsView: View {
                     get: { settingsManager.verboseMPVLogging },
                     set: { settingsManager.verboseMPVLogging = $0 }
                 )) {
-                    Label(String(localized: "settings.advanced.debug.verboseMPV"), systemImage: "doc.text.magnifyingglass")
+                    Label(AppLocalization.string("settings.advanced.debug.verboseMPV"), systemImage: "doc.text.magnifyingglass")
                 }
 
                 Toggle(isOn: Binding(
                     get: { settingsManager.verboseRemoteControlLogging },
                     set: { settingsManager.verboseRemoteControlLogging = $0 }
                 )) {
-                    Label(String(localized: "settings.advanced.debug.verboseRemote"), systemImage: "antenna.radiowaves.left.and.right")
+                    Label(AppLocalization.string("settings.advanced.debug.verboseRemote"), systemImage: "antenna.radiowaves.left.and.right")
                 }
             }
         }
@@ -149,7 +149,7 @@ struct DeveloperSettingsView: View {
                     get: { settingsManager.showPlayerAreaDebug },
                     set: { settingsManager.showPlayerAreaDebug = $0 }
                 )) {
-                    Label(String(localized: "settings.advanced.debug.playerAreaDebug"), systemImage: "rectangle.dashed")
+                    Label(AppLocalization.string("settings.advanced.debug.playerAreaDebug"), systemImage: "rectangle.dashed")
                 }
 
                 #if os(iOS)
@@ -157,7 +157,7 @@ struct DeveloperSettingsView: View {
                     get: { settingsManager.zoomTransitionsEnabled },
                     set: { settingsManager.zoomTransitionsEnabled = $0 }
                 )) {
-                    Label(String(localized: "settings.advanced.debug.zoomTransitions"), systemImage: "arrow.up.left.and.arrow.down.right")
+                    Label(AppLocalization.string("settings.advanced.debug.zoomTransitions"), systemImage: "arrow.up.left.and.arrow.down.right")
                 }
                 #endif
 
@@ -166,7 +166,7 @@ struct DeveloperSettingsView: View {
                     get: { settingsManager.showTVDebugButton },
                     set: { settingsManager.showTVDebugButton = $0 }
                 )) {
-                    Label(String(localized: "settings.advanced.debug.showTVDebugButton"), systemImage: "ant.circle")
+                    Label(AppLocalization.string("settings.advanced.debug.showTVDebugButton"), systemImage: "ant.circle")
                 }
                 #endif
             }
@@ -187,7 +187,7 @@ struct DeveloperSettingsView: View {
                 Button {
                     showingDeduplicateConfirmation = true
                 } label: {
-                    Label(String(localized: "settings.advanced.data.removeDuplicates"), systemImage: "doc.on.doc")
+                    Label(AppLocalization.string("settings.advanced.data.removeDuplicates"), systemImage: "doc.on.doc")
                 }
                 Spacer()
             }
@@ -196,7 +196,7 @@ struct DeveloperSettingsView: View {
                 Button(role: .destructive) {
                     showingResetiCloudConfirmation = true
                 } label: {
-                    Label(String(localized: "settings.advanced.data.resetICloud"), systemImage: "icloud.slash")
+                    Label(AppLocalization.string("settings.advanced.data.resetICloud"), systemImage: "icloud.slash")
                 }
                 Spacer()
             }
@@ -231,7 +231,7 @@ struct DeveloperSettingsView: View {
                 Button {
                     sendTestNotification()
                 } label: {
-                    Label(String(localized: "settings.advanced.testing.sendTestNotification"), systemImage: "bell.badge")
+                    Label(AppLocalization.string("settings.advanced.testing.sendTestNotification"), systemImage: "bell.badge")
                 }
                 Spacer()
             }
@@ -240,7 +240,7 @@ struct DeveloperSettingsView: View {
                 Button {
                     triggerBackgroundRefresh()
                 } label: {
-                    Label(String(localized: "settings.advanced.testing.triggerBackgroundRefresh"), systemImage: "arrow.clockwise")
+                    Label(AppLocalization.string("settings.advanced.testing.triggerBackgroundRefresh"), systemImage: "arrow.clockwise")
                 }
                 Spacer()
             }

@@ -32,7 +32,7 @@ struct TVAutoplayCountdownView: View {
             
             VStack(spacing: 30) {
                 // Countdown text
-                Text(String(localized: "player.autoplay.playingIn \(countdown)"))
+                Text(AppLocalization.string("player.autoplay.playingIn \(countdown)"))
                     .font(.system(size: 48, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.white)
@@ -117,7 +117,7 @@ struct TVAutoplayCountdownView: View {
         Button {
             onPlayNext()
         } label: {
-            Text(String(localized: "player.autoplay.playNext"))
+            Text(AppLocalization.string("player.autoplay.playNext"))
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 250, height: 80)
@@ -130,7 +130,7 @@ struct TVAutoplayCountdownView: View {
         Button {
             onCancel()
         } label: {
-            Text(String(localized: "player.autoplay.cancel"))
+            Text(AppLocalization.string("player.autoplay.cancel"))
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 250, height: 80)

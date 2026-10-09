@@ -122,29 +122,29 @@ struct AddRemoteServerView: View {
             formContent
         }
         .confirmationDialog(
-            String(localized: "sources.yatteeServer.warning.title"),
+            AppLocalization.string("sources.yatteeServer.warning.title"),
             isPresented: $showingYatteeServerWarning,
             titleVisibility: .visible
         ) {
             yatteeServerWarningButtons
         } message: {
-            Text(String(localized: "sources.yatteeServer.warning.message"))
+            Text(AppLocalization.string("sources.yatteeServer.warning.message"))
         }
         .presentationCompactAdaptation(.sheet)
         #else
         formContent
-            .navigationTitle(String(localized: "sources.addRemoteServer"))
+            .reactiveNavigationTitle(AppLocalization.string("sources.addRemoteServer"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .confirmationDialog(
-                String(localized: "sources.yatteeServer.warning.title"),
+                AppLocalization.string("sources.yatteeServer.warning.title"),
                 isPresented: $showingYatteeServerWarning,
                 titleVisibility: .visible
             ) {
                 yatteeServerWarningButtons
             } message: {
-                Text(String(localized: "sources.yatteeServer.warning.message"))
+                Text(AppLocalization.string("sources.yatteeServer.warning.message"))
             }
             .presentationCompactAdaptation(.sheet)
         #endif
@@ -152,7 +152,7 @@ struct AddRemoteServerView: View {
 
     @ViewBuilder
     private var yatteeServerWarningButtons: some View {
-        Button(String(localized: "sources.yatteeServer.warning.disableOthers"), role: .destructive) {
+        Button(AppLocalization.string("sources.yatteeServer.warning.disableOthers"), role: .destructive) {
             if let instance = pendingYatteeServerInstance {
                 appEnvironment?.instancesManager.disableOtherYatteeServerInstances(except: instance.id)
                 appEnvironment?.instancesManager.add(instance)
@@ -163,7 +163,7 @@ struct AddRemoteServerView: View {
                 }
             }
         }
-        Button(String(localized: "common.cancel"), role: .cancel) {
+        Button(AppLocalization.string("common.cancel"), role: .cancel) {
             pendingYatteeServerInstance = nil
         }
     }
@@ -207,10 +207,10 @@ struct AddRemoteServerView: View {
                         if isValidatingCredentials {
                             HStack(spacing: 6) {
                                 ProgressView().controlSize(.small)
-                                Text(String(localized: "sources.validatingCredentials"))
+                                Text(AppLocalization.string("sources.validatingCredentials"))
                             }
                         } else {
-                            Text(String(localized: "sources.addSource"))
+                            Text(AppLocalization.string("sources.addSource"))
                         }
                     }
                     .disabled(!canAdd || isValidatingCredentials)
@@ -227,7 +227,7 @@ struct AddRemoteServerView: View {
     private var urlEntrySection: some View {
         Section {
             #if os(tvOS)
-            TVSettingsTextField(title: String(localized: "sources.placeholder.urlOrAddress"), text: $urlString)
+            TVSettingsTextField(title: AppLocalization.string("sources.placeholder.urlOrAddress"), text: $urlString)
                 .onChange(of: urlString) { _, _ in
                     handleURLChange()
                 }
@@ -240,18 +240,18 @@ struct AddRemoteServerView: View {
                         HStack {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "sources.detecting"))
+                            Text(AppLocalization.string("sources.detecting"))
                         }
                     } else {
-                        Text(String(localized: "sources.detect"))
+                        Text(AppLocalization.string("sources.detect"))
                     }
                 }
                 .buttonStyle(TVSettingsButtonStyle())
                 .disabled(urlString.isEmpty || uiState == .detecting)
             }
             #elseif os(macOS)
-            LabeledContent(String(localized: "sources.field.url")) {
-                TextField("", text: $urlString, prompt: Text(String(localized: "sources.placeholder.urlOrAddress")))
+            LabeledContent(AppLocalization.string("sources.field.url")) {
+                TextField("", text: $urlString, prompt: Text(AppLocalization.string("sources.placeholder.urlOrAddress")))
                     .textContentType(.URL)
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("addRemoteServer.urlField")
@@ -271,7 +271,7 @@ struct AddRemoteServerView: View {
                                 ProgressView()
                                     .controlSize(.small)
                             }
-                            Text(String(localized: "sources.detect"))
+                            Text(AppLocalization.string("sources.detect"))
                         }
                     }
                     .disabled(urlString.isEmpty || uiState == .detecting)
@@ -279,7 +279,7 @@ struct AddRemoteServerView: View {
                 }
             }
             #else
-            TextField(String(localized: "sources.placeholder.urlOrAddress"), text: $urlString)
+            TextField(AppLocalization.string("sources.placeholder.urlOrAddress"), text: $urlString)
                 .textContentType(.URL)
                 #if os(iOS)
                 .keyboardType(.URL)
@@ -300,7 +300,7 @@ struct AddRemoteServerView: View {
                             ProgressView()
                                 .controlSize(.small)
                         }
-                        Text(String(localized: "sources.detect"))
+                        Text(AppLocalization.string("sources.detect"))
                     }
                 }
                 .disabled(urlString.isEmpty || uiState == .detecting)
@@ -308,7 +308,7 @@ struct AddRemoteServerView: View {
             }
             #endif
         } footer: {
-            Text(String(localized: "sources.footer.remoteServer"))
+            Text(AppLocalization.string("sources.footer.remoteServer"))
         }
     }
 
@@ -320,11 +320,11 @@ struct AddRemoteServerView: View {
                 Text("my-server.example.com")
                     .redacted(reason: .placeholder)
             } header: {
-                Text(String(localized: "sources.detecting"))
+                Text(AppLocalization.string("sources.detecting"))
             }
 
             Section {
-                Text(String(localized: "sources.field.name"))
+                Text(AppLocalization.string("sources.field.name"))
                     .redacted(reason: .placeholder)
             }
         }
@@ -346,37 +346,37 @@ struct AddRemoteServerView: View {
     private func basicAuthRequiredSection(invalidCredentials: Bool) -> some View {
         Section {
             #if os(tvOS)
-            TVSettingsTextField(title: String(localized: "sources.field.username"), text: $basicAuthUsername)
-            TVSettingsTextField(title: String(localized: "sources.field.password"), text: $basicAuthPassword, isSecure: true)
+            TVSettingsTextField(title: AppLocalization.string("sources.field.username"), text: $basicAuthUsername)
+            TVSettingsTextField(title: AppLocalization.string("sources.field.password"), text: $basicAuthPassword, isSecure: true)
             #elseif os(macOS)
-            LabeledContent(String(localized: "sources.field.username")) {
+            LabeledContent(AppLocalization.string("sources.field.username")) {
                 TextField("", text: $basicAuthUsername)
                     .textContentType(.username)
                     .autocorrectionDisabled()
             }
-            LabeledContent(String(localized: "sources.field.password")) {
+            LabeledContent(AppLocalization.string("sources.field.password")) {
                 SecureField("", text: $basicAuthPassword)
                     .textContentType(.password)
             }
             #else
-            TextField(String(localized: "sources.field.username"), text: $basicAuthUsername)
+            TextField(AppLocalization.string("sources.field.username"), text: $basicAuthUsername)
                 .textContentType(.username)
                 #if os(iOS)
                 .textInputAutocapitalization(.never)
                 #endif
                 .autocorrectionDisabled()
 
-            SecureField(String(localized: "sources.field.password"), text: $basicAuthPassword)
+            SecureField(AppLocalization.string("sources.field.password"), text: $basicAuthPassword)
                 .textContentType(.password)
             #endif
         } header: {
-            Text(String(localized: "sources.header.basicAuth"))
+            Text(AppLocalization.string("sources.header.basicAuth"))
         } footer: {
             if invalidCredentials {
-                Text(String(localized: "sources.error.basicAuthInvalid"))
+                Text(AppLocalization.string("sources.error.basicAuthInvalid"))
                     .foregroundStyle(.red)
             } else {
-                Text(String(localized: "sources.footer.basicAuthRequired"))
+                Text(AppLocalization.string("sources.footer.basicAuthRequired"))
             }
         }
 
@@ -388,10 +388,10 @@ struct AddRemoteServerView: View {
                     HStack {
                         ProgressView()
                             .controlSize(.small)
-                        Text(String(localized: "sources.detecting"))
+                        Text(AppLocalization.string("sources.detecting"))
                     }
                 } else {
-                    Text(String(localized: "sources.retryDetection"))
+                    Text(AppLocalization.string("sources.retryDetection"))
                 }
             }
             .disabled(basicAuthUsername.isEmpty || basicAuthPassword.isEmpty || uiState == .detecting)
@@ -408,16 +408,16 @@ struct AddRemoteServerView: View {
     private var serverConfigurationFields: some View {
         Section {
             #if os(tvOS)
-            TVSettingsTextField(title: String(localized: "sources.field.nameOptional"), text: $name)
+            TVSettingsTextField(title: AppLocalization.string("sources.field.nameOptional"), text: $name)
             #elseif os(macOS)
-            LabeledContent(String(localized: "sources.field.name")) {
-                TextField("", text: $name, prompt: Text(String(localized: "sources.field.nameOptional")))
+            LabeledContent(AppLocalization.string("sources.field.name")) {
+                TextField("", text: $name, prompt: Text(AppLocalization.string("sources.field.nameOptional")))
             }
             #else
-            TextField(String(localized: "sources.field.nameOptional"), text: $name)
+            TextField(AppLocalization.string("sources.field.nameOptional"), text: $name)
             #endif
         } header: {
-            Text(String(localized: "sources.header.displayName"))
+            Text(AppLocalization.string("sources.header.displayName"))
         }
 
         // Show detected type badge
@@ -432,7 +432,7 @@ struct AddRemoteServerView: View {
                 }
                 .accessibilityIdentifier("addRemoteServer.detectedType")
             } header: {
-                Text(String(localized: "sources.detectedType"))
+                Text(AppLocalization.string("sources.detectedType"))
             }
         }
 
@@ -441,16 +441,16 @@ struct AddRemoteServerView: View {
             Section {
                 #if os(tvOS)
                 TVSettingsToggle(
-                    title: String(localized: "sources.field.allowInvalidCertificates"),
+                    title: AppLocalization.string("sources.field.allowInvalidCertificates"),
                     isOn: $allowInvalidCertificates
                 )
                 #else
-                Toggle(String(localized: "sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
+                Toggle(AppLocalization.string("sources.field.allowInvalidCertificates"), isOn: $allowInvalidCertificates)
                 #endif
             } header: {
-                Text(String(localized: "sources.header.security"))
+                Text(AppLocalization.string("sources.header.security"))
             } footer: {
-                Text(String(localized: "sources.footer.allowInvalidCertificates"))
+                Text(AppLocalization.string("sources.footer.allowInvalidCertificates"))
             }
         }
 
@@ -466,33 +466,33 @@ struct AddRemoteServerView: View {
         if showBasicAuthSection {
             Section {
                 #if os(tvOS)
-                TVSettingsTextField(title: String(localized: "sources.field.username"), text: $basicAuthUsername)
-                TVSettingsTextField(title: String(localized: "sources.field.password"), text: $basicAuthPassword, isSecure: true)
+                TVSettingsTextField(title: AppLocalization.string("sources.field.username"), text: $basicAuthUsername)
+                TVSettingsTextField(title: AppLocalization.string("sources.field.password"), text: $basicAuthPassword, isSecure: true)
                 #elseif os(macOS)
-                LabeledContent(String(localized: "sources.field.username")) {
+                LabeledContent(AppLocalization.string("sources.field.username")) {
                     TextField("", text: $basicAuthUsername)
                         .textContentType(.username)
                         .autocorrectionDisabled()
                 }
-                LabeledContent(String(localized: "sources.field.password")) {
+                LabeledContent(AppLocalization.string("sources.field.password")) {
                     SecureField("", text: $basicAuthPassword)
                         .textContentType(.password)
                 }
                 #else
-                TextField(String(localized: "sources.field.username"), text: $basicAuthUsername)
+                TextField(AppLocalization.string("sources.field.username"), text: $basicAuthUsername)
                     .textContentType(.username)
                     #if os(iOS)
                     .textInputAutocapitalization(.never)
                     #endif
                     .autocorrectionDisabled()
 
-                SecureField(String(localized: "sources.field.password"), text: $basicAuthPassword)
+                SecureField(AppLocalization.string("sources.field.password"), text: $basicAuthPassword)
                     .textContentType(.password)
                 #endif
             } header: {
-                Text(String(localized: detectedType == .yatteeServer ? "sources.header.auth" : "sources.header.basicAuth"))
+                Text(AppLocalization.string(detectedType == .yatteeServer ? "sources.header.auth" : "sources.header.basicAuth"))
             } footer: {
-                Text(String(localized: detectedType == .yatteeServer ? "sources.footer.yatteeServerAuth" : "sources.footer.basicAuth"))
+                Text(AppLocalization.string(detectedType == .yatteeServer ? "sources.footer.yatteeServerAuth" : "sources.footer.basicAuth"))
             }
 
             if let error = credentialValidationError {
@@ -515,10 +515,10 @@ struct AddRemoteServerView: View {
                     HStack {
                         ProgressView()
                             .controlSize(.small)
-                        Text(String(localized: "sources.validatingCredentials"))
+                        Text(AppLocalization.string("sources.validatingCredentials"))
                     }
                 } else {
-                    Text(String(localized: "sources.addSource"))
+                    Text(AppLocalization.string("sources.addSource"))
                 }
             }
             .accessibilityIdentifier("addRemoteServer.actionButton")
@@ -557,7 +557,7 @@ struct AddRemoteServerView: View {
 
         guard let url = Instance.normalizeSourceURL(urlString) else {
             withAnimation {
-                uiState = .error(String(localized: "sources.validation.invalidURL"))
+                uiState = .error(AppLocalization.string("sources.validation.invalidURL"))
             }
             return
         }
@@ -595,7 +595,7 @@ struct AddRemoteServerView: View {
 
                 if basicAuthHeader != nil, !detectionResult.type.supportsHTTPBasicAuthProxy {
                     withAnimation {
-                        self.uiState = .error(String(localized: "sources.error.pipedBasicAuthUnsupported"))
+                        self.uiState = .error(AppLocalization.string("sources.error.pipedBasicAuthUnsupported"))
                     }
                     return
                 }
@@ -634,7 +634,7 @@ struct AddRemoteServerView: View {
         guard !basicAuthUsername.isEmpty, !basicAuthPassword.isEmpty else { return }
         guard let url = Instance.normalizeSourceURL(urlString) else {
             withAnimation {
-                uiState = .error(String(localized: "sources.validation.invalidURL"))
+                uiState = .error(AppLocalization.string("sources.validation.invalidURL"))
             }
             return
         }
@@ -659,7 +659,7 @@ struct AddRemoteServerView: View {
 
         guard let url = Instance.normalizeSourceURL(urlString) else {
             withAnimation {
-                uiState = .error(String(localized: "sources.validation.invalidURL"))
+                uiState = .error(AppLocalization.string("sources.validation.invalidURL"))
             }
             return
         }
@@ -730,7 +730,7 @@ struct AddRemoteServerView: View {
         // For Yattee Server, always validate credentials first
         if type == .yatteeServer {
             guard !basicAuthUsername.isEmpty, !basicAuthPassword.isEmpty else {
-                credentialValidationError = String(localized: "sources.error.credentialsRequired")
+                credentialValidationError = AppLocalization.string("sources.error.credentialsRequired")
                 return
             }
 
@@ -775,7 +775,7 @@ struct AddRemoteServerView: View {
                             }
                         }
                     } else {
-                        credentialValidationError = String(localized: "sources.error.invalidCredentials")
+                        credentialValidationError = AppLocalization.string("sources.error.invalidCredentials")
                     }
                 }
             }

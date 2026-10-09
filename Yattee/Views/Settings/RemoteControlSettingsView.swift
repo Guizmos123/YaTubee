@@ -10,7 +10,7 @@ import SwiftUI
 struct RemoteControlSettingsView: View {
     var body: some View {
         RemoteControlContentView(navigationStyle: .link)
-            .navigationTitle(String(localized: "remoteControl.title"))
+            .reactiveNavigationTitle(AppLocalization.string("remoteControl.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif

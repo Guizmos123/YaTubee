@@ -23,11 +23,11 @@ enum ControlsTheme: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .system:
-            return String(localized: "controls.theme.system")
+            return AppLocalization.string("controls.theme.system")
         case .light:
-            return String(localized: "controls.theme.light")
+            return AppLocalization.string("controls.theme.light")
         case .dark:
-            return String(localized: "controls.theme.dark")
+            return AppLocalization.string("controls.theme.dark")
         }
     }
 
@@ -78,11 +78,11 @@ enum ButtonSize: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .small:
-            return String(localized: "controls.size.small")
+            return AppLocalization.string("controls.size.small")
         case .medium:
-            return String(localized: "controls.size.medium")
+            return AppLocalization.string("controls.size.medium")
         case .large:
-            return String(localized: "controls.size.large")
+            return AppLocalization.string("controls.size.large")
         }
     }
 }
@@ -102,11 +102,11 @@ enum ButtonBackgroundStyle: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .none:
-            return String(localized: "controls.buttonBackground.none")
+            return AppLocalization.string("controls.buttonBackground.none")
         case .clearGlass:
-            return String(localized: "controls.buttonBackground.clearGlass")
+            return AppLocalization.string("controls.buttonBackground.clearGlass")
         case .regularGlass:
-            return String(localized: "controls.buttonBackground.regularGlass")
+            return AppLocalization.string("controls.buttonBackground.regularGlass")
         }
     }
 
@@ -135,9 +135,9 @@ enum ControlsStyle: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .plain:
-            return String(localized: "controls.style.plain")
+            return AppLocalization.string("controls.style.plain")
         case .glass:
-            return String(localized: "controls.style.glass")
+            return AppLocalization.string("controls.style.glass")
         }
     }
 
@@ -325,11 +325,11 @@ enum ControlsFontStyle: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .system:
-            return String(localized: "controls.fontStyle.system")
+            return AppLocalization.string("controls.fontStyle.system")
         case .monospaced:
-            return String(localized: "controls.fontStyle.monospaced")
+            return AppLocalization.string("controls.fontStyle.monospaced")
         case .rounded:
-            return String(localized: "controls.fontStyle.rounded")
+            return AppLocalization.string("controls.fontStyle.rounded")
         }
     }
 

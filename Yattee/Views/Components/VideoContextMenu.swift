@@ -105,9 +105,9 @@ struct VideoContextMenuModifier: ViewModifier {
             .sheet(isPresented: $showingDownloadSheet) {
                 DownloadQualitySheet(video: video)
             }
-            .alert(String(localized: "videoInfo.download.remove.title"), isPresented: $showingDeleteDownloadConfirmation) {
-                Button(String(localized: "common.cancel"), role: .cancel) {}
-                Button(String(localized: "videoInfo.download.remove.confirm"), role: .destructive) {
+            .alert(AppLocalization.string("videoInfo.download.remove.title"), isPresented: $showingDeleteDownloadConfirmation) {
+                Button(AppLocalization.string("common.cancel"), role: .cancel) {}
+                Button(AppLocalization.string("videoInfo.download.remove.confirm"), role: .destructive) {
                     if let download = downloadToDelete {
                         Task {
                             await appEnvironment?.downloadManager.delete(download)
@@ -115,7 +115,7 @@ struct VideoContextMenuModifier: ViewModifier {
                     }
                 }
             } message: {
-                Text(String(localized: "videoInfo.download.remove.message"))
+                Text(AppLocalization.string("videoInfo.download.remove.message"))
             }
             #endif
             .onReceive(NotificationCenter.default.publisher(for: .watchHistoryDidChange)) { _ in
@@ -246,7 +246,7 @@ struct VideoContextMenuContent: View {
                     appEnvironment?.playerService.openVideo(video)
                 }
             } label: {
-                Label(String(localized: "video.context.play"), systemImage: "play.fill")
+                Label(AppLocalization.string("video.context.play"), systemImage: "play.fill")
             }
         }
 
@@ -259,20 +259,20 @@ struct VideoContextMenuContent: View {
                         await appEnvironment?.downloadManager.cancel(download)
                     }
                 } label: {
-                    Label(String(localized: "video.context.cancelDownload"), systemImage: "xmark.circle")
+                    Label(AppLocalization.string("video.context.cancelDownload"), systemImage: "xmark.circle")
                 }
             } else if isDownloaded, let download = snapshotDownload {
                 Button {
                     downloadToDelete = download
                     showingDeleteDownloadConfirmation = true
                 } label: {
-                    Label(String(localized: "video.context.downloaded"), systemImage: "checkmark.circle.fill")
+                    Label(AppLocalization.string("video.context.downloaded"), systemImage: "checkmark.circle.fill")
                 }
             } else {
                 Button {
                     startDownload(for: video)
                 } label: {
-                    Label(String(localized: "video.context.download"), systemImage: "arrow.down.circle")
+                    Label(AppLocalization.string("video.context.download"), systemImage: "arrow.down.circle")
                 }
             }
         }
@@ -281,7 +281,7 @@ struct VideoContextMenuContent: View {
         // Share
         #if !os(tvOS)
         ShareLink(item: video.shareURL) {
-            Label(String(localized: "video.context.share"), systemImage: "square.and.arrow.up")
+            Label(AppLocalization.string("video.context.share"), systemImage: "square.and.arrow.up")
         }
         #endif
     }
@@ -315,7 +315,7 @@ struct VideoContextMenuContent: View {
             Button {
                 appEnvironment?.playerService.openVideo(video, startTime: 0)
             } label: {
-                Label(String(localized: "video.context.playFromBeginning"), systemImage: "arrow.counterclockwise")
+                Label(AppLocalization.string("video.context.playFromBeginning"), systemImage: "arrow.counterclockwise")
             }
         }
 
@@ -329,9 +329,9 @@ struct VideoContextMenuContent: View {
                 }
             } label: {
                 if isWatched {
-                    Label(String(localized: "video.context.markUnwatched"), systemImage: "eye.slash")
+                    Label(AppLocalization.string("video.context.markUnwatched"), systemImage: "eye.slash")
                 } else {
-                    Label(String(localized: "video.context.markWatched"), systemImage: "eye")
+                    Label(AppLocalization.string("video.context.markWatched"), systemImage: "eye")
                 }
             }
         }
@@ -341,13 +341,13 @@ struct VideoContextMenuContent: View {
             Button {
                 appEnvironment?.queueManager.playNext(video)
             } label: {
-                Label(String(localized: "video.context.playNext"), systemImage: "text.line.first.and.arrowtriangle.forward")
+                Label(AppLocalization.string("video.context.playNext"), systemImage: "text.line.first.and.arrowtriangle.forward")
             }
 
             Button {
                 appEnvironment?.queueManager.addToQueue(video)
             } label: {
-                Label(String(localized: "video.context.addToQueue"), systemImage: "text.append")
+                Label(AppLocalization.string("video.context.addToQueue"), systemImage: "text.append")
             }
         }
 
@@ -360,7 +360,7 @@ struct VideoContextMenuContent: View {
                     playOnRemoteDevice(device)
                 } label: {
                     Label(
-                        String(format: String(localized: "video.context.playOn %@"), device.name),
+                        String(format: AppLocalization.string("video.context.playOn %@"), device.name),
                         systemImage: device.platform.iconName
                     )
                 }
@@ -376,7 +376,7 @@ struct VideoContextMenuContent: View {
                     moveToRemoteDevice(device)
                 } label: {
                     Label(
-                        String(format: String(localized: "video.context.moveTo %@"), device.name),
+                        String(format: AppLocalization.string("video.context.moveTo %@"), device.name),
                         systemImage: device.platform.iconName
                     )
                 }
@@ -395,7 +395,7 @@ struct VideoContextMenuContent: View {
             }
             appEnvironment?.navigationCoordinator.navigate(to: .video(.loaded(video)))
         } label: {
-            Label(String(localized: "video.context.info"), systemImage: "info.circle")
+            Label(AppLocalization.string("video.context.info"), systemImage: "info.circle")
         }
 
         // Go to channel (hidden for media browser, or when no real channel info)
@@ -403,7 +403,7 @@ struct VideoContextMenuContent: View {
             Button {
                 appEnvironment?.navigationCoordinator.navigateToChannel(for: video, collapsePlayer: context == .player)
             } label: {
-                Label(String(localized: "video.context.goToChannel"), systemImage: "person.circle")
+                Label(AppLocalization.string("video.context.goToChannel"), systemImage: "person.circle")
             }
         }
 
@@ -417,9 +417,9 @@ struct VideoContextMenuContent: View {
                 }
             } label: {
                 if isBookmarked {
-                    Label(String(localized: "video.context.removeFromBookmarks"), systemImage: "bookmark.slash")
+                    Label(AppLocalization.string("video.context.removeFromBookmarks"), systemImage: "bookmark.slash")
                 } else {
-                    Label(String(localized: "video.context.addToBookmarks"), systemImage: "bookmark")
+                    Label(AppLocalization.string("video.context.addToBookmarks"), systemImage: "bookmark")
                 }
             }
         }
@@ -429,7 +429,7 @@ struct VideoContextMenuContent: View {
             Button {
                 showingPlaylistSheet = true
             } label: {
-                Label(String(localized: "video.context.addToPlaylist"), systemImage: "text.badge.plus")
+                Label(AppLocalization.string("video.context.addToPlaylist"), systemImage: "text.badge.plus")
             }
         }
     }
@@ -457,7 +457,7 @@ struct VideoContextMenuContent: View {
                 } catch {
                     appEnvironment.toastManager.show(
                         category: .error,
-                        title: String(localized: "download.error.title"),
+                        title: AppLocalization.string("download.error.title"),
                         subtitle: error.localizedDescription,
                         icon: "exclamationmark.triangle",
                         iconColor: .red
@@ -486,7 +486,7 @@ struct VideoContextMenuContent: View {
                 } catch {
                     appEnvironment.toastManager.show(
                         category: .error,
-                        title: String(localized: "download.error.title"),
+                        title: AppLocalization.string("download.error.title"),
                         subtitle: error.localizedDescription,
                         icon: "exclamationmark.triangle",
                         iconColor: .red
@@ -651,9 +651,9 @@ struct VideoContextMenuView: View {
         .sheet(isPresented: $showingDownloadSheet) {
             DownloadQualitySheet(video: video)
         }
-        .alert(String(localized: "videoInfo.download.remove.title"), isPresented: $showingDeleteDownloadConfirmation) {
-            Button(String(localized: "common.cancel"), role: .cancel) {}
-            Button(String(localized: "videoInfo.download.remove.confirm"), role: .destructive) {
+        .alert(AppLocalization.string("videoInfo.download.remove.title"), isPresented: $showingDeleteDownloadConfirmation) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("videoInfo.download.remove.confirm"), role: .destructive) {
                 if let download = downloadToDelete {
                     Task {
                         await appEnvironment?.downloadManager.delete(download)
@@ -661,7 +661,7 @@ struct VideoContextMenuView: View {
                 }
             }
         } message: {
-            Text(String(localized: "videoInfo.download.remove.message"))
+            Text(AppLocalization.string("videoInfo.download.remove.message"))
         }
         .onReceive(NotificationCenter.default.publisher(for: .bookmarksDidChange)) { _ in
             refreshID = UUID()

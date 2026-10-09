@@ -27,7 +27,7 @@ extension LayoutPreset {
     static func defaultPreset(for deviceClass: DeviceClass = .current) -> LayoutPreset {
         LayoutPreset(
             id: BuiltInID.defaultPreset,
-            name: String(localized: "controls.preset.default"),
+            name: AppLocalization.string("controls.preset.default"),
             createdAt: Date(timeIntervalSince1970: 0),
             updatedAt: Date(timeIntervalSince1970: 0),
             isBuiltIn: true,
@@ -200,7 +200,7 @@ extension LayoutPreset {
     static func minimalPreset(for deviceClass: DeviceClass = .current) -> LayoutPreset {
         LayoutPreset(
             id: BuiltInID.minimalPreset,
-            name: String(localized: "controls.preset.minimal"),
+            name: AppLocalization.string("controls.preset.minimal"),
             createdAt: Date(timeIntervalSince1970: 0),
             updatedAt: Date(timeIntervalSince1970: 0),
             isBuiltIn: true,

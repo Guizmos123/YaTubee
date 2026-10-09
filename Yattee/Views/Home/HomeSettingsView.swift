@@ -72,7 +72,7 @@ struct HomeSettingsView: View {
         #endif
         .opaqueSettingsFormBackground()
         #if !os(tvOS)
-        .navigationTitle(String(localized: "home.settings.title"))
+        .navigationTitle(AppLocalization.string("home.settings.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -93,7 +93,7 @@ struct HomeSettingsView: View {
         Section {
             #if !os(tvOS)
             // Layout picker (List vs Cards)
-            Picker(String(localized: "home.settings.shortcuts.layout"), selection: $shortcutLayout) {
+            Picker(AppLocalization.string("home.settings.shortcuts.layout"), selection: $shortcutLayout) {
                 ForEach(HomeShortcutLayout.allCases, id: \.self) { layout in
                     Label(layout.displayName, systemImage: layout.systemImage)
                         .tag(layout)
@@ -109,7 +109,7 @@ struct HomeSettingsView: View {
                     showingStyleSettings = true
                 } label: {
                     HStack(spacing: 8) {
-                        Label(String(localized: "home.settings.shortcuts.style"), systemImage: "paintpalette")
+                        Label(AppLocalization.string("home.settings.shortcuts.style"), systemImage: "paintpalette")
                         Spacer()
                         Text(shortcutCardStyle.displayName)
                             .foregroundStyle(.secondary)
@@ -164,14 +164,14 @@ struct HomeSettingsView: View {
             }
             #endif
         } header: {
-            Text(String(localized: "home.settings.shortcuts.header"))
+            Text(AppLocalization.string("home.settings.shortcuts.header"))
         }
     }
     
     private var availableShortcutsSection: some View {
         Section {
             if availableShortcutsByInstance.isEmpty && availableShortcutsByMediaSource.isEmpty {
-                Text(String(localized: "home.settings.availableShortcuts.empty"))
+                Text(AppLocalization.string("home.settings.availableShortcuts.empty"))
                     .foregroundStyle(.secondary)
                     .italic()
             } else {
@@ -187,15 +187,15 @@ struct HomeSettingsView: View {
                 }
             }
         } header: {
-            Text(String(localized: "home.settings.availableShortcuts.header"))
+            Text(AppLocalization.string("home.settings.availableShortcuts.header"))
         } footer: {
-            Text(String(localized: "home.settings.availableShortcuts.footer"))
+            Text(AppLocalization.string("home.settings.availableShortcuts.footer"))
         }
     }
 
     private var sectionsSection: some View {
         Section {
-            Picker(String(localized: "home.settings.sections.layout"), selection: $sectionLayout) {
+            Picker(AppLocalization.string("home.settings.sections.layout"), selection: $sectionLayout) {
                 ForEach(HomeSectionLayout.allCases, id: \.self) { layout in
                     Label(layout.displayName, systemImage: layout.systemImage)
                         .tag(layout)
@@ -230,16 +230,16 @@ struct HomeSettingsView: View {
             }
             #endif
         } header: {
-            Text(String(localized: "home.settings.sections.header"))
+            Text(AppLocalization.string("home.settings.sections.header"))
         } footer: {
-            Text(String(localized: "home.settings.sections.footer"))
+            Text(AppLocalization.string("home.settings.sections.footer"))
         }
     }
     
     private var availableSectionsSection: some View {
         Section {
             if availableSectionsByInstance.isEmpty {
-                Text(String(localized: "home.settings.availableSections.empty"))
+                Text(AppLocalization.string("home.settings.availableSections.empty"))
                     .foregroundStyle(.secondary)
                     .italic()
             } else {
@@ -250,9 +250,9 @@ struct HomeSettingsView: View {
                 }
             }
         } header: {
-            Text(String(localized: "home.settings.availableSections.header"))
+            Text(AppLocalization.string("home.settings.availableSections.header"))
         } footer: {
-            Text(String(localized: "home.settings.availableSections.footer"))
+            Text(AppLocalization.string("home.settings.availableSections.footer"))
         }
     }
 
@@ -274,7 +274,7 @@ struct HomeSettingsView: View {
         Section {
             #if os(tvOS)
             HStack {
-                Text(String(localized: "home.settings.itemsLimit"))
+                Text(AppLocalization.string("home.settings.itemsLimit"))
                 Spacer()
                 Button {
                     if sectionItemsLimit > 1 { sectionItemsLimit -= 1 }
@@ -294,7 +294,7 @@ struct HomeSettingsView: View {
             #else
             Stepper(value: $sectionItemsLimit, in: 1...20) {
                 HStack {
-                    Text(String(localized: "home.settings.itemsLimit"))
+                    Text(AppLocalization.string("home.settings.itemsLimit"))
                     Spacer()
                     Text("\(sectionItemsLimit)")
                         .foregroundStyle(.secondary)
@@ -483,7 +483,7 @@ struct HomeSettingsView: View {
                     Button(role: .destructive) {
                         removeShortcut(card)
                     } label: {
-                        Label(String(localized: "home.settings.remove"), systemImage: "trash")
+                        Label(AppLocalization.string("home.settings.remove"), systemImage: "trash")
                     }
                     .tint(.red)
                 }
@@ -492,7 +492,7 @@ struct HomeSettingsView: View {
                     Button(role: .destructive) {
                         removeShortcut(card)
                     } label: {
-                        Label(String(localized: "home.settings.remove"), systemImage: "trash")
+                        Label(AppLocalization.string("home.settings.remove"), systemImage: "trash")
                     }
                 }
             }
@@ -505,14 +505,14 @@ struct HomeSettingsView: View {
                     title: "\(source.name) (\(source.type.displayName))",
                     isVisible: shortcutBinding(for: card),
                     isDisabled: isDisabled,
-                    disabledReason: isDisabled ? String(localized: "home.settings.sourceDisabled") : nil
+                    disabledReason: isDisabled ? AppLocalization.string("home.settings.sourceDisabled") : nil
                 )
                 #if os(iOS)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
                         removeShortcut(card)
                     } label: {
-                        Label(String(localized: "home.settings.remove"), systemImage: "trash")
+                        Label(AppLocalization.string("home.settings.remove"), systemImage: "trash")
                     }
                     .tint(.red)
                 }
@@ -521,7 +521,7 @@ struct HomeSettingsView: View {
                     Button(role: .destructive) {
                         removeShortcut(card)
                     } label: {
-                        Label(String(localized: "home.settings.remove"), systemImage: "trash")
+                        Label(AppLocalization.string("home.settings.remove"), systemImage: "trash")
                     }
                 }
             }
@@ -553,7 +553,7 @@ struct HomeSettingsView: View {
                     Button(role: .destructive) {
                         removeSection(section)
                     } label: {
-                        Label(String(localized: "home.settings.remove"), systemImage: "trash")
+                        Label(AppLocalization.string("home.settings.remove"), systemImage: "trash")
                     }
                     .tint(.red)
                 }
@@ -562,7 +562,7 @@ struct HomeSettingsView: View {
                     Button(role: .destructive) {
                         removeSection(section)
                     } label: {
-                        Label(String(localized: "home.settings.remove"), systemImage: "trash")
+                        Label(AppLocalization.string("home.settings.remove"), systemImage: "trash")
                     }
                 }
             }
@@ -648,10 +648,10 @@ struct HomeSettingsView: View {
 
     private func disabledReason(instance: Instance, contentType: InstanceContentType) -> String? {
         if !instance.isEnabled {
-            return String(localized: "home.settings.instanceDisabled")
+            return AppLocalization.string("home.settings.instanceDisabled")
         }
         if contentType == .feed && !isLoggedIn(instance) {
-            return String(localized: "home.settings.feedRequiresLogin")
+            return AppLocalization.string("home.settings.feedRequiresLogin")
         }
         return nil
     }
@@ -682,7 +682,7 @@ struct HomeSettingsView: View {
                 .disabled(isDisabled)
             }
             #if !os(tvOS)
-            .help(isDisabled ? String(localized: "home.settings.sourceDisabled") : "")
+            .help(isDisabled ? AppLocalization.string("home.settings.sourceDisabled") : "")
             #endif
         }
     }
@@ -761,8 +761,8 @@ private struct TVHomeItemRow: View {
                         .frame(width: 30, height: 24)
                 }
                 .buttonStyle(TVCompactButtonStyle())
-                .alert(String(localized: "home.removeConfirmation.title"), isPresented: $showingDeleteConfirmation) {
-                    Button(String(localized: "common.cancel"), role: .cancel) { }
+                .alert(AppLocalization.string("home.removeConfirmation.title"), isPresented: $showingDeleteConfirmation) {
+                    Button(AppLocalization.string("common.cancel"), role: .cancel) { }
                     Button("common.remove", role: .destructive) {
                         onDelete?()
                     }

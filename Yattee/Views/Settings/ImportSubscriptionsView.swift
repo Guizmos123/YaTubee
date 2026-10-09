@@ -43,7 +43,7 @@ struct ImportSubscriptionsView: View {
     var body: some View {
         content
             #if !os(tvOS)
-            .navigationTitle(String(localized: "import.subscriptions.title"))
+            .reactiveNavigationTitle(AppLocalization.string("import.subscriptions.title"))
             #endif
             .accessibilityIdentifier(AccessibilityID.view)
             #if os(iOS)
@@ -55,18 +55,18 @@ struct ImportSubscriptionsView: View {
                         Button {
                             showAddAllConfirmation = true
                         } label: {
-                            Label(String(localized: "import.subscriptions.addAll"), systemImage: "plus.circle")
+                            Label(AppLocalization.string("import.subscriptions.addAll"), systemImage: "plus.circle")
                         }
                         .accessibilityIdentifier(AccessibilityID.addAllButton)
                     }
                 }
             }
             .confirmationDialog(
-                String(localized: "import.subscriptions.addAllConfirmation \(unsubscribedChannels.count)"),
+                AppLocalization.string("import.subscriptions.addAllConfirmation \(unsubscribedChannels.count)"),
                 isPresented: $showAddAllConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(String(localized: "import.subscriptions.addAll")) {
+                Button(AppLocalization.string("import.subscriptions.addAll")) {
                     addAllSubscriptions()
                 }
             }
@@ -94,7 +94,7 @@ struct ImportSubscriptionsView: View {
     private var loadingView: some View {
         VStack(spacing: 16) {
             ProgressView()
-            Text(String(localized: "import.subscriptions.loading"))
+            Text(AppLocalization.string("import.subscriptions.loading"))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -103,11 +103,11 @@ struct ImportSubscriptionsView: View {
 
     private func errorView(_ error: Error) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "import.subscriptions.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("import.subscriptions.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error.localizedDescription)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await loadSubscriptions() }
             }
             .buttonStyle(.bordered)
@@ -118,9 +118,9 @@ struct ImportSubscriptionsView: View {
 
     private var emptyView: some View {
         ContentUnavailableView(
-            String(localized: "import.subscriptions.emptyTitle"),
+            AppLocalization.string("import.subscriptions.emptyTitle"),
             systemImage: "person.2.slash",
-            description: Text(String(localized: "import.subscriptions.emptyDescription"))
+            description: Text(AppLocalization.string("import.subscriptions.emptyDescription"))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier(AccessibilityID.emptyState)
@@ -261,7 +261,7 @@ struct ImportSubscriptionsView: View {
         dataManager.subscribe(to: channel)
         subscribedChannelIDs.insert(channel.id.channelID)
 
-        appEnvironment?.toastManager.showSuccess(String(localized: "import.subscriptions.added.title"))
+        appEnvironment?.toastManager.showSuccess(AppLocalization.string("import.subscriptions.added.title"))
     }
 
     private func addAllSubscriptions() {
@@ -274,8 +274,8 @@ struct ImportSubscriptionsView: View {
         }
 
         appEnvironment?.toastManager.showSuccess(
-            String(localized: "import.subscriptions.added.title"),
-            subtitle: String(localized: "import.subscriptions.count.subtitle \(toAdd.count)")
+            AppLocalization.string("import.subscriptions.added.title"),
+            subtitle: AppLocalization.string("import.subscriptions.count.subtitle \(toAdd.count)")
         )
     }
 
@@ -288,9 +288,9 @@ struct ImportSubscriptionsView: View {
         var errorDescription: String? {
             switch self {
             case .notLoggedIn:
-                return String(localized: "import.subscriptions.notLoggedIn")
+                return AppLocalization.string("import.subscriptions.notLoggedIn")
             case .notSupported:
-                return String(localized: "import.subscriptions.notSupported")
+                return AppLocalization.string("import.subscriptions.notSupported")
             }
         }
     }

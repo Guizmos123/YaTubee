@@ -18,7 +18,7 @@ struct LogExportOverlayView: View {
 
     var body: some View {
         VStack(spacing: 40) {
-            Text(String(localized: "settings.advanced.logs.export.title"))
+            Text(AppLocalization.string("settings.advanced.logs.export.title"))
                 .font(.title)
                 .fontWeight(.bold)
 
@@ -36,7 +36,7 @@ struct LogExportOverlayView: View {
                 server.stop()
                 dismiss()
             } label: {
-                Text(server.isRunning ? String(localized: "settings.advanced.logs.export.stop") : String(localized: "common.close"))
+                Text(server.isRunning ? AppLocalization.string("settings.advanced.logs.export.stop") : AppLocalization.string("common.close"))
                     .frame(minWidth: 300)
             }
             .buttonStyle(.bordered)
@@ -58,7 +58,7 @@ struct LogExportOverlayView: View {
             ProgressView()
                 .scaleEffect(2)
 
-            Text(String(localized: "settings.advanced.logs.export.starting"))
+            Text(AppLocalization.string("settings.advanced.logs.export.starting"))
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }
@@ -68,7 +68,7 @@ struct LogExportOverlayView: View {
     private func runningView(url: String) -> some View {
         VStack(spacing: 30) {
             // Instructions
-            Text(String(localized: "settings.advanced.logs.export.instructions"))
+            Text(AppLocalization.string("settings.advanced.logs.export.instructions"))
                 .font(.title3)
                 .foregroundStyle(.secondary)
 
@@ -87,13 +87,13 @@ struct LogExportOverlayView: View {
                     .background(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text(String(localized: "settings.advanced.logs.export.scanQR"))
+                Text(AppLocalization.string("settings.advanced.logs.export.scanQR"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
             // Countdown timer
-            Text(String(localized: "settings.advanced.logs.export.autoStop \(formattedTimeRemaining)"))
+            Text(AppLocalization.string("settings.advanced.logs.export.autoStop \(formattedTimeRemaining)"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }

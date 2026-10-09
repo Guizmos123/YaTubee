@@ -51,7 +51,7 @@ struct TabBarSettingsView: View {
             #if os(iOS) || os(tvOS)
             .environment(\.editMode, .constant(.active))
             #endif
-            .navigationTitle(String(localized: "settings.tabBar.title"))
+            .reactiveNavigationTitle(AppLocalization.string("settings.tabBar.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -65,15 +65,15 @@ struct TabBarSettingsView: View {
 
     private var startupSection: some View {
         Section {
-            Picker(String(localized: "settings.tabBar.startup.tab"), selection: startupTabBinding) {
+            Picker(AppLocalization.string("settings.tabBar.startup.tab"), selection: startupTabBinding) {
                 ForEach(validStartupTabs) { item in
                     Text(item.localizedTitle).tag(item)
                 }
             }
         } header: {
-            Text(String(localized: "settings.tabBar.startup.header"))
+            Text(AppLocalization.string("settings.tabBar.startup.header"))
         } footer: {
-            Text(String(localized: "settings.tabBar.startup.footer"))
+            Text(AppLocalization.string("settings.tabBar.startup.footer"))
         }
     }
 
@@ -102,7 +102,7 @@ struct TabBarSettingsView: View {
                 settingsManager?.tabBarItemOrder = order
             }
         } footer: {
-            Text(String(localized: "settings.tabBar.fixedTabs.footer"))
+            Text(AppLocalization.string("settings.tabBar.fixedTabs.footer"))
         }
     }
 

@@ -53,7 +53,7 @@ struct RetryState: Equatable, Sendable {
     /// Text to display during retries (e.g., "Retrying... (1/5)").
     var displayText: String? {
         guard isRetrying, currentRetry > 0 else { return nil }
-        return String(localized: "player.retry.status \(currentRetry) \(maxRetries)")
+        return AppLocalization.string("player.retry.status \(currentRetry) \(maxRetries)")
     }
 }
 
@@ -129,7 +129,7 @@ enum PlaybackRate: Double, CaseIterable, Identifiable, Sendable {
 
     var displayText: String {
         if rawValue == 1.0 {
-            return String(localized: "player.playbackRate.normal")
+            return AppLocalization.string("player.playbackRate.normal")
         }
         return formattedRate
     }
@@ -180,10 +180,10 @@ enum QueueMode: String, CaseIterable, Codable, Sendable {
     /// Localized display name.
     var displayName: String {
         switch self {
-        case .normal: String(localized: "queue.mode.normal")
-        case .repeatAll: String(localized: "queue.mode.repeatAll")
-        case .repeatOne: String(localized: "queue.mode.repeatOne")
-        case .shuffle: String(localized: "queue.mode.shuffle")
+        case .normal: AppLocalization.string("queue.mode.normal")
+        case .repeatAll: AppLocalization.string("queue.mode.repeatAll")
+        case .repeatOne: AppLocalization.string("queue.mode.repeatOne")
+        case .shuffle: AppLocalization.string("queue.mode.shuffle")
         }
     }
 

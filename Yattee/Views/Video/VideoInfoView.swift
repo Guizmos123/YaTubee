@@ -237,15 +237,15 @@ struct VideoInfoView: View {
               savedProgress >= 5,
               video.duration > 0,
               savedProgress < video.duration * 0.9 else {
-            return String(localized: "video.context.play")
+            return AppLocalization.string("video.context.play")
         }
         
         let resumeAction = appEnvironment?.settingsManager.resumeAction ?? .continueWatching
         switch resumeAction {
         case .continueWatching, .ask:
-            return String(localized: "resume.action.continueAt \(savedProgress.formattedAsTimestamp)")
+            return AppLocalization.string("resume.action.continueAt \(savedProgress.formattedAsTimestamp)")
         case .startFromBeginning:
-            return String(localized: "video.context.play")
+            return AppLocalization.string("video.context.play")
         }
     }
 
@@ -406,18 +406,18 @@ struct VideoInfoView: View {
             }
         }
         #endif
-        .alert(String(localized: "bookmark.remove.title"), isPresented: $showingRemoveBookmarkAlert) {
-            Button(String(localized: "common.cancel"), role: .cancel) {}
-            Button(String(localized: "bookmark.remove.confirm"), role: .destructive) {
+        .alert(AppLocalization.string("bookmark.remove.title"), isPresented: $showingRemoveBookmarkAlert) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("bookmark.remove.confirm"), role: .destructive) {
                 removeBookmark()
             }
         } message: {
-            Text(String(localized: "bookmark.remove.message"))
+            Text(AppLocalization.string("bookmark.remove.message"))
         }
         #if !os(tvOS)
-        .alert(String(localized: "videoInfo.download.remove.title"), isPresented: $showingRemoveDownloadConfirmation) {
-            Button(String(localized: "common.cancel"), role: .cancel) {}
-            Button(String(localized: "videoInfo.download.remove.confirm"), role: .destructive) {
+        .alert(AppLocalization.string("videoInfo.download.remove.title"), isPresented: $showingRemoveDownloadConfirmation) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("videoInfo.download.remove.confirm"), role: .destructive) {
                 if let download = download {
                     Task {
                         await downloadManager?.delete(download)
@@ -425,7 +425,7 @@ struct VideoInfoView: View {
                 }
             }
         } message: {
-            Text(String(localized: "videoInfo.download.remove.message"))
+            Text(AppLocalization.string("videoInfo.download.remove.message"))
         }
         #endif
     }
@@ -628,7 +628,7 @@ struct VideoInfoView: View {
                 Button {
                     showingPlaylistSheet = true
                 } label: {
-                    Label(String(localized: "video.context.addToPlaylist"), systemImage: "text.badge.plus")
+                    Label(AppLocalization.string("video.context.addToPlaylist"), systemImage: "text.badge.plus")
                         .frame(maxWidth: .infinity, minHeight: 50)
                 }
                 .buttonStyle(.bordered)
@@ -637,7 +637,7 @@ struct VideoInfoView: View {
                     toggleBookmark()
                 } label: {
                     Label(
-                        isBookmarked ? String(localized: "video.removeBookmark") : String(localized: "video.bookmark"),
+                        isBookmarked ? AppLocalization.string("video.removeBookmark") : AppLocalization.string("video.bookmark"),
                         systemImage: isBookmarked ? "bookmark.fill" : "bookmark"
                     )
                     .frame(maxWidth: .infinity, minHeight: 50)
@@ -779,11 +779,11 @@ struct VideoInfoView: View {
     @ViewBuilder
     private func videoLoadErrorView(_ message: String) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "video.error.title"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("video.error.title"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(message)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task {
                     await loadInitialVideoIfNeeded()
                 }
@@ -1140,7 +1140,7 @@ struct VideoInfoView: View {
                 // Play button
                 verticalActionButton(
                     icon: "play.fill",
-                    label: String(localized: "video.context.play"),
+                    label: AppLocalization.string("video.context.play"),
                     action: playVideo
                 )
                 #if os(macOS)
@@ -1154,7 +1154,7 @@ struct VideoInfoView: View {
                 if let video = displayedVideo {
                     ShareLink(item: video.shareURL) {
                         #if os(macOS)
-                        Label(String(localized: "video.share"), systemImage: "square.and.arrow.up")
+                        Label(AppLocalization.string("video.share"), systemImage: "square.and.arrow.up")
                             .font(.body)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 4)
@@ -1162,7 +1162,7 @@ struct VideoInfoView: View {
                         VStack(spacing: 6) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 18))
-                            Text(String(localized: "video.share"))
+                            Text(AppLocalization.string("video.share"))
                                 .font(.caption)
                         }
                         .frame(maxWidth: .infinity, minHeight: 50)
@@ -1183,7 +1183,7 @@ struct VideoInfoView: View {
                 Button {
                     showingPlaylistSheet = true
                 } label: {
-                    Label(String(localized: "video.context.addToPlaylist"), systemImage: "text.badge.plus")
+                    Label(AppLocalization.string("video.context.addToPlaylist"), systemImage: "text.badge.plus")
                         .frame(maxWidth: .infinity)
                         .font(.subheadline)
                 }
@@ -1193,7 +1193,7 @@ struct VideoInfoView: View {
                     toggleBookmark()
                 } label: {
                     Label(
-                        isBookmarked ? String(localized: "video.removeBookmark") : String(localized: "video.bookmark"),
+                        isBookmarked ? AppLocalization.string("video.removeBookmark") : AppLocalization.string("video.bookmark"),
                         systemImage: isBookmarked ? "bookmark.fill" : "bookmark"
                     )
                     .frame(maxWidth: .infinity)
@@ -1224,7 +1224,7 @@ struct VideoInfoView: View {
                 showingRemoveDownloadConfirmation = true
             } label: {
                 #if os(macOS)
-                Label(String(localized: "video.downloaded"), systemImage: "checkmark.circle.fill")
+                Label(AppLocalization.string("video.downloaded"), systemImage: "checkmark.circle.fill")
                     .font(.body)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
@@ -1232,7 +1232,7 @@ struct VideoInfoView: View {
                 VStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 18))
-                    Text(String(localized: "video.downloaded"))
+                    Text(AppLocalization.string("video.downloaded"))
                         .font(.caption)
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
@@ -1253,7 +1253,7 @@ struct VideoInfoView: View {
                     ProgressView()
                         .controlSize(.small)
                     if isEnqueuingDownload {
-                        Text(String(localized: "video.downloading"))
+                        Text(AppLocalization.string("video.downloading"))
                             .allowsTightening(true)
                     } else if let video = displayedVideo,
                               let progress = downloadManager?.downloadProgressByVideo[video.id],
@@ -1261,7 +1261,7 @@ struct VideoInfoView: View {
                         Text("\(Int(progress.progress * 100))%")
                             .monospacedDigit()
                     } else {
-                        Text(String(localized: "video.downloading"))
+                        Text(AppLocalization.string("video.downloading"))
                             .allowsTightening(true)
                     }
                 }
@@ -1273,7 +1273,7 @@ struct VideoInfoView: View {
                     ProgressView()
                         .controlSize(.regular)
                     if isEnqueuingDownload {
-                        Text(String(localized: "video.downloading"))
+                        Text(AppLocalization.string("video.downloading"))
                             .allowsTightening(true)
                             .font(.caption)
                     } else if let video = displayedVideo,
@@ -1283,7 +1283,7 @@ struct VideoInfoView: View {
                             .font(.caption)
                             .monospacedDigit()
                     } else {
-                        Text(String(localized: "video.downloading"))
+                        Text(AppLocalization.string("video.downloading"))
                             .allowsTightening(true)
                             .font(.caption)
                     }
@@ -1303,7 +1303,7 @@ struct VideoInfoView: View {
                 startDownload(for: video)
             } label: {
                 #if os(macOS)
-                Label(String(localized: "video.download"), systemImage: "arrow.down.circle")
+                Label(AppLocalization.string("video.download"), systemImage: "arrow.down.circle")
                     .font(.body)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
@@ -1311,7 +1311,7 @@ struct VideoInfoView: View {
                 VStack(spacing: 6) {
                     Image(systemName: "arrow.down.circle")
                         .font(.system(size: 18))
-                    Text(String(localized: "video.download"))
+                    Text(AppLocalization.string("video.download"))
                         .font(.caption)
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
@@ -1346,7 +1346,7 @@ struct VideoInfoView: View {
                 } catch {
                     appEnvironment.toastManager.show(
                         category: .error,
-                        title: String(localized: "download.error.title"),
+                        title: AppLocalization.string("download.error.title"),
                         subtitle: error.localizedDescription,
                         icon: "exclamationmark.triangle",
                         iconColor: .red
@@ -1379,7 +1379,7 @@ struct VideoInfoView: View {
                 } catch {
                     appEnvironment.toastManager.show(
                         category: .error,
-                        title: String(localized: "download.error.title"),
+                        title: AppLocalization.string("download.error.title"),
                         subtitle: error.localizedDescription,
                         icon: "exclamationmark.triangle",
                         iconColor: .red
@@ -1395,7 +1395,7 @@ struct VideoInfoView: View {
     }
 
     private func downloadSection(_ download: Download) -> some View {
-        CollapsibleSection(title: String(localized: "videoInfo.section.download"), isExpanded: $isDownloadExpanded) {
+        CollapsibleSection(title: AppLocalization.string("videoInfo.section.download"), isExpanded: $isDownloadExpanded) {
             VStack(alignment: .leading, spacing: 12) {
                 LazyVGrid(columns: [
                     GridItem(.flexible()),
@@ -1403,20 +1403,20 @@ struct VideoInfoView: View {
                 ], spacing: 12) {
                     // Quality
                     infoRow(
-                        label: String(localized: "videoInfo.download.quality"),
+                        label: AppLocalization.string("videoInfo.download.quality"),
                         value: download.quality
                     )
 
                     // File size
                     infoRow(
-                        label: String(localized: "videoInfo.download.fileSize"),
+                        label: AppLocalization.string("videoInfo.download.fileSize"),
                         value: formatBytes(download.totalBytes)
                     )
 
                     // Video codec
                     if let codec = download.videoCodec {
                         infoRow(
-                            label: String(localized: "videoInfo.download.videoCodec"),
+                            label: AppLocalization.string("videoInfo.download.videoCodec"),
                             value: codec.uppercased()
                         )
                     }
@@ -1424,7 +1424,7 @@ struct VideoInfoView: View {
                     // Audio codec
                     if let codec = download.audioCodec {
                         infoRow(
-                            label: String(localized: "videoInfo.download.audioCodec"),
+                            label: AppLocalization.string("videoInfo.download.audioCodec"),
                             value: codec.uppercased()
                         )
                     }
@@ -1432,7 +1432,7 @@ struct VideoInfoView: View {
                     // Downloaded at
                     if let completedAt = download.completedAt {
                         infoRow(
-                            label: String(localized: "videoInfo.download.downloadedAt"),
+                            label: AppLocalization.string("videoInfo.download.downloadedAt"),
                             value: completedAt.formatted(date: .abbreviated, time: .shortened)
                         )
                     }
@@ -1440,14 +1440,14 @@ struct VideoInfoView: View {
                     // Bitrates
                     if let videoBitrate = download.videoBitrate {
                         infoRow(
-                            label: String(localized: "videoInfo.download.videoBitrate"),
+                            label: AppLocalization.string("videoInfo.download.videoBitrate"),
                             value: formatBitrate(videoBitrate)
                         )
                     }
 
                     if let audioBitrate = download.audioBitrate {
                         infoRow(
-                            label: String(localized: "videoInfo.download.audioBitrate"),
+                            label: AppLocalization.string("videoInfo.download.audioBitrate"),
                             value: formatBitrate(audioBitrate)
                         )
                     }
@@ -1456,7 +1456,7 @@ struct VideoInfoView: View {
                 Button(role: .destructive) {
                     showingRemoveDownloadConfirmation = true
                 } label: {
-                    Label(String(localized: "videoInfo.download.remove"), systemImage: "trash")
+                    Label(AppLocalization.string("videoInfo.download.remove"), systemImage: "trash")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -1485,40 +1485,40 @@ struct VideoInfoView: View {
     @ViewBuilder
     private var statsSection: some View {
         if let video = displayedVideo {
-            CollapsibleSection(title: String(localized: "videoInfo.section.stats"), isExpanded: $isStatsExpanded) {
+            CollapsibleSection(title: AppLocalization.string("videoInfo.section.stats"), isExpanded: $isStatsExpanded) {
                 LazyVGrid(columns: [
                     GridItem(.flexible()),
                     GridItem(.flexible())
                 ], spacing: 12) {
                     if let viewCount = video.viewCount {
                         infoRow(
-                            label: String(localized: "videoInfo.views"),
+                            label: AppLocalization.string("videoInfo.views"),
                             value: CountFormatter.compact(viewCount)
                         )
                     }
 
                     if let likeCount = video.likeCount {
                         infoRow(
-                            label: String(localized: "videoInfo.likes"),
+                            label: AppLocalization.string("videoInfo.likes"),
                             value: CountFormatter.compact(likeCount)
                         )
                     }
 
                     if let publishedText = video.formattedPublishedDate {
                         infoRow(
-                            label: String(localized: "videoInfo.published"),
+                            label: AppLocalization.string("videoInfo.published"),
                             value: publishedText
                         )
                     }
 
                     infoRow(
-                        label: String(localized: "videoInfo.duration"),
+                        label: AppLocalization.string("videoInfo.duration"),
                         value: video.formattedDuration
                     )
 
                     if let source = videoSourceDisplay {
                         infoRow(
-                            label: String(localized: "videoInfo.source"),
+                            label: AppLocalization.string("videoInfo.source"),
                             value: source
                         )
                     }
@@ -1530,26 +1530,26 @@ struct VideoInfoView: View {
     // MARK: - Watch History Section
 
     private func watchHistorySection(_ entry: WatchEntry) -> some View {
-        CollapsibleSection(title: String(localized: "videoInfo.section.watchHistory"), isExpanded: $isWatchHistoryExpanded) {
+        CollapsibleSection(title: AppLocalization.string("videoInfo.section.watchHistory"), isExpanded: $isWatchHistoryExpanded) {
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
                 // First watched
                 infoRow(
-                    label: String(localized: "videoInfo.firstWatched"),
+                    label: AppLocalization.string("videoInfo.firstWatched"),
                     value: entry.createdAt.formatted(date: .abbreviated, time: .shortened)
                 )
 
                 // Last watched
                 infoRow(
-                    label: String(localized: "videoInfo.lastWatched"),
+                    label: AppLocalization.string("videoInfo.lastWatched"),
                     value: entry.updatedAt.formatted(date: .abbreviated, time: .shortened)
                 )
 
                 // Progress
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "videoInfo.progress"))
+                    Text(AppLocalization.string("videoInfo.progress"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -1579,7 +1579,7 @@ struct VideoInfoView: View {
 
                 // Completed
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(String(localized: "videoInfo.completed"))
+                    Text(AppLocalization.string("videoInfo.completed"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -1588,11 +1588,11 @@ struct VideoInfoView: View {
                             .font(.subheadline)
                             .fontWeight(.medium)
                     } else if entry.isFinished {
-                        Text(String(localized: "common.yes"))
+                        Text(AppLocalization.string("common.yes"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                     } else {
-                        Text(String(localized: "videoInfo.notCompleted"))
+                        Text(AppLocalization.string("videoInfo.notCompleted"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -1605,11 +1605,11 @@ struct VideoInfoView: View {
     // MARK: - Bookmark Details Section
     
     private func bookmarkDetailsSection(_ bookmark: Bookmark) -> some View {
-        CollapsibleSection(title: String(localized: "videoInfo.section.bookmarkDetails"), isExpanded: $isBookmarkExpanded) {
+        CollapsibleSection(title: AppLocalization.string("videoInfo.section.bookmarkDetails"), isExpanded: $isBookmarkExpanded) {
             VStack(alignment: .leading, spacing: 12) {
                 // Bookmarked date
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(String(localized: "videoInfo.bookmarkedAt"))
+                    Text(AppLocalization.string("videoInfo.bookmarkedAt"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
@@ -1620,7 +1620,7 @@ struct VideoInfoView: View {
                 
                 // Tags section
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "videoInfo.bookmark.tags"))
+                    Text(AppLocalization.string("videoInfo.bookmark.tags"))
                         .font(.subheadline)
                         .fontWeight(.medium)
 
@@ -1628,7 +1628,7 @@ struct VideoInfoView: View {
                         Button {
                             isEditingBookmarkTags = true
                         } label: {
-                            Label(String(localized: "videoInfo.bookmark.addTags"), systemImage: "plus.circle")
+                            Label(AppLocalization.string("videoInfo.bookmark.addTags"), systemImage: "plus.circle")
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
@@ -1645,7 +1645,7 @@ struct VideoInfoView: View {
                 
                 // Notes section
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "videoInfo.bookmark.notes"))
+                    Text(AppLocalization.string("videoInfo.bookmark.notes"))
                         .font(.subheadline)
                         .fontWeight(.medium)
 
@@ -1654,13 +1654,13 @@ struct VideoInfoView: View {
                             isEditingBookmarkNote = true
                             isBookmarkNoteFocused = true
                         } label: {
-                            Label(String(localized: "videoInfo.bookmark.addNotes"), systemImage: "plus.circle")
+                            Label(AppLocalization.string("videoInfo.bookmark.addNotes"), systemImage: "plus.circle")
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                     } else {
                         #if os(tvOS)
-                        TextField(String(localized: "videoInfo.bookmark.notes"), text: $bookmarkNote, axis: .vertical)
+                        TextField(AppLocalization.string("videoInfo.bookmark.notes"), text: $bookmarkNote, axis: .vertical)
                             .frame(minHeight: 100)
                             .font(.subheadline)
                             .onChange(of: bookmarkNote) { _, _ in
@@ -1738,7 +1738,7 @@ struct VideoInfoView: View {
     // MARK: - Description Section
 
     private var descriptionSection: some View {
-        CollapsibleSection(title: String(localized: "video.description"), isExpanded: $isDescriptionExpanded) {
+        CollapsibleSection(title: AppLocalization.string("video.description"), isExpanded: $isDescriptionExpanded) {
             if isLoadingVideoDetails {
                 // Loading state
                 HStack {
@@ -1768,7 +1768,7 @@ struct VideoInfoView: View {
     // MARK: - Original Title Section
 
     private var originalTitleSection: some View {
-        CollapsibleSection(title: String(localized: "video.originalTitle"), isExpanded: $isOriginalTitleExpanded) {
+        CollapsibleSection(title: AppLocalization.string("video.originalTitle"), isExpanded: $isOriginalTitleExpanded) {
             if let title = displayedVideo?.title {
                 Text(title)
                     #if os(macOS)
@@ -1792,14 +1792,14 @@ struct VideoInfoView: View {
         #else
         let rowSpacing: CGFloat = 12
         #endif
-        return CollapsibleSection(title: String(localized: "videoInfo.section.relatedVideos"), isExpanded: $isRelatedExpanded) {
+        return CollapsibleSection(title: AppLocalization.string("videoInfo.section.relatedVideos"), isExpanded: $isRelatedExpanded) {
             LazyVStack(spacing: rowSpacing) {
                 ForEach(Array(videos.enumerated()), id: \.element.id) { index, relatedVideo in
                     VideoRowView(video: relatedVideo, style: .regular)
                         .tappableVideo(
                             relatedVideo,
                             queueSource: .manual,
-                            sourceLabel: String(localized: "videoInfo.section.relatedVideos"),
+                            sourceLabel: AppLocalization.string("videoInfo.section.relatedVideos"),
                             videoList: videos,
                             videoIndex: index,
                             loadMoreVideos: nil
@@ -1824,7 +1824,7 @@ struct VideoInfoView: View {
     @ViewBuilder
     private var commentsSection: some View {
         if supportsComments {
-            CollapsibleSection(title: String(localized: "videoInfo.section.comments"), isExpanded: $isCommentsExpanded) {
+            CollapsibleSection(title: AppLocalization.string("videoInfo.section.comments"), isExpanded: $isCommentsExpanded) {
                 switch commentsState {
                 case .idle, .loading:
                     HStack {
@@ -1841,7 +1841,7 @@ struct VideoInfoView: View {
                             Image(systemName: "exclamationmark.bubble")
                                 .font(.title2)
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "videoInfo.comments.disabled"))
+                            Text(AppLocalization.string("videoInfo.comments.disabled"))
                                 #if os(macOS)
                                 .font(.body)
                                 #else
@@ -1860,7 +1860,7 @@ struct VideoInfoView: View {
                             Image(systemName: "exclamationmark.triangle")
                                 .font(.title2)
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "videoInfo.comments.error"))
+                            Text(AppLocalization.string("videoInfo.comments.error"))
                                 #if os(macOS)
                                 .font(.body)
                                 #else
@@ -1876,7 +1876,7 @@ struct VideoInfoView: View {
                     if comments.isEmpty {
                         HStack {
                             Spacer()
-                            Text(String(localized: "videoInfo.comments.empty"))
+                            Text(AppLocalization.string("videoInfo.comments.empty"))
                                 #if os(macOS)
                                 .font(.body)
                                 #else
@@ -1905,7 +1905,7 @@ struct VideoInfoView: View {
                                     showingCommentsSheet = true
                                 } label: {
                                     HStack {
-                                        Text(String(localized: "videoInfo.viewAllComments"))
+                                        Text(AppLocalization.string("videoInfo.viewAllComments"))
                                             .fontWeight(.medium)
                                         Image(systemName: "chevron.right")
                                     }
@@ -1971,7 +1971,7 @@ struct VideoInfoView: View {
                 #if os(tvOS)
                 .background(Color.black.ignoresSafeArea())
                 #endif
-                .navigationTitle(String(localized: "videoInfo.section.comments"))
+                .navigationTitle(AppLocalization.string("videoInfo.section.comments"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
@@ -2237,7 +2237,7 @@ struct VideoInfoView: View {
         guard let contentService,
               let instancesManager,
               let instance = instancesManager.instance(for: videoID.source) else {
-            initialVideoLoadError = String(localized: "error.noInstance")
+            initialVideoLoadError = AppLocalization.string("error.noInstance")
             return
         }
         

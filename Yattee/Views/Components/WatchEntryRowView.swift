@@ -33,7 +33,7 @@ struct WatchEntryRowView: View {
             video: video,
             style: .regular,
             watchProgress: entry.progress,
-            customMetadata: entry.isFinished ? nil : String(localized: "home.history.remaining \(entry.remainingTime)")
+            customMetadata: entry.isFinished ? nil : AppLocalization.string("home.history.remaining \(entry.remainingTime)")
         )
         .tappableVideo(
             video,
@@ -48,7 +48,7 @@ struct WatchEntryRowView: View {
             video: video,
             customActions: [
                 VideoContextAction(
-                    String(localized: "home.history.remove"),
+                    AppLocalization.string("home.history.remove"),
                     systemImage: "trash",
                     role: .destructive,
                     action: onRemove

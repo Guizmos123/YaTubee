@@ -39,6 +39,10 @@ struct PlaylistsListView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     private var viewOptionsSheetContent: some View {
         ViewOptionsSheet(
             layout: $layout,
@@ -89,10 +93,11 @@ struct PlaylistsListView: View {
                 viewWidth = newWidth
             }
         }
+        .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .navigationTitle(String(localized: "home.playlists.title"))
+        .navigationTitle(AppLocalization.string("home.playlists.title"))
         .toolbarTitleDisplayMode(.inlineLarge)
-        .searchable(text: $searchText, prompt: Text(String(localized: "playlists.search.placeholder")))
+        .searchable(text: $searchText, prompt: Text(AppLocalization.string("playlists.search.placeholder")))
         .toolbar {
             #if os(macOS)
             // Pin the trailing group (search field + toolbar buttons) to the right edge,
@@ -105,7 +110,7 @@ struct PlaylistsListView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "playlistsViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -155,19 +160,19 @@ struct PlaylistsListView: View {
     private var tvOSContent: some View {
         VStack(spacing: 0) {
             HStack(spacing: 24) {
-                TextField(String(localized: "playlists.search.placeholder"), text: $searchText)
+                TextField(AppLocalization.string("playlists.search.placeholder"), text: $searchText)
                     .textFieldStyle(.plain)
 
                 Button {
                     showingNewPlaylist = true
                 } label: {
-                    Label(String(localized: "home.playlists.new"), systemImage: "plus")
+                    Label(AppLocalization.string("home.playlists.new"), systemImage: "plus")
                 }
 
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
             }
             .focusSection()
@@ -213,14 +218,14 @@ struct PlaylistsListView: View {
 
     private var noPlaylistsView: some View {
         ContentUnavailableView {
-            Label(String(localized: "home.playlists.title"), systemImage: "list.bullet.rectangle")
+            Label(AppLocalization.string("home.playlists.title"), systemImage: "list.bullet.rectangle")
         } description: {
-            Text(String(localized: "home.empty.description"))
+            Text(AppLocalization.string("home.empty.description"))
         } actions: {
             Button {
                 showingNewPlaylist = true
             } label: {
-                Label(String(localized: "home.playlists.new"), systemImage: "plus")
+                Label(AppLocalization.string("home.playlists.new"), systemImage: "plus")
             }
             .buttonStyle(.borderedProminent)
         }
@@ -328,13 +333,13 @@ struct PlaylistsListView: View {
                 Button {
                     playlistToEdit = playlist
                 } label: {
-                    Label(String(localized: "playlist.edit"), systemImage: "pencil")
+                    Label(AppLocalization.string("playlist.edit"), systemImage: "pencil")
                 }
                 Button(role: .destructive) {
                     dataManager?.deletePlaylist(playlist)
                     loadPlaylists()
                 } label: {
-                    Label(String(localized: "playlist.delete"), systemImage: "trash")
+                    Label(AppLocalization.string("playlist.delete"), systemImage: "trash")
                 }
             }
         #endif

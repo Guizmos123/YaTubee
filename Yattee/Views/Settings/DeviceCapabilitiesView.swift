@@ -16,7 +16,7 @@ struct DeviceCapabilitiesView: View {
             networkStatusSection
             effectiveSettingsSection
         }
-        .navigationTitle(String(localized: "settings.deviceCapabilities.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.deviceCapabilities.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -50,26 +50,26 @@ struct DeviceCapabilitiesView: View {
         if let connectivity = appEnvironment?.connectivityMonitor {
             SettingsFormSection("settings.deviceCapabilities.networkStatus", footer: "settings.deviceCapabilities.networkStatus.footer") {
                 HStack {
-                    Text(String(localized: "settings.deviceCapabilities.network.connection"))
+                    Text(AppLocalization.string("settings.deviceCapabilities.network.connection"))
                     Spacer()
                     Text(connectionTypeString(connectivity))
                         .foregroundStyle(.secondary)
                 }
 
                 HStack {
-                    Text(String(localized: "settings.deviceCapabilities.network.online"))
+                    Text(AppLocalization.string("settings.deviceCapabilities.network.online"))
                     Spacer()
                     statusIndicator(connectivity.isOnline)
                 }
 
                 HStack {
-                    Text(String(localized: "settings.deviceCapabilities.network.expensive"))
+                    Text(AppLocalization.string("settings.deviceCapabilities.network.expensive"))
                     Spacer()
                     statusIndicator(connectivity.isExpensive)
                 }
 
                 HStack {
-                    Text(String(localized: "settings.deviceCapabilities.network.lowDataMode"))
+                    Text(AppLocalization.string("settings.deviceCapabilities.network.lowDataMode"))
                     Spacer()
                     statusIndicator(connectivity.isConstrained)
                 }
@@ -85,14 +85,14 @@ struct DeviceCapabilitiesView: View {
            let connectivity = appEnvironment?.connectivityMonitor {
             SettingsFormSection("settings.deviceCapabilities.effectiveSettings", footer: "settings.deviceCapabilities.effectiveSettings.footer") {
                 HStack {
-                    Text(String(localized: "settings.deviceCapabilities.effective.qualityLimit"))
+                    Text(AppLocalization.string("settings.deviceCapabilities.effective.qualityLimit"))
                     Spacer()
                     Text(effectiveQualityString(settings: settings, connectivity: connectivity))
                         .foregroundStyle(.secondary)
                 }
 
                 HStack {
-                    Text(String(localized: "settings.deviceCapabilities.effective.preferredCodecs"))
+                    Text(AppLocalization.string("settings.deviceCapabilities.effective.preferredCodecs"))
                     Spacer()
                     Text(HardwareCapabilities.shared.preferredCodecOrder.joined(separator: ", "))
                         .foregroundStyle(.secondary)
@@ -105,11 +105,11 @@ struct DeviceCapabilitiesView: View {
 
     private func connectionTypeString(_ connectivity: ConnectivityMonitor) -> String {
         if connectivity.isCellular {
-            return String(localized: "settings.deviceCapabilities.network.type.cellular")
+            return AppLocalization.string("settings.deviceCapabilities.network.type.cellular")
         } else if connectivity.isOnline {
-            return String(localized: "settings.deviceCapabilities.network.type.wifi")
+            return AppLocalization.string("settings.deviceCapabilities.network.type.wifi")
         } else {
-            return String(localized: "settings.deviceCapabilities.network.type.offline")
+            return AppLocalization.string("settings.deviceCapabilities.network.type.offline")
         }
     }
 
@@ -135,7 +135,7 @@ struct DeviceCapabilitiesView: View {
         }
 
         if quality == .auto {
-            return String(localized: "settings.deviceCapabilities.effective.auto")
+            return AppLocalization.string("settings.deviceCapabilities.effective.auto")
         }
         return quality.rawValue.uppercased()
     }

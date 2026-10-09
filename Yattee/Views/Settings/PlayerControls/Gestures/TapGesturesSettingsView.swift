@@ -31,7 +31,7 @@ struct TapGesturesSettingsView: View {
                 timingSection
             }
         }
-        .navigationTitle(String(localized: "gestures.tap.title", defaultValue: "Tap Gestures"))
+        .reactiveNavigationTitle(AppLocalization.string("gestures.tap.title", defaultValue: "Tap Gestures"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -53,7 +53,7 @@ struct TapGesturesSettingsView: View {
     private var enableSection: some View {
         Section {
             Toggle(
-                String(localized: "gestures.tap.enable", defaultValue: "Enable Tap Gestures"),
+                AppLocalization.string("gestures.tap.enable", defaultValue: "Enable Tap Gestures"),
                 isOn: $isEnabled
             )
             .onChange(of: isEnabled) { _, newValue in
@@ -61,7 +61,7 @@ struct TapGesturesSettingsView: View {
             }
             .disabled(!viewModel.canEditActivePreset)
         } footer: {
-            Text(String(localized: "gestures.tap.enableFooter", defaultValue: "Double-tap zones on the player to trigger actions when controls are hidden."))
+            Text(AppLocalization.string("gestures.tap.enableFooter", defaultValue: "Double-tap zones on the player to trigger actions when controls are hidden."))
         }
     }
 
@@ -77,9 +77,9 @@ struct TapGesturesSettingsView: View {
                 }
                 .disabled(!viewModel.canEditActivePreset)
         } header: {
-            Text(String(localized: "gestures.tap.layout", defaultValue: "Zone Layout"))
+            Text(AppLocalization.string("gestures.tap.layout", defaultValue: "Zone Layout"))
         } footer: {
-            Text(String(localized: "gestures.tap.layoutFooter", defaultValue: "Choose how the screen is divided into tap zones."))
+            Text(AppLocalization.string("gestures.tap.layoutFooter", defaultValue: "Choose how the screen is divided into tap zones."))
         }
     }
 
@@ -96,9 +96,9 @@ struct TapGesturesSettingsView: View {
             )
             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
         } header: {
-            Text(String(localized: "gestures.tap.preview", defaultValue: "Preview"))
+            Text(AppLocalization.string("gestures.tap.preview", defaultValue: "Preview"))
         } footer: {
-            Text(String(localized: "gestures.tap.previewFooter", defaultValue: "Tap a zone to configure its action."))
+            Text(AppLocalization.string("gestures.tap.previewFooter", defaultValue: "Tap a zone to configure its action."))
         }
     }
 
@@ -134,7 +134,7 @@ struct TapGesturesSettingsView: View {
                 .disabled(!viewModel.canEditActivePreset)
             }
         } header: {
-            Text(String(localized: "gestures.tap.zones", defaultValue: "Zone Actions"))
+            Text(AppLocalization.string("gestures.tap.zones", defaultValue: "Zone Actions"))
         }
     }
 
@@ -142,7 +142,7 @@ struct TapGesturesSettingsView: View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text(String(localized: "gestures.tap.doubleTapWindow", defaultValue: "Double-Tap Window"))
+                    Text(AppLocalization.string("gestures.tap.doubleTapWindow", defaultValue: "Double-Tap Window"))
                     Spacer()
                     Text("\(doubleTapInterval)ms")
                         .foregroundStyle(.secondary)
@@ -163,9 +163,9 @@ struct TapGesturesSettingsView: View {
                 .disabled(!viewModel.canEditActivePreset)
             }
         } header: {
-            Text(String(localized: "gestures.tap.timing", defaultValue: "Timing"))
+            Text(AppLocalization.string("gestures.tap.timing", defaultValue: "Timing"))
         } footer: {
-            Text(String(localized: "gestures.tap.timingFooter", defaultValue: "Time window to detect a double-tap. Lower values are faster but may conflict with single-tap."))
+            Text(AppLocalization.string("gestures.tap.timingFooter", defaultValue: "Time window to detect a double-tap. Lower values are faster but may conflict with single-tap."))
         }
     }
 
@@ -206,19 +206,19 @@ struct TapGesturesSettingsView: View {
         case .seekBackward(let seconds):
             "-\(seconds)s"
         case .togglePlayPause:
-            String(localized: "gestures.action.playPause.short", defaultValue: "Play/Pause")
+            AppLocalization.string("gestures.action.playPause.short", defaultValue: "Play/Pause")
         case .toggleFullscreen:
-            String(localized: "gestures.action.fullscreen.short", defaultValue: "Fullscreen")
+            AppLocalization.string("gestures.action.fullscreen.short", defaultValue: "Fullscreen")
         case .togglePiP:
-            String(localized: "gestures.action.pip.short", defaultValue: "PiP")
+            AppLocalization.string("gestures.action.pip.short", defaultValue: "PiP")
         case .playNext:
-            String(localized: "gestures.action.next.short", defaultValue: "Next")
+            AppLocalization.string("gestures.action.next.short", defaultValue: "Next")
         case .playPrevious:
-            String(localized: "gestures.action.previous.short", defaultValue: "Previous")
+            AppLocalization.string("gestures.action.previous.short", defaultValue: "Previous")
         case .cyclePlaybackSpeed:
-            String(localized: "gestures.action.speed.short", defaultValue: "Speed")
+            AppLocalization.string("gestures.action.speed.short", defaultValue: "Speed")
         case .toggleMute:
-            String(localized: "gestures.action.mute.short", defaultValue: "Mute")
+            AppLocalization.string("gestures.action.mute.short", defaultValue: "Mute")
         }
     }
 }

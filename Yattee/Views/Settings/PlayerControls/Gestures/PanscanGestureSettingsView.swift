@@ -23,7 +23,7 @@ struct PanscanGestureSettingsView: View {
                 snapModeSection
             }
         }
-        .navigationTitle(String(localized: "gestures.panscan.title", defaultValue: "Panscan Gesture"))
+        .reactiveNavigationTitle(AppLocalization.string("gestures.panscan.title", defaultValue: "Panscan Gesture"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             syncFromViewModel()
@@ -38,7 +38,7 @@ struct PanscanGestureSettingsView: View {
     private var enableSection: some View {
         Section {
             Toggle(
-                String(localized: "gestures.panscan.enable", defaultValue: "Enable Panscan Gesture"),
+                AppLocalization.string("gestures.panscan.enable", defaultValue: "Enable Panscan Gesture"),
                 isOn: $isEnabled
             )
             .onChange(of: isEnabled) { _, newValue in
@@ -46,14 +46,14 @@ struct PanscanGestureSettingsView: View {
             }
             .disabled(!viewModel.canEditActivePreset)
         } footer: {
-            Text(String(localized: "gestures.panscan.enableFooter", defaultValue: "Pinch to zoom between fit and fill modes while in fullscreen."))
+            Text(AppLocalization.string("gestures.panscan.enableFooter", defaultValue: "Pinch to zoom between fit and fill modes while in fullscreen."))
         }
     }
 
     private var snapModeSection: some View {
         Section {
             Toggle(
-                String(localized: "gestures.panscan.snapToEnds", defaultValue: "Snap to Fit/Fill"),
+                AppLocalization.string("gestures.panscan.snapToEnds", defaultValue: "Snap to Fit/Fill"),
                 isOn: $snapToEnds
             )
             .onChange(of: snapToEnds) { _, newValue in
@@ -69,9 +69,9 @@ struct PanscanGestureSettingsView: View {
 
     private var snapModeFooterText: String {
         if snapToEnds {
-            String(localized: "gestures.panscan.snapToEnds.on.footer", defaultValue: "When released, the zoom will snap to either fit (show full video) or fill (fill the screen).")
+            AppLocalization.string("gestures.panscan.snapToEnds.on.footer", defaultValue: "When released, the zoom will snap to either fit (show full video) or fill (fill the screen).")
         } else {
-            String(localized: "gestures.panscan.snapToEnds.off.footer", defaultValue: "The zoom level stays exactly where you release, allowing any value between fit and fill.")
+            AppLocalization.string("gestures.panscan.snapToEnds.off.footer", defaultValue: "The zoom level stays exactly where you release, allowing any value between fit and fill.")
         }
     }
 

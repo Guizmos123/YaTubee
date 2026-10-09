@@ -12,7 +12,7 @@ import SwiftUI
 struct FileCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button(String(localized: "menu.file.openLink")) {
+            Button(AppLocalization.string("menu.file.openLink")) {
                 NotificationCenter.default.post(name: .showOpenLinkSheet, object: nil)
             }
             .keyboardShortcut("o", modifiers: [.command])
@@ -27,7 +27,7 @@ struct SettingsWindowMenuItem: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button(String(localized: "menu.app.settings")) {
+        Button(AppLocalization.string("menu.app.settings")) {
             openWindow(id: "settings")
         }
         .keyboardShortcut(",", modifiers: [.command])

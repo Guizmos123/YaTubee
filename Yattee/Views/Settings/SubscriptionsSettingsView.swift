@@ -85,7 +85,7 @@ struct SubscriptionsSettingsView: View {
         .task(id: currentAccount) {
             await refreshAccountSubscriptionCount()
         }
-        .navigationTitle(String(localized: "settings.subscriptions.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.subscriptions.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingImportPicker) {
@@ -98,49 +98,49 @@ struct SubscriptionsSettingsView: View {
         }
         #endif
         .alert(
-            String(localized: "settings.subscriptions.import.success.title"),
+            AppLocalization.string("settings.subscriptions.import.success.title"),
             isPresented: $showingImportResult
         ) {
-            Button(String(localized: "common.ok")) {}
+            Button(AppLocalization.string("common.ok")) {}
         } message: {
             if let result = importResult {
-                Text(String(localized: "settings.subscriptions.import.success.message \(result.imported) \(result.skipped) \(result.format)"))
+                Text(AppLocalization.string("settings.subscriptions.import.success.message \(result.imported) \(result.skipped) \(result.format)"))
             }
         }
         .alert(
-            String(localized: "settings.subscriptions.import.error.title"),
+            AppLocalization.string("settings.subscriptions.import.error.title"),
             isPresented: $showingImportError
         ) {
-            Button(String(localized: "common.ok")) {}
+            Button(AppLocalization.string("common.ok")) {}
         } message: {
             if let error = importError {
                 Text(error)
             }
         }
         .confirmationDialog(
-            String(localized: "settings.subscriptions.account.switch.title"),
+            AppLocalization.string("settings.subscriptions.account.switch.title"),
             isPresented: $showingAccountSwitchConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.subscriptions.account.switch.action")) {
+            Button(AppLocalization.string("settings.subscriptions.account.switch.action")) {
                 confirmAccountSwitch()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
                 cancelAccountSwitch()
             }
         } message: {
-            Text(String(localized: "settings.subscriptions.account.switch.message"))
+            Text(AppLocalization.string("settings.subscriptions.account.switch.message"))
         }
         .confirmationDialog(
-            String(localized: "settings.subscriptions.localData.delete.confirmation.title \(localSubscriptionCount)"),
+            AppLocalization.string("settings.subscriptions.localData.delete.confirmation.title \(localSubscriptionCount)"),
             isPresented: $showingDeleteLocalConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "settings.subscriptions.localData.delete.confirmation.action"), role: .destructive) {
+            Button(AppLocalization.string("settings.subscriptions.localData.delete.confirmation.action"), role: .destructive) {
                 deleteLocalSubscriptions()
             }
         } message: {
-            Text(String(localized: "settings.subscriptions.localData.delete.confirmation.message"))
+            Text(AppLocalization.string("settings.subscriptions.localData.delete.confirmation.message"))
         }
         .presentationCompactAdaptation(.sheet)
     }
@@ -152,7 +152,7 @@ struct SubscriptionsSettingsView: View {
         Section {
             if let validator, validator.hasAvailableAccounts {
                 Picker(
-                    String(localized: "settings.subscriptions.account.label"),
+                    AppLocalization.string("settings.subscriptions.account.label"),
                     selection: Binding(
                         get: { currentAccount },
                         set: { newAccount in
@@ -172,16 +172,16 @@ struct SubscriptionsSettingsView: View {
                 // No accounts available - show setup prompt
                 VStack(alignment: .leading, spacing: 8) {
                     Label(
-                        String(localized: "settings.subscriptions.account.noAccounts.title"),
+                        AppLocalization.string("settings.subscriptions.account.noAccounts.title"),
                         systemImage: "exclamationmark.triangle"
                     )
                     .foregroundStyle(.secondary)
 
-                    Text(String(localized: "settings.subscriptions.account.noAccounts.message"))
+                    Text(AppLocalization.string("settings.subscriptions.account.noAccounts.message"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Button(String(localized: "settings.subscriptions.account.noAccounts.action")) {
+                    Button(AppLocalization.string("settings.subscriptions.account.noAccounts.action")) {
                         appEnvironment?.navigationCoordinator.navigate(to: .settings)
                     }
                     .font(.caption)
@@ -191,7 +191,7 @@ struct SubscriptionsSettingsView: View {
             }
         } footer: {
             if validator?.hasAvailableAccounts == true {
-                Text(String(localized: "settings.subscriptions.account.footer"))
+                Text(AppLocalization.string("settings.subscriptions.account.footer"))
             }
         }
     }
@@ -227,7 +227,7 @@ struct SubscriptionsSettingsView: View {
                 showImportPicker()
             } label: {
                 HStack {
-                    Label(String(localized: "settings.subscriptions.import.button"), systemImage: "square.and.arrow.down")
+                    Label(AppLocalization.string("settings.subscriptions.import.button"), systemImage: "square.and.arrow.down")
                     Spacer()
                     if isImporting {
                         ProgressView()
@@ -236,9 +236,9 @@ struct SubscriptionsSettingsView: View {
             }
             .disabled(isImporting)
         } header: {
-            Text(String(localized: "settings.subscriptions.import.title"))
+            Text(AppLocalization.string("settings.subscriptions.import.title"))
         } footer: {
-            Text(String(localized: "settings.subscriptions.import.footer"))
+            Text(AppLocalization.string("settings.subscriptions.import.footer"))
         }
     }
 
@@ -247,7 +247,7 @@ struct SubscriptionsSettingsView: View {
     @ViewBuilder
     private var exportSection: some View {
         Section {
-            Picker(String(localized: "settings.subscriptions.export.format"), selection: $selectedExportFormat) {
+            Picker(AppLocalization.string("settings.subscriptions.export.format"), selection: $selectedExportFormat) {
                 ForEach(SubscriptionExportFormat.allCases) { format in
                     Text(format.rawValue).tag(format)
                 }
@@ -257,7 +257,7 @@ struct SubscriptionsSettingsView: View {
                 exportSubscriptions()
             } label: {
                 HStack {
-                    Label(String(localized: "settings.subscriptions.export.button"), systemImage: "square.and.arrow.up")
+                    Label(AppLocalization.string("settings.subscriptions.export.button"), systemImage: "square.and.arrow.up")
                     Spacer()
                     if isExporting {
                         ProgressView()
@@ -266,9 +266,9 @@ struct SubscriptionsSettingsView: View {
             }
             .disabled(subscriptionCount == 0 || isExporting)
         } header: {
-            Text(String(localized: "settings.subscriptions.export.title"))
+            Text(AppLocalization.string("settings.subscriptions.export.title"))
         } footer: {
-            Text(String(localized: "settings.subscriptions.export.footer \(subscriptionCount)"))
+            Text(AppLocalization.string("settings.subscriptions.export.footer \(subscriptionCount)"))
         }
     }
 
@@ -283,12 +283,12 @@ struct SubscriptionsSettingsView: View {
                 Button(role: .destructive) {
                     showingDeleteLocalConfirmation = true
                 } label: {
-                    Label(String(localized: "settings.subscriptions.localData.delete.button"), systemImage: "trash")
+                    Label(AppLocalization.string("settings.subscriptions.localData.delete.button"), systemImage: "trash")
                 }
             } header: {
-                Text(String(localized: "settings.subscriptions.localData.title"))
+                Text(AppLocalization.string("settings.subscriptions.localData.title"))
             } footer: {
-                Text(String(localized: "settings.subscriptions.localData.footer \(localSubscriptionCount)"))
+                Text(AppLocalization.string("settings.subscriptions.localData.footer \(localSubscriptionCount)"))
             }
         }
     }
@@ -314,7 +314,7 @@ struct SubscriptionsSettingsView: View {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.message = String(localized: "settings.subscriptions.import.panel.message")
+        panel.message = AppLocalization.string("settings.subscriptions.import.panel.message")
 
         if panel.runModal() == .OK, let url = panel.url {
             handleImportedFile(url)
@@ -389,7 +389,7 @@ struct SubscriptionsSettingsView: View {
             } catch {
                 LoggingService.shared.logSubscriptionsError("Failed to fetch account subscriptions for export", error: error)
                 appEnvironment?.toastManager.showError(
-                    String(localized: "settings.subscriptions.export.error.title"),
+                    AppLocalization.string("settings.subscriptions.export.error.title"),
                     subtitle: error.localizedDescription
                 )
                 return
@@ -441,7 +441,7 @@ struct SubscriptionsSettingsView: View {
 
     private func deleteLocalSubscriptions() {
         dataManager?.deleteAllSubscriptions()
-        appEnvironment?.toastManager.showSuccess(String(localized: "settings.subscriptions.localData.deleted.title"))
+        appEnvironment?.toastManager.showSuccess(AppLocalization.string("settings.subscriptions.localData.deleted.title"))
         Task {
             await refreshAccountSubscriptionCount()
         }

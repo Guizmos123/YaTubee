@@ -61,7 +61,7 @@ struct QueueActionSheet: View {
                     dismiss()
                 } label: {
                     HStack {
-                        Label(String(localized: "queue.action.playNow"), systemImage: "play.fill")
+                        Label(AppLocalization.string("queue.action.playNow"), systemImage: "play.fill")
                             .font(.body)
                         Spacer()
                     }
@@ -80,7 +80,7 @@ struct QueueActionSheet: View {
                     dismiss()
                 } label: {
                     HStack {
-                        Label(String(localized: "queue.action.playNext"), systemImage: "text.line.first.and.arrowtriangle.forward")
+                        Label(AppLocalization.string("queue.action.playNext"), systemImage: "text.line.first.and.arrowtriangle.forward")
                             .font(.body)
                         Spacer()
                     }
@@ -99,7 +99,7 @@ struct QueueActionSheet: View {
                     dismiss()
                 } label: {
                     HStack {
-                        Label(String(localized: "queue.action.addToQueue"), systemImage: "text.append")
+                        Label(AppLocalization.string("queue.action.addToQueue"), systemImage: "text.append")
                             .font(.body)
                         Spacer()
                     }

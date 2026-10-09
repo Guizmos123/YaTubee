@@ -21,7 +21,7 @@ struct InstanceLoginView: View {
 
     var body: some View {
         #if os(tvOS)
-        TVSidebarDetailContainer(systemImage: "person.badge.key", title: String(localized: "login.title")) {
+        TVSidebarDetailContainer(systemImage: "person.badge.key", title: AppLocalization.string("login.title")) {
             formContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -30,13 +30,13 @@ struct InstanceLoginView: View {
         #else
         NavigationStack {
             formContent
-                .navigationTitle(String(localized: "login.title"))
+                .reactiveNavigationTitle(AppLocalization.string("login.title"))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "common.cancel")) {
+                        Button(AppLocalization.string("common.cancel")) {
                             dismiss()
                         }
                     }
@@ -54,7 +54,7 @@ struct InstanceLoginView: View {
             Section {
                 #if os(tvOS)
                 TVSettingsTextField(title: usernameFieldLabel, text: $username)
-                TVSettingsTextField(title: String(localized: "login.password"), text: $password, isSecure: true)
+                TVSettingsTextField(title: AppLocalization.string("login.password"), text: $password, isSecure: true)
                 #else
                 TextField(usernameFieldLabel, text: $username)
                     .textContentType(.username)
@@ -64,12 +64,12 @@ struct InstanceLoginView: View {
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("instance.login.usernameField")
 
-                SecureField(String(localized: "login.password"), text: $password)
+                SecureField(AppLocalization.string("login.password"), text: $password)
                     .textContentType(.password)
                     .accessibilityIdentifier("instance.login.passwordField")
                 #endif
             } header: {
-                Text(String(localized: "login.header.credentials"))
+                Text(AppLocalization.string("login.header.credentials"))
             } footer: {
                 Text(footerText)
             }
@@ -90,10 +90,10 @@ struct InstanceLoginView: View {
                         HStack {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(String(localized: "login.loggingIn"))
+                            Text(AppLocalization.string("login.loggingIn"))
                         }
                     } else {
-                        Text(String(localized: "login.signIn"))
+                        Text(AppLocalization.string("login.signIn"))
                     }
                 }
                 .disabled(username.isEmpty || password.isEmpty || isLoading)
@@ -114,11 +114,11 @@ struct InstanceLoginView: View {
     private var usernameFieldLabel: String {
         switch instance.type {
         case .piped:
-            return String(localized: "login.username")
+            return AppLocalization.string("login.username")
         case .invidious:
-            return String(localized: "login.email")
+            return AppLocalization.string("login.email")
         default:
-            return String(localized: "login.username")
+            return AppLocalization.string("login.username")
         }
     }
 
@@ -126,9 +126,9 @@ struct InstanceLoginView: View {
     private var footerText: String {
         switch instance.type {
         case .piped:
-            return String(localized: "login.footer.pipedAccount \(instance.displayName)")
+            return AppLocalization.string("login.footer.pipedAccount \(instance.displayName)")
         case .invidious:
-            return String(localized: "login.footer.invidiousAccount \(instance.displayName)")
+            return AppLocalization.string("login.footer.invidiousAccount \(instance.displayName)")
         default:
             return ""
         }
@@ -152,7 +152,7 @@ struct InstanceLoginView: View {
                 }
             } catch APIError.unauthorized {
                 await MainActor.run {
-                    errorMessage = String(localized: "login.error.invalidCredentials")
+                    errorMessage = AppLocalization.string("login.error.invalidCredentials")
                     isLoading = false
                 }
             } catch {

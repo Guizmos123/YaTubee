@@ -42,7 +42,7 @@ struct ShareSheet: View {
                 .frame(maxHeight: 400)
             }
 
-            Button(String(localized: "settings.advanced.logs.export.copy")) {
+            Button(AppLocalization.string("settings.advanced.logs.export.copy")) {
                 if let text = items.first as? String {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(text, forType: .string)

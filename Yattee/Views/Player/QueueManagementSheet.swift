@@ -75,7 +75,7 @@ struct QueueManagementSheet: View {
             // ZStack so the centered title is decoupled from the leading
             // shuffle button's vertical sizing.
             ZStack {
-                Text(queueSourceLabel ?? String(localized: "queue.sheet.title"))
+                Text(queueSourceLabel ?? AppLocalization.string("queue.sheet.title"))
                     .font(.system(size: 32, weight: .semibold))
                     .foregroundStyle(.primary)
                 HStack {
@@ -117,7 +117,7 @@ struct QueueManagementSheet: View {
                     queueListView
                 }
             }
-            .navigationTitle(queueSourceLabel ?? String(localized: "queue.sheet.title"))
+            .navigationTitle(queueSourceLabel ?? AppLocalization.string("queue.sheet.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -140,7 +140,7 @@ struct QueueManagementSheet: View {
                         queueModeMenu
                         Spacer()
                         Button(role: .cancel) { performDismiss() } label: {
-                            Text(String(localized: "common.close"))
+                            Text(AppLocalization.string("common.close"))
                         }
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.borderedProminent)
@@ -169,11 +169,11 @@ struct QueueManagementSheet: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
 
-            Text(String(localized: "queue.sheet.empty"))
+            Text(AppLocalization.string("queue.sheet.empty"))
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            Text(String(localized: "queue.sheet.emptyHint"))
+            Text(AppLocalization.string("queue.sheet.emptyHint"))
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -203,7 +203,7 @@ struct QueueManagementSheet: View {
                 VStack(alignment: .leading, spacing: 24) {
                     if !history.isEmpty {
                         sectionHeader(
-                            String(localized: "queue.section.previously"),
+                            AppLocalization.string("queue.section.previously"),
                             count: history.count
                         )
                         VStack(spacing: 20) {
@@ -221,7 +221,7 @@ struct QueueManagementSheet: View {
                     }
 
                     if let currentVideo = playerState?.currentVideo {
-                        sectionHeader(String(localized: "queue.section.nowPlaying"))
+                        sectionHeader(AppLocalization.string("queue.section.nowPlaying"))
                             .id("now-playing")
 
                         let nowPlayingItem = QueuedVideo(
@@ -241,7 +241,7 @@ struct QueueManagementSheet: View {
 
                     if !queue.isEmpty {
                         sectionHeader(
-                            String(localized: "queue.section.upNext"),
+                            AppLocalization.string("queue.section.upNext"),
                             count: queue.count
                         )
                         VStack(spacing: 20) {
@@ -269,7 +269,7 @@ struct QueueManagementSheet: View {
                                         Button {
                                             Task { try? await queueManager?.loadMoreQueueItems() }
                                         } label: {
-                                            Text(String(localized: "queue.sheet.loadMore"))
+                                            Text(AppLocalization.string("queue.sheet.loadMore"))
                                                 .font(.subheadline)
                                                 .foregroundStyle(.tint)
                                         }
@@ -300,7 +300,7 @@ struct QueueManagementSheet: View {
                 .foregroundStyle(.secondary)
             Spacer()
             if let count {
-                Text(String(localized: "queue.section.count \(count)"))
+                Text(AppLocalization.string("queue.section.count \(count)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -336,9 +336,9 @@ struct QueueManagementSheet: View {
                         }
                     } header: {
                         HStack {
-                            Text(String(localized: "queue.section.previously"))
+                            Text(AppLocalization.string("queue.section.previously"))
                             Spacer()
-                            Text(String(localized: "queue.section.count \(history.count)"))
+                            Text(AppLocalization.string("queue.section.count \(history.count)"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -416,7 +416,7 @@ struct QueueManagementSheet: View {
                                             try? await queueManager?.loadMoreQueueItems()
                                         }
                                     } label: {
-                                        Text(String(localized: "queue.sheet.loadMore"))
+                                        Text(AppLocalization.string("queue.sheet.loadMore"))
                                             .font(.subheadline)
                                             .foregroundStyle(.tint)
                                     }
@@ -427,9 +427,9 @@ struct QueueManagementSheet: View {
                         }
                     } header: {
                         HStack {
-                            Text(String(localized: "queue.section.upNext"))
+                            Text(AppLocalization.string("queue.section.upNext"))
                             Spacer()
-                            Text(String(localized: "queue.section.count \(queue.count)"))
+                            Text(AppLocalization.string("queue.section.count \(queue.count)"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -457,7 +457,7 @@ struct QueueManagementSheet: View {
     /// Header for Now Playing section
     @ViewBuilder
     private var nowPlayingHeader: some View {
-        Text(String(localized: "queue.section.nowPlaying"))
+        Text(AppLocalization.string("queue.section.nowPlaying"))
     }
 
     /// Menu for selecting queue mode (shuffle, repeat, etc.)

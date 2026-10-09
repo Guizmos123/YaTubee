@@ -165,7 +165,7 @@ private struct TruncationTextRenderer: TextRenderer {
     private func drawMoreTextAtEnd(line: Text.Layout.Element, context: inout GraphicsContext) {
         let runs = line.flatMap { $0 }
         let runsCount = runs.count
-        let text = " ..." + String(localized: "common.more")
+        let text = " ..." + AppLocalization.string("common.more")
         let textCount = text.count
 
         // Draw runs until the text count

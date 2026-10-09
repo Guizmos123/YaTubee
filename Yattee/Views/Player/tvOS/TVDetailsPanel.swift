@@ -200,7 +200,7 @@ struct TVDetailsPanel: View {
                     navigateToChannel(for: video)
                 }
             } label: {
-                Text(String(localized: "channel.view"))
+                Text(AppLocalization.string("channel.view"))
                     .font(.callout)
                     .fontWeight(.medium)
             }
@@ -272,7 +272,7 @@ struct TVDetailsPanel: View {
                 )
                 .padding(.vertical, 16)
             } else {
-                Text(String(localized: "comments.unavailable"))
+                Text(AppLocalization.string("comments.unavailable"))
                     .font(.body)
                     .foregroundStyle(.white.opacity(0.5))
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -472,7 +472,7 @@ struct TVCommentsListView: View {
             Image(systemName: "bubble.left.and.exclamationmark.bubble.right")
                 .font(.title2)
                 .foregroundStyle(.white.opacity(0.5))
-            Text(String(localized: "comments.disabled"))
+            Text(AppLocalization.string("comments.disabled"))
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.5))
         }
@@ -485,10 +485,10 @@ struct TVCommentsListView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.title2)
                 .foregroundStyle(.white.opacity(0.5))
-            Text(String(localized: "comments.failedToLoad"))
+            Text(AppLocalization.string("comments.failedToLoad"))
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.5))
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await loadComments() }
             }
             .buttonStyle(.bordered)
@@ -502,7 +502,7 @@ struct TVCommentsListView: View {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.title2)
                 .foregroundStyle(.white.opacity(0.5))
-            Text(String(localized: "comments.empty"))
+            Text(AppLocalization.string("comments.empty"))
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.5))
         }
@@ -740,7 +740,7 @@ struct TVFocusableCommentView: View {
                 Button {
                     Task { await loadReplies() }
                 } label: {
-                    Text(String(localized: "comments.loadMoreReplies"))
+                    Text(AppLocalization.string("comments.loadMoreReplies"))
                         .font(.caption)
                         .foregroundStyle(.primary)
                 }

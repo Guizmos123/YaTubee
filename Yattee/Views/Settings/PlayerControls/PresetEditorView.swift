@@ -15,16 +15,16 @@ enum PresetEditorMode {
     var title: String {
         switch self {
         case .create:
-            return String(localized: "settings.playerControls.newPreset")
+            return AppLocalization.string("settings.playerControls.newPreset")
         case .rename:
-            return String(localized: "settings.playerControls.renamePreset")
+            return AppLocalization.string("settings.playerControls.renamePreset")
         }
     }
 
     var placeholder: String {
         switch self {
         case .create, .rename:
-            return String(localized: "settings.playerControls.presetNamePlaceholder")
+            return AppLocalization.string("settings.playerControls.presetNamePlaceholder")
         }
     }
 
@@ -40,9 +40,9 @@ enum PresetEditorMode {
     var saveButtonTitle: String {
         switch self {
         case .create:
-            return String(localized: "settings.playerControls.create")
+            return AppLocalization.string("settings.playerControls.create")
         case .rename:
-            return String(localized: "settings.playerControls.save")
+            return AppLocalization.string("settings.playerControls.save")
         }
     }
 }
@@ -103,13 +103,13 @@ struct PresetEditorView: View {
                     nameFooter
                 }
             }
-            .navigationTitle(mode.title)
+            .reactiveNavigationTitle(mode.title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "settings.playerControls.cancel")) {
+                    Button(AppLocalization.string("settings.playerControls.cancel")) {
                         dismiss()
                     }
                 }
@@ -135,7 +135,7 @@ struct PresetEditorView: View {
 
     private var basePicker: some View {
         Picker(
-            String(localized: "settings.playerControls.baseLayout"),
+            AppLocalization.string("settings.playerControls.baseLayout"),
             selection: $selectedBaseLayoutID
         ) {
             ForEach(baseLayouts) { preset in
@@ -154,7 +154,7 @@ struct PresetEditorView: View {
     private var nameFooter: some View {
         HStack {
             if trimmedName.count > LayoutPreset.maxNameLength {
-                Text(String(localized: "settings.playerControls.nameTooLong"))
+                Text(AppLocalization.string("settings.playerControls.nameTooLong"))
                     .foregroundStyle(.red)
             }
             Spacer()
@@ -189,7 +189,7 @@ struct PresetEditorView: View {
 
             HStack {
                 Spacer()
-                Button(String(localized: "settings.playerControls.cancel")) {
+                Button(AppLocalization.string("settings.playerControls.cancel")) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)

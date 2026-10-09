@@ -17,7 +17,7 @@ struct CheckForUpdatesMenuItem: View {
     @State private var updater = AppUpdater.shared
 
     var body: some View {
-        Button(String(localized: "menu.app.checkForUpdates")) {
+        Button(AppLocalization.string("menu.app.checkForUpdates")) {
             updater.checkForUpdates()
         }
         .disabled(!updater.canCheckForUpdates)

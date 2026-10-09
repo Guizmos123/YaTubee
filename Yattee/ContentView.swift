@@ -25,7 +25,7 @@ struct ContentView: View {
                 unifiedContentView(appEnvironment: appEnvironment)
                 #endif
             } else {
-                ProgressView(String(localized: "common.loading"))
+                ProgressView(AppLocalization.string("common.loading"))
             }
         }
         .toastOverlay()

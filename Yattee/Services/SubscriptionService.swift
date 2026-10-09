@@ -18,11 +18,11 @@ enum SubscriptionError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .alreadySubscribed:
-            return String(localized: "subscription.error.alreadySubscribed")
+            return AppLocalization.string("subscription.error.alreadySubscribed")
         case .notSubscribed:
-            return String(localized: "subscription.error.notSubscribed")
+            return AppLocalization.string("subscription.error.notSubscribed")
         case .providerNotAvailable:
-            return String(localized: "subscription.error.providerNotAvailable")
+            return AppLocalization.string("subscription.error.providerNotAvailable")
         case .operationFailed(let message):
             return message
         }

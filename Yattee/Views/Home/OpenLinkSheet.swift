@@ -55,7 +55,7 @@ struct OpenLinkSheet: View {
             OpenLinkFormView(prefilledURL: prefilledURL, onRequestDismiss: { dismiss() })
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "common.cancel")) {
+                        Button(AppLocalization.string("common.cancel")) {
                             dismiss()
                         }
                     }
@@ -146,7 +146,7 @@ struct OpenLinkFormView: View {
             yatteeServerWarningSection
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "openLink.title"))
+        .navigationTitle(AppLocalization.string("openLink.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -159,7 +159,7 @@ struct OpenLinkFormView: View {
     @ViewBuilder
     private var macOSBody: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "openLink.title"))
+            Text(AppLocalization.string("openLink.title"))
                 .font(.title3)
                 .fontWeight(.semibold)
 
@@ -187,13 +187,13 @@ struct OpenLinkFormView: View {
                     Spacer()
                     if isTooManyURLs {
                         Label(
-                            String(localized: "openLink.tooManyUrls \(Self.maxURLs)"),
+                            AppLocalization.string("openLink.tooManyUrls \(Self.maxURLs)"),
                             systemImage: "exclamationmark.triangle"
                         )
                         .foregroundStyle(.orange)
                         .font(.caption)
                     } else if urlCount > 0 {
-                        Text(String(localized: "openLink.urlCount \(urlCount)"))
+                        Text(AppLocalization.string("openLink.urlCount \(urlCount)"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -209,9 +209,9 @@ struct OpenLinkFormView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "doc.on.clipboard")
                             if clipboardURLs.count > 1 {
-                                Text(String(localized: "openLink.pasteMultiple \(clipboardURLs.count)"))
+                                Text(AppLocalization.string("openLink.pasteMultiple \(clipboardURLs.count)"))
                             } else {
-                                Text(String(localized: "openLink.pasteClipboard"))
+                                Text(AppLocalization.string("openLink.pasteClipboard"))
                             }
                             Text("·")
                                 .foregroundStyle(.secondary)
@@ -238,9 +238,9 @@ struct OpenLinkFormView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.yellow)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(String(localized: "openLink.yatteeServerNotConfigured"))
+                        Text(AppLocalization.string("openLink.yatteeServerNotConfigured"))
                             .font(.subheadline)
-                        Text(String(localized: "openLink.yatteeServerMessage"))
+                        Text(AppLocalization.string("openLink.yatteeServerMessage"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -251,7 +251,7 @@ struct OpenLinkFormView: View {
 
             HStack(spacing: 8) {
                 if onRequestDismiss != nil {
-                    Button(String(localized: "common.cancel")) {
+                    Button(AppLocalization.string("common.cancel")) {
                         onRequestDismiss?()
                     }
                     .keyboardShortcut(.cancelAction)
@@ -260,7 +260,7 @@ struct OpenLinkFormView: View {
                 if isExtracting {
                     ProgressView()
                         .controlSize(.small)
-                    Text(String(localized: "openLink.extracting"))
+                    Text(AppLocalization.string("openLink.extracting"))
                         .foregroundStyle(.secondary)
                         .font(.subheadline)
                 } else {
@@ -270,8 +270,8 @@ struct OpenLinkFormView: View {
                     } label: {
                         Label(
                             isMultipleURLs
-                                ? String(localized: "openLink.downloadAll")
-                                : String(localized: "openLink.download"),
+                                ? AppLocalization.string("openLink.downloadAll")
+                                : AppLocalization.string("openLink.download"),
                             systemImage: "arrow.down.circle"
                         )
                     }
@@ -283,8 +283,8 @@ struct OpenLinkFormView: View {
                     } label: {
                         Label(
                             isMultipleURLs
-                                ? String(localized: "openLink.openAll")
-                                : String(localized: "openLink.open"),
+                                ? AppLocalization.string("openLink.openAll")
+                                : AppLocalization.string("openLink.open"),
                             systemImage: "play.fill"
                         )
                     }
@@ -305,11 +305,11 @@ struct OpenLinkFormView: View {
                     if case .pending = item.status { return false }
                     return true
                 }.count
-                Text(String(localized: "openLink.extractingProgress \(processed) \(extractedItems.count)"))
+                Text(AppLocalization.string("openLink.extractingProgress \(processed) \(extractedItems.count)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text(String(localized: "openLink.results"))
+                Text(AppLocalization.string("openLink.results"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -362,7 +362,7 @@ struct OpenLinkFormView: View {
         Section {
             #if os(tvOS)
             // tvOS doesn't have TextEditor, use TextField for single URL
-            TextField(String(localized: "openLink.urlPlaceholder"), text: $urlText)
+            TextField(AppLocalization.string("openLink.urlPlaceholder"), text: $urlText)
                 .textContentType(.URL)
                 .focused($isTextEditorFocused)
                 .disabled(isExtracting)
@@ -383,13 +383,13 @@ struct OpenLinkFormView: View {
             HStack {
                 if isTooManyURLs {
                     Label(
-                        String(localized: "openLink.tooManyUrls \(Self.maxURLs)"),
+                        AppLocalization.string("openLink.tooManyUrls \(Self.maxURLs)"),
                         systemImage: "exclamationmark.triangle"
                     )
                     .foregroundStyle(.orange)
                     .font(.caption)
                 } else if urlCount > 0 {
-                    Text(String(localized: "openLink.urlCount \(urlCount)"))
+                    Text(AppLocalization.string("openLink.urlCount \(urlCount)"))
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 }
@@ -407,10 +407,10 @@ struct OpenLinkFormView: View {
                             Image(systemName: "doc.on.clipboard")
                             VStack(alignment: .leading) {
                                 if clipboardURLs.count > 1 {
-                                    Text(String(localized: "openLink.pasteMultiple \(clipboardURLs.count)"))
+                                    Text(AppLocalization.string("openLink.pasteMultiple \(clipboardURLs.count)"))
                                         .font(.subheadline)
                                 } else {
-                                    Text(String(localized: "openLink.pasteClipboard"))
+                                    Text(AppLocalization.string("openLink.pasteClipboard"))
                                         .font(.subheadline)
                                 }
                                 Text(clipboardURLs.first?.host ?? "")
@@ -432,7 +432,7 @@ struct OpenLinkFormView: View {
     /// Dynamic hint text based on enabled backend instances.
     private var supportedSitesHint: String {
         guard let instancesManager = appEnvironment?.instancesManager else {
-            return String(localized: "openLink.hint.noInstances")
+            return AppLocalization.string("openLink.hint.noInstances")
         }
 
         let hasEnabledYatteeServer = !instancesManager.enabledYatteeServerInstances.isEmpty
@@ -441,11 +441,11 @@ struct OpenLinkFormView: View {
         }
 
         if hasEnabledYatteeServer {
-            return String(localized: "openLink.hint.yatteeServer")
+            return AppLocalization.string("openLink.hint.yatteeServer")
         } else if hasEnabledInvidiousPiped {
-            return String(localized: "openLink.hint.youtubeOnly")
+            return AppLocalization.string("openLink.hint.youtubeOnly")
         } else {
-            return String(localized: "openLink.hint.noInstances")
+            return AppLocalization.string("openLink.hint.noInstances")
         }
     }
 
@@ -510,9 +510,9 @@ struct OpenLinkFormView: View {
                         default: return true
                         }
                     }.count
-                    Text(String(localized: "openLink.extractingProgress \(processed) \(extractedItems.count)"))
+                    Text(AppLocalization.string("openLink.extractingProgress \(processed) \(extractedItems.count)"))
                 } else {
-                    Text(String(localized: "openLink.results"))
+                    Text(AppLocalization.string("openLink.results"))
                 }
             }
         }
@@ -526,7 +526,7 @@ struct OpenLinkFormView: View {
             if isExtracting {
                 HStack {
                     ProgressView()
-                    Text(String(localized: "openLink.extracting"))
+                    Text(AppLocalization.string("openLink.extracting"))
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -537,8 +537,8 @@ struct OpenLinkFormView: View {
                 } label: {
                     Label(
                         isMultipleURLs
-                            ? String(localized: "openLink.openAll")
-                            : String(localized: "openLink.open"),
+                            ? AppLocalization.string("openLink.openAll")
+                            : AppLocalization.string("openLink.open"),
                         systemImage: "play.fill"
                     )
                 }
@@ -552,8 +552,8 @@ struct OpenLinkFormView: View {
                 } label: {
                     Label(
                         isMultipleURLs
-                            ? String(localized: "openLink.downloadAll")
-                            : String(localized: "openLink.download"),
+                            ? AppLocalization.string("openLink.downloadAll")
+                            : AppLocalization.string("openLink.download"),
                         systemImage: "arrow.down.circle"
                     )
                 }
@@ -572,10 +572,10 @@ struct OpenLinkFormView: View {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.yellow)
-                    Text(String(localized: "openLink.yatteeServerNotConfigured"))
+                    Text(AppLocalization.string("openLink.yatteeServerNotConfigured"))
                         .font(.subheadline)
                 }
-                Text(String(localized: "openLink.yatteeServerMessage"))
+                Text(AppLocalization.string("openLink.yatteeServerMessage"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -701,23 +701,23 @@ struct OpenLinkFormView: View {
         if failedCount == 0 {
             if successCount > 1 {
                 appEnvironment.toastManager.showSuccess(
-                    String(localized: "openLink.queuedSuccess.title"),
-                    subtitle: String(localized: "openLink.queuedSuccess.subtitle \(successCount)")
+                    AppLocalization.string("openLink.queuedSuccess.title"),
+                    subtitle: AppLocalization.string("openLink.queuedSuccess.subtitle \(successCount)")
                 )
             }
             dismissIfRequested()
         } else if successCount > 0 {
             appEnvironment.toastManager.show(
                 category: .error,
-                title: String(localized: "openLink.queuedPartial.title"),
-                subtitle: String(localized: "openLink.queuedPartial.subtitle \(successCount) \(failedCount)")
+                title: AppLocalization.string("openLink.queuedPartial.title"),
+                subtitle: AppLocalization.string("openLink.queuedPartial.subtitle \(successCount) \(failedCount)")
             )
             // Keep sheet open so user can see errors
         } else {
             appEnvironment.toastManager.show(
                 category: .error,
-                title: String(localized: "openLink.allFailed.title"),
-                subtitle: String(localized: "openLink.allFailed.subtitle \(failedCount)")
+                title: AppLocalization.string("openLink.allFailed.title"),
+                subtitle: AppLocalization.string("openLink.allFailed.subtitle \(failedCount)")
             )
             // Keep sheet open
         }
@@ -833,8 +833,8 @@ struct OpenLinkFormView: View {
             } else if failedCount > 0 {
                 appEnvironment.toastManager.show(
                     category: .error,
-                    title: String(localized: "openLink.allFailed.title"),
-                    subtitle: String(localized: "openLink.allFailed.subtitle \(failedCount)")
+                    title: AppLocalization.string("openLink.allFailed.title"),
+                    subtitle: AppLocalization.string("openLink.allFailed.subtitle \(failedCount)")
                 )
             }
         } else {
@@ -842,23 +842,23 @@ struct OpenLinkFormView: View {
             if failedCount == 0 {
                 if successCount >= 2 {
                     appEnvironment.toastManager.showSuccess(
-                        String(localized: "openLink.downloadQueued.title"),
-                        subtitle: String(localized: "openLink.downloadQueued.subtitle \(successCount)")
+                        AppLocalization.string("openLink.downloadQueued.title"),
+                        subtitle: AppLocalization.string("openLink.downloadQueued.subtitle \(successCount)")
                     )
                 }
                 dismissIfRequested()
             } else if successCount > 0 {
                 appEnvironment.toastManager.show(
                     category: .error,
-                    title: String(localized: "openLink.downloadPartial.title"),
-                    subtitle: String(localized: "openLink.downloadPartial.subtitle \(successCount) \(failedCount)")
+                    title: AppLocalization.string("openLink.downloadPartial.title"),
+                    subtitle: AppLocalization.string("openLink.downloadPartial.subtitle \(successCount) \(failedCount)")
                 )
                 // Keep sheet open
             } else {
                 appEnvironment.toastManager.show(
                     category: .error,
-                    title: String(localized: "openLink.allFailed.title"),
-                    subtitle: String(localized: "openLink.allFailed.subtitle \(failedCount)")
+                    title: AppLocalization.string("openLink.allFailed.title"),
+                    subtitle: AppLocalization.string("openLink.allFailed.subtitle \(failedCount)")
                 )
                 // Keep sheet open
             }
@@ -941,8 +941,8 @@ struct OpenLinkFormView: View {
         if failedCount == 0 {
             if successCount >= 2 {
                 appEnvironment.toastManager.showSuccess(
-                    String(localized: "openLink.downloadQueued.title"),
-                    subtitle: String(localized: "openLink.downloadQueued.subtitle \(successCount)")
+                    AppLocalization.string("openLink.downloadQueued.title"),
+                    subtitle: AppLocalization.string("openLink.downloadQueued.subtitle \(successCount)")
                 )
             }
             if !hasErrors {
@@ -951,8 +951,8 @@ struct OpenLinkFormView: View {
         } else {
             appEnvironment.toastManager.show(
                 category: .error,
-                title: String(localized: "openLink.downloadPartial.title"),
-                subtitle: String(localized: "openLink.downloadPartial.subtitle \(successCount) \(failedCount)")
+                title: AppLocalization.string("openLink.downloadPartial.title"),
+                subtitle: AppLocalization.string("openLink.downloadPartial.subtitle \(successCount) \(failedCount)")
             )
         }
     }
@@ -1081,11 +1081,11 @@ private enum OpenLinkError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noInstanceAvailable:
-            return String(localized: "openLink.noInstance")
+            return AppLocalization.string("openLink.noInstance")
         case .noYatteeServer:
-            return String(localized: "openLink.noYatteeServer")
+            return AppLocalization.string("openLink.noYatteeServer")
         case .notAVideo:
-            return String(localized: "openLink.notAVideo")
+            return AppLocalization.string("openLink.notAVideo")
         }
     }
 }

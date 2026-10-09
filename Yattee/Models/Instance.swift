@@ -16,10 +16,10 @@ enum InstanceType: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .invidious: return String(localized: "instances.type.invidious")
-        case .piped: return String(localized: "instances.type.piped")
-        case .peertube: return String(localized: "instances.type.peertube")
-        case .yatteeServer: return String(localized: "instances.type.yatteeServer")
+        case .invidious: return AppLocalization.string("instances.type.invidious")
+        case .piped: return AppLocalization.string("instances.type.piped")
+        case .peertube: return AppLocalization.string("instances.type.peertube")
+        case .yatteeServer: return AppLocalization.string("instances.type.yatteeServer")
         }
     }
 

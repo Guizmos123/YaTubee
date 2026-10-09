@@ -19,11 +19,11 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return String(localized: "tabs.home")
-        case .subscriptions: return String(localized: "tabs.subscriptions")
-        case .search: return String(localized: "tabs.search")
+        case .home: return AppLocalization.string("tabs.home")
+        case .subscriptions: return AppLocalization.string("tabs.subscriptions")
+        case .search: return AppLocalization.string("tabs.search")
         #if os(tvOS)
-        case .settings: return String(localized: "tabs.settings")
+        case .settings: return AppLocalization.string("tabs.settings")
         #endif
         }
     }

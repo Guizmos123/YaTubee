@@ -470,14 +470,14 @@ struct TVPlayerView: View {
 
                 HStack(spacing: 32) {
                     failureButton(
-                        title: String(localized: "player.error.button"),
+                        title: AppLocalization.string("player.error.button"),
                         systemImage: "info.circle",
                         focus: .errorDetails,
                         action: { showingErrorSheet = true }
                     )
 
                     failureButton(
-                        title: String(localized: "player.error.retry"),
+                        title: AppLocalization.string("player.error.retry"),
                         systemImage: "arrow.clockwise",
                         focus: .errorRetry,
                         action: { retryPlayback() }
@@ -485,14 +485,14 @@ struct TVPlayerView: View {
 
                     if playerState?.nextQueuedVideo != nil {
                         failureButton(
-                            title: String(localized: "player.autoplay.playNext"),
+                            title: AppLocalization.string("player.autoplay.playNext"),
                             systemImage: "forward.fill",
                             focus: .errorPlayNext,
                             action: { playNextInQueue() }
                         )
                     } else {
                         failureButton(
-                            title: String(localized: "player.close"),
+                            title: AppLocalization.string("player.close"),
                             systemImage: "xmark",
                             focus: .errorClose,
                             action: { closeVideo() }
@@ -515,21 +515,21 @@ struct TVPlayerView: View {
                     Image(systemName: "arrow.clockwise.circle")
                         .font(.system(size: 56, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.85))
-                    Text(String(localized: "player.retry.button"))
+                    Text(AppLocalization.string("player.retry.button"))
                         .font(.system(size: 32, weight: .semibold))
                         .foregroundStyle(.white)
                 }
 
                 HStack(spacing: 32) {
                     failureButton(
-                        title: String(localized: "player.error.retry"),
+                        title: AppLocalization.string("player.error.retry"),
                         systemImage: "arrow.clockwise",
                         focus: .errorRetry,
                         action: { retryPlayback() }
                     )
 
                     failureButton(
-                        title: String(localized: "player.close"),
+                        title: AppLocalization.string("player.close"),
                         systemImage: "xmark",
                         focus: .errorClose,
                         action: { closeVideo() }

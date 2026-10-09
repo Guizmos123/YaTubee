@@ -131,7 +131,7 @@ struct MPVTrack: Equatable, Sendable, Identifiable, Decodable {
            let localized = Locale.current.localizedString(forLanguageCode: baseLanguageCode) {
             return localized
         }
-        return String(localized: "player.track.number \(trackID)")
+        return AppLocalization.string("player.track.number \(trackID)")
     }
 
     /// Whether this track's language matches a user preference code like "en".

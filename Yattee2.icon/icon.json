@@ -1,17 +1,11 @@
 {
-  "fill" : {
-    "automatic-gradient" : "display-p3:0.13970,0.37320,0.80670,1.00000"
-  },
   "groups" : [
     {
       "layers" : [
         {
-          "fill" : {
-            "automatic-gradient" : "display-p3:0.73183,0.93576,0.96783,1.00000"
-          },
           "hidden" : false,
-          "image-name" : "play-stream.svg",
-          "name" : "play-stream",
+          "image-name" : "YaTubee-Default-Light.png",
+          "name" : "YaTubee Default",
           "position" : {
             "scale" : 1.15,
             "translation-in-points" : [
@@ -21,13 +15,9 @@
           }
         }
       ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
       "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+        "enabled" : false,
+        "value" : 0
       }
     }
   ],

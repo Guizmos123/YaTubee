@@ -27,7 +27,7 @@ struct PlaybackSettingsView: View {
             }
         }
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.playback.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.playback.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -46,7 +46,7 @@ private struct QualitySection: View {
             footer: "settings.playback.quality.allowSoftwareDecoded.footer"
         ) {
             PlatformMenuPicker(
-                String(localized: "settings.playback.quality.preferred"),
+                AppLocalization.string("settings.playback.quality.preferred"),
                 selection: $settings.preferredQuality
             ) {
                 ForEach(VideoQuality.allCases, id: \.self) { quality in
@@ -56,7 +56,7 @@ private struct QualitySection: View {
 
             #if os(iOS)
             Picker(
-                String(localized: "settings.playback.quality.cellular"),
+                AppLocalization.string("settings.playback.quality.cellular"),
                 selection: $settings.cellularQuality
             ) {
                 ForEach(VideoQuality.allCases, id: \.self) { quality in
@@ -66,7 +66,7 @@ private struct QualitySection: View {
             #endif
 
             Toggle(
-                String(localized: "settings.playback.quality.allowSoftwareDecoded"),
+                AppLocalization.string("settings.playback.quality.allowSoftwareDecoded"),
                 isOn: $settings.allowSoftwareDecodedFormats
             )
         }
@@ -169,13 +169,13 @@ private struct AudioSection: View {
     var body: some View {
         SettingsFormSection("settings.playback.audio.header") {
             Picker(
-                String(localized: "settings.playback.audio.preferredLanguage"),
+                AppLocalization.string("settings.playback.audio.preferredLanguage"),
                 selection: Binding(
                     get: { settings.preferredAudioLanguage ?? "" },
                     set: { settings.preferredAudioLanguage = $0.isEmpty ? nil : $0 }
                 )
             ) {
-                Text(String(localized: "settings.playback.audio.original"))
+                Text(AppLocalization.string("settings.playback.audio.original"))
                     .tag("")
 
                 Divider()
@@ -211,13 +211,13 @@ private struct SubtitlesSection: View {
     var body: some View {
         SettingsFormSection("settings.playback.subtitles.header") {
             Picker(
-                String(localized: "settings.playback.subtitles.preferredLanguage"),
+                AppLocalization.string("settings.playback.subtitles.preferredLanguage"),
                 selection: Binding(
                     get: { settings.preferredSubtitlesLanguage ?? "" },
                     set: { settings.preferredSubtitlesLanguage = $0.isEmpty ? nil : $0 }
                 )
             ) {
-                Text(String(localized: "settings.playback.subtitles.off"))
+                Text(AppLocalization.string("settings.playback.subtitles.off"))
                     .tag("")
 
                 Divider()
@@ -230,7 +230,7 @@ private struct SubtitlesSection: View {
             NavigationLink {
                 SubtitlesSettingsView()
             } label: {
-                Label(String(localized: "settings.playback.subtitles.appearance"), systemImage: "textformat.size")
+                Label(AppLocalization.string("settings.playback.subtitles.appearance"), systemImage: "textformat.size")
             }
         }
     }
@@ -251,18 +251,18 @@ private struct BehaviorSection: View {
         SettingsFormSection("settings.playback.behavior.header", footer: footer) {
             #if os(macOS)
             Toggle(
-                String(localized: "settings.playback.macOS.separateWindow"),
+                AppLocalization.string("settings.playback.macOS.separateWindow"),
                 isOn: $settings.macPlayerSeparateWindow
             )
 
             Toggle(
-                String(localized: "settings.playback.macOS.autoResizePlayer"),
+                AppLocalization.string("settings.playback.macOS.autoResizePlayer"),
                 isOn: $settings.playerSheetAutoResize
             )
             #endif
 
             PlatformMenuPicker(
-                String(localized: "settings.playback.resumeAction"),
+                AppLocalization.string("settings.playback.resumeAction"),
                 selection: $settings.resumeAction
             ) {
                 ForEach(ResumeAction.allCases, id: \.self) { action in
@@ -274,14 +274,14 @@ private struct BehaviorSection: View {
             // macOS never suspends apps, so playback always continues in the
             // background — the toggle would have no effect there
             Toggle(
-                String(localized: "settings.playback.backgroundPlayback"),
+                AppLocalization.string("settings.playback.backgroundPlayback"),
                 isOn: $settings.backgroundPlaybackEnabled
             )
             #endif
 
             #if os(tvOS)
             Toggle(
-                String(localized: "settings.playback.tvOSMenuButtonClosesVideo"),
+                AppLocalization.string("settings.playback.tvOSMenuButtonClosesVideo"),
                 isOn: $settings.tvOSMenuButtonClosesVideo
             )
             #endif
@@ -301,12 +301,12 @@ private struct TVDisplayMatchingSection: View {
             footer: "settings.playback.tvDisplayMatching.footer"
         ) {
             Toggle(
-                String(localized: "settings.playback.tvDisplayMatching.frameRate"),
+                AppLocalization.string("settings.playback.tvDisplayMatching.frameRate"),
                 isOn: $settings.tvMatchDisplayFrameRate
             )
 
             Toggle(
-                String(localized: "settings.playback.tvDisplayMatching.dynamicRange"),
+                AppLocalization.string("settings.playback.tvDisplayMatching.dynamicRange"),
                 isOn: $settings.tvMatchDisplayDynamicRange
             )
         }
@@ -322,13 +322,13 @@ private struct QueueSection: View {
     var body: some View {
         SettingsFormSection("settings.playback.queue.header") {
             Toggle(
-                String(localized: "settings.playback.queue.enabled"),
+                AppLocalization.string("settings.playback.queue.enabled"),
                 isOn: $settings.queueEnabled
             )
 
             #if os(tvOS)
             PlatformMenuPicker(
-                String(localized: "settings.playback.queue.autoPlayCountdown"),
+                AppLocalization.string("settings.playback.queue.autoPlayCountdown"),
                 selection: $settings.queueAutoPlayCountdown
             ) {
                 ForEach(1...15, id: \.self) { value in
@@ -339,7 +339,7 @@ private struct QueueSection: View {
             #elseif os(macOS)
             // macOS: Use simple string label (custom HStack label breaks Form rendering)
             Stepper(
-                "\(String(localized: "settings.playback.queue.autoPlayCountdown")): \(settings.queueAutoPlayCountdown)s",
+                "\(AppLocalization.string("settings.playback.queue.autoPlayCountdown")): \(settings.queueAutoPlayCountdown)s",
                 value: $settings.queueAutoPlayCountdown,
                 in: 1...15
             )
@@ -350,7 +350,7 @@ private struct QueueSection: View {
                 in: 1...15
             ) {
                 HStack {
-                    Text(String(localized: "settings.playback.queue.autoPlayCountdown"))
+                    Text(AppLocalization.string("settings.playback.queue.autoPlayCountdown"))
                     Spacer()
                     Text("\(settings.queueAutoPlayCountdown)s")
                         .foregroundStyle(.secondary)
@@ -375,13 +375,13 @@ private struct OrientationSection: View {
     var body: some View {
         SettingsFormSection("settings.playback.orientation.header") {
             Toggle(
-                String(localized: "settings.playback.orientation.rotateToMatchAspectRatio"),
+                AppLocalization.string("settings.playback.orientation.rotateToMatchAspectRatio"),
                 isOn: $settings.rotateToMatchAspectRatio
             )
 
             if isPhone {
                 Toggle(
-                    String(localized: "settings.playback.orientation.preferPortraitBrowsing"),
+                    AppLocalization.string("settings.playback.orientation.preferPortraitBrowsing"),
                     isOn: $settings.preferPortraitBrowsing
                 )
             }
@@ -395,7 +395,7 @@ private struct OrientationSection: View {
 extension VideoQuality {
     var displayName: String {
         switch self {
-        case .auto: return String(localized: "settings.playback.quality.best")
+        case .auto: return AppLocalization.string("settings.playback.quality.best")
         case .hd4k: return "4K"
         case .hd1440p: return "1440p"
         case .hd1080p: return "1080p"

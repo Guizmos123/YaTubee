@@ -15,20 +15,20 @@ struct ReturnYouTubeDislikeSettingsView: View {
             if let settings = appEnvironment?.settingsManager {
                 SettingsFormSection(footer: "settings.returnYouTubeDislike.footer") {
                     Toggle(
-                        String(localized: "settings.returnYouTubeDislike.enabled"),
+                        AppLocalization.string("settings.returnYouTubeDislike.enabled"),
                         isOn: Bindable(settings).returnYouTubeDislikeEnabled
                     )
                 }
 
                 SettingsFormSection("settings.returnYouTubeDislike.about.header") {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "settings.returnYouTubeDislike.about.description"))
+                        Text(AppLocalization.string("settings.returnYouTubeDislike.about.description"))
                             .font(.callout)
                             .foregroundStyle(.secondary)
 
                         Link(destination: URL(string: "https://returnyoutubedislike.com")!) {
                             HStack {
-                                Text(String(localized: "settings.returnYouTubeDislike.learnMore"))
+                                Text(AppLocalization.string("settings.returnYouTubeDislike.learnMore"))
                                 Spacer()
                                 Image(systemName: "arrow.up.right")
                                     .font(.caption)
@@ -38,7 +38,7 @@ struct ReturnYouTubeDislikeSettingsView: View {
                 }
             }
         }
-        .navigationTitle(String(localized: "settings.returnYouTubeDislike.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.returnYouTubeDislike.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

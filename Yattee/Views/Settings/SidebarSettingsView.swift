@@ -150,7 +150,7 @@ struct SidebarSettingsView: View {
         #endif
         .opaqueSettingsFormBackground()
         #if !os(tvOS)
-        .navigationTitle(String(localized: "settings.sidebar.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.sidebar.title"))
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -164,15 +164,15 @@ struct SidebarSettingsView: View {
 
     private var startupSection: some View {
         Section {
-            PlatformMenuPicker(String(localized: "settings.sidebar.startup.tab"), selection: startupTabBinding) {
+            PlatformMenuPicker(AppLocalization.string("settings.sidebar.startup.tab"), selection: startupTabBinding) {
                 ForEach(validStartupTabs) { item in
                     Text(item.localizedTitle).tag(item)
                 }
             }
         } header: {
-            Text(String(localized: "settings.sidebar.startup.header"))
+            Text(AppLocalization.string("settings.sidebar.startup.header"))
         } footer: {
-            Text(String(localized: "settings.sidebar.startup.footer"))
+            Text(AppLocalization.string("settings.sidebar.startup.footer"))
         }
     }
 
@@ -234,9 +234,9 @@ struct SidebarSettingsView: View {
             }
             #endif
         } header: {
-            Text(String(localized: "settings.sidebar.mainNavigation.header"))
+            Text(AppLocalization.string("settings.sidebar.mainNavigation.header"))
         } footer: {
-            Text(String(localized: "settings.sidebar.mainNavigation.footer"))
+            Text(AppLocalization.string("settings.sidebar.mainNavigation.footer"))
         }
     }
 
@@ -293,13 +293,13 @@ struct SidebarSettingsView: View {
     private var sourcesSection: some View {
         Section {
             // Show in Sidebar toggle
-            Toggle(String(localized: "settings.sidebar.showInSidebar"), isOn: sourcesEnabledBinding)
+            Toggle(AppLocalization.string("settings.sidebar.showInSidebar"), isOn: sourcesEnabledBinding)
                 .onChange(of: sourcesEnabledBinding.wrappedValue) {
                     notifySidebarSettingsChanged()
                 }
 
             // Source sort order
-            PlatformMenuPicker(String(localized: "settings.sidebar.sourceSort"), selection: sourceSortBinding) {
+            PlatformMenuPicker(AppLocalization.string("settings.sidebar.sourceSort"), selection: sourceSortBinding) {
                 ForEach(SidebarSourceSort.allCases) { sort in
                     Text(sort.localizedTitle).tag(sort)
                 }
@@ -310,7 +310,7 @@ struct SidebarSettingsView: View {
             }
 
             // Limit sources toggle
-            Toggle(String(localized: "settings.sidebar.sourcesLimitEnabled"), isOn: sourcesLimitEnabledBinding)
+            Toggle(AppLocalization.string("settings.sidebar.sourcesLimitEnabled"), isOn: sourcesLimitEnabledBinding)
                 .disabled(!sourcesEnabledBinding.wrappedValue)
                 .onChange(of: sourcesLimitEnabledBinding.wrappedValue) {
                     notifySidebarSettingsChanged()
@@ -320,7 +320,7 @@ struct SidebarSettingsView: View {
             if sourcesLimitEnabledBinding.wrappedValue {
                 #if os(tvOS)
                 // tvOS uses Picker instead of Slider (Slider/Stepper unavailable)
-                PlatformMenuPicker(String(localized: "settings.sidebar.maxSources"), selection: maxSourcesBinding) {
+                PlatformMenuPicker(AppLocalization.string("settings.sidebar.maxSources"), selection: maxSourcesBinding) {
                     ForEach([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100], id: \.self) { value in
                         Text("\(value)").tag(value)
                     }
@@ -332,7 +332,7 @@ struct SidebarSettingsView: View {
                 #else
                 // Max sources slider
                 HStack {
-                    Text(String(localized: "settings.sidebar.maxSources"))
+                    Text(AppLocalization.string("settings.sidebar.maxSources"))
                     Spacer()
                     Text("\(maxSourcesBinding.wrappedValue)")
                         .foregroundStyle(.secondary)
@@ -356,22 +356,22 @@ struct SidebarSettingsView: View {
                 #endif
             }
         } header: {
-            Text(String(localized: "settings.sidebar.sources.header"))
+            Text(AppLocalization.string("settings.sidebar.sources.header"))
         } footer: {
-            Text(String(localized: "settings.sidebar.sources.footer"))
+            Text(AppLocalization.string("settings.sidebar.sources.footer"))
         }
     }
 
     private var channelsSection: some View {
         Section {
             // Show in Sidebar toggle (first)
-            Toggle(String(localized: "settings.sidebar.showInSidebar"), isOn: channelsEnabledBinding)
+            Toggle(AppLocalization.string("settings.sidebar.showInSidebar"), isOn: channelsEnabledBinding)
                 .onChange(of: channelsEnabledBinding.wrappedValue) {
                     notifySidebarSettingsChanged()
                 }
 
             // Channel sort order
-            PlatformMenuPicker(String(localized: "settings.sidebar.channelSort"), selection: channelSortBinding) {
+            PlatformMenuPicker(AppLocalization.string("settings.sidebar.channelSort"), selection: channelSortBinding) {
                 ForEach(SidebarChannelSort.allCases.filter { $0 != .custom }) { sort in
                     Text(sort.localizedTitle).tag(sort)
                 }
@@ -382,7 +382,7 @@ struct SidebarSettingsView: View {
             }
 
             // Limit channels toggle
-            Toggle(String(localized: "settings.sidebar.channelsLimitEnabled"), isOn: channelsLimitEnabledBinding)
+            Toggle(AppLocalization.string("settings.sidebar.channelsLimitEnabled"), isOn: channelsLimitEnabledBinding)
                 .disabled(!channelsEnabledBinding.wrappedValue)
                 .onChange(of: channelsLimitEnabledBinding.wrappedValue) {
                     notifySidebarSettingsChanged()
@@ -392,7 +392,7 @@ struct SidebarSettingsView: View {
             if channelsLimitEnabledBinding.wrappedValue {
                 #if os(tvOS)
                 // tvOS uses Picker instead of Slider (Slider/Stepper unavailable)
-                PlatformMenuPicker(String(localized: "settings.sidebar.maxChannels"), selection: maxChannelsBinding) {
+                PlatformMenuPicker(AppLocalization.string("settings.sidebar.maxChannels"), selection: maxChannelsBinding) {
                     ForEach([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100], id: \.self) { value in
                         Text("\(value)").tag(value)
                     }
@@ -404,7 +404,7 @@ struct SidebarSettingsView: View {
                 #else
                 // Max channels slider
                 HStack {
-                    Text(String(localized: "settings.sidebar.maxChannels"))
+                    Text(AppLocalization.string("settings.sidebar.maxChannels"))
                     Spacer()
                     Text("\(maxChannelsBinding.wrappedValue)")
                         .foregroundStyle(.secondary)
@@ -428,22 +428,22 @@ struct SidebarSettingsView: View {
                 #endif
             }
         } header: {
-            Text(String(localized: "settings.sidebar.channels.header"))
+            Text(AppLocalization.string("settings.sidebar.channels.header"))
         } footer: {
-            Text(String(localized: "settings.sidebar.channels.footer"))
+            Text(AppLocalization.string("settings.sidebar.channels.footer"))
         }
     }
 
     private var playlistsSection: some View {
         Section {
             // Show in Sidebar toggle (first)
-            Toggle(String(localized: "settings.sidebar.showInSidebar"), isOn: playlistsEnabledBinding)
+            Toggle(AppLocalization.string("settings.sidebar.showInSidebar"), isOn: playlistsEnabledBinding)
                 .onChange(of: playlistsEnabledBinding.wrappedValue) {
                     notifySidebarSettingsChanged()
                 }
 
             // Playlist sort order
-            PlatformMenuPicker(String(localized: "settings.sidebar.playlistSort"), selection: playlistSortBinding) {
+            PlatformMenuPicker(AppLocalization.string("settings.sidebar.playlistSort"), selection: playlistSortBinding) {
                 ForEach(SidebarPlaylistSort.allCases) { sort in
                     Text(sort.localizedTitle).tag(sort)
                 }
@@ -454,7 +454,7 @@ struct SidebarSettingsView: View {
             }
 
             // Limit playlists toggle
-            Toggle(String(localized: "settings.sidebar.playlistsLimitEnabled"), isOn: playlistsLimitEnabledBinding)
+            Toggle(AppLocalization.string("settings.sidebar.playlistsLimitEnabled"), isOn: playlistsLimitEnabledBinding)
                 .disabled(!playlistsEnabledBinding.wrappedValue)
                 .onChange(of: playlistsLimitEnabledBinding.wrappedValue) {
                     notifySidebarSettingsChanged()
@@ -464,7 +464,7 @@ struct SidebarSettingsView: View {
             if playlistsLimitEnabledBinding.wrappedValue {
                 #if os(tvOS)
                 // tvOS uses Picker instead of Slider (Slider/Stepper unavailable)
-                PlatformMenuPicker(String(localized: "settings.sidebar.maxPlaylists"), selection: maxPlaylistsBinding) {
+                PlatformMenuPicker(AppLocalization.string("settings.sidebar.maxPlaylists"), selection: maxPlaylistsBinding) {
                     ForEach([5, 10, 15, 20, 25, 30], id: \.self) { value in
                         Text("\(value)").tag(value)
                     }
@@ -476,7 +476,7 @@ struct SidebarSettingsView: View {
                 #else
                 // Max playlists slider
                 HStack {
-                    Text(String(localized: "settings.sidebar.maxPlaylists"))
+                    Text(AppLocalization.string("settings.sidebar.maxPlaylists"))
                     Spacer()
                     Text("\(maxPlaylistsBinding.wrappedValue)")
                         .foregroundStyle(.secondary)
@@ -500,9 +500,9 @@ struct SidebarSettingsView: View {
                 #endif
             }
         } header: {
-            Text(String(localized: "settings.sidebar.playlists.header"))
+            Text(AppLocalization.string("settings.sidebar.playlists.header"))
         } footer: {
-            Text(String(localized: "settings.sidebar.playlists.footer"))
+            Text(AppLocalization.string("settings.sidebar.playlists.footer"))
         }
     }
 

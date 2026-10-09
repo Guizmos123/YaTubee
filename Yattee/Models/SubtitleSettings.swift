@@ -19,11 +19,11 @@ enum SubtitleFont: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .sansSerif:
-            return String(localized: "settings.subtitles.font.sansSerif")
+            return AppLocalization.string("settings.subtitles.font.sansSerif")
         case .serif:
-            return String(localized: "settings.subtitles.font.serif")
+            return AppLocalization.string("settings.subtitles.font.serif")
         case .monospaced:
-            return String(localized: "settings.subtitles.font.monospaced")
+            return AppLocalization.string("settings.subtitles.font.monospaced")
         }
     }
 

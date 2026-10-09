@@ -23,7 +23,7 @@ struct SeekGestureSettingsView: View {
                 sensitivitySection
             }
         }
-        .navigationTitle(String(localized: "gestures.seek.title", defaultValue: "Seek Gesture"))
+        .reactiveNavigationTitle(AppLocalization.string("gestures.seek.title", defaultValue: "Seek Gesture"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             syncFromViewModel()
@@ -38,7 +38,7 @@ struct SeekGestureSettingsView: View {
     private var enableSection: some View {
         Section {
             Toggle(
-                String(localized: "gestures.seek.enable", defaultValue: "Enable Seek Gesture"),
+                AppLocalization.string("gestures.seek.enable", defaultValue: "Enable Seek Gesture"),
                 isOn: $isEnabled
             )
             .onChange(of: isEnabled) { _, newValue in
@@ -46,14 +46,14 @@ struct SeekGestureSettingsView: View {
             }
             .disabled(!viewModel.canEditActivePreset)
         } footer: {
-            Text(String(localized: "gestures.seek.enableFooter", defaultValue: "Drag left or right to seek backward or forward when controls are hidden."))
+            Text(AppLocalization.string("gestures.seek.enableFooter", defaultValue: "Drag left or right to seek backward or forward when controls are hidden."))
         }
     }
 
     private var sensitivitySection: some View {
         Section {
             Picker(
-                String(localized: "gestures.seek.sensitivity", defaultValue: "Sensitivity"),
+                AppLocalization.string("gestures.seek.sensitivity", defaultValue: "Sensitivity"),
                 selection: $sensitivity
             ) {
                 ForEach(SeekGestureSensitivity.allCases, id: \.self) { level in
@@ -70,7 +70,7 @@ struct SeekGestureSettingsView: View {
             }
             .disabled(!viewModel.canEditActivePreset)
         } header: {
-            Text(String(localized: "gestures.seek.sensitivity", defaultValue: "Sensitivity"))
+            Text(AppLocalization.string("gestures.seek.sensitivity", defaultValue: "Sensitivity"))
         } footer: {
             Text(sensitivityFooterText)
         }
@@ -81,11 +81,11 @@ struct SeekGestureSettingsView: View {
     private var sensitivityFooterText: String {
         switch sensitivity {
         case .low:
-            String(localized: "gestures.seek.sensitivity.low.footer", defaultValue: "Precise control for short videos or fine-tuning.")
+            AppLocalization.string("gestures.seek.sensitivity.low.footer", defaultValue: "Precise control for short videos or fine-tuning.")
         case .medium:
-            String(localized: "gestures.seek.sensitivity.medium.footer", defaultValue: "Balanced for most video lengths.")
+            AppLocalization.string("gestures.seek.sensitivity.medium.footer", defaultValue: "Balanced for most video lengths.")
         case .high:
-            String(localized: "gestures.seek.sensitivity.high.footer", defaultValue: "Fast navigation for long videos or podcasts.")
+            AppLocalization.string("gestures.seek.sensitivity.high.footer", defaultValue: "Fast navigation for long videos or podcasts.")
         }
     }
 

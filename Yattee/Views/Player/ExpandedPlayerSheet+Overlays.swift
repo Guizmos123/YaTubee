@@ -109,7 +109,7 @@ extension ExpandedPlayerSheet {
             Button {
                 showingErrorSheet = true
             } label: {
-                Label(String(localized: "player.error.button"), systemImage: "info.circle")
+                Label(AppLocalization.string("player.error.button"), systemImage: "info.circle")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.white.opacity(0.8))
                     .padding(.horizontal, 16)
@@ -118,13 +118,13 @@ extension ExpandedPlayerSheet {
             }
             .buttonStyle(.plain)
             .environment(\.colorScheme, .dark)
-            .accessibilityLabel(String(localized: "player.error.showDetails.accessibilityLabel"))
+            .accessibilityLabel(AppLocalization.string("player.error.showDetails.accessibilityLabel"))
 
             // Retry and Close buttons side by side
             HStack(spacing: 12) {
                 // Retry button
                 Button(action: retryPlayback) {
-                    Label(String(localized: "player.error.retry"), systemImage: "arrow.clockwise")
+                    Label(AppLocalization.string("player.error.retry"), systemImage: "arrow.clockwise")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(.horizontal, 16)
@@ -133,14 +133,14 @@ extension ExpandedPlayerSheet {
                 }
                 .buttonStyle(.plain)
                 .environment(\.colorScheme, .dark)
-                .accessibilityLabel(String(localized: "player.error.retry.accessibilityLabel"))
+                .accessibilityLabel(AppLocalization.string("player.error.retry.accessibilityLabel"))
 
                 // Play Next button (when queue has next video) or Close button (when queue is empty)
                 if nextQueuedVideo != nil {
                     Button {
                         playNextInQueue()
                     } label: {
-                        Label(String(localized: "player.autoplay.playNext"), systemImage: "forward.fill")
+                        Label(AppLocalization.string("player.autoplay.playNext"), systemImage: "forward.fill")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.white.opacity(0.8))
                             .padding(.horizontal, 16)
@@ -149,12 +149,12 @@ extension ExpandedPlayerSheet {
                     }
                     .buttonStyle(.plain)
                     .environment(\.colorScheme, .dark)
-                    .accessibilityLabel(String(localized: "player.autoplay.playNext"))
+                    .accessibilityLabel(AppLocalization.string("player.autoplay.playNext"))
                 } else {
                     Button {
                         closeVideo()
                     } label: {
-                        Label(String(localized: "player.close"), systemImage: "xmark")
+                        Label(AppLocalization.string("player.close"), systemImage: "xmark")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.white.opacity(0.8))
                             .padding(.horizontal, 16)
@@ -163,7 +163,7 @@ extension ExpandedPlayerSheet {
                     }
                     .buttonStyle(.plain)
                     .environment(\.colorScheme, .dark)
-                    .accessibilityLabel(String(localized: "player.close.accessibilityLabel"))
+                    .accessibilityLabel(AppLocalization.string("player.close.accessibilityLabel"))
                 }
             }
         }
@@ -175,7 +175,7 @@ extension ExpandedPlayerSheet {
         Color.black.opacity(0.4)
         VStack(spacing: 16) {
             PlayerOverlayButton(icon: "arrow.clockwise", action: retryPlayback)
-            Text(String(localized: "player.retry.button"))
+            Text(AppLocalization.string("player.retry.button"))
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.9))
 
@@ -183,7 +183,7 @@ extension ExpandedPlayerSheet {
             if let fallbackStream = firstMuxedStream,
                fallbackStream.id != playerState?.currentStream?.id {
                 Button(action: { tryFallbackStream(fallbackStream) }) {
-                    Text(String(localized: "player.retry.tryResolution \(fallbackStream.resolution?.description ?? "")"))
+                    Text(AppLocalization.string("player.retry.tryResolution \(fallbackStream.resolution?.description ?? "")"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)

@@ -25,6 +25,10 @@ struct HistoryListView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     // UI state
     @State private var showViewOptions = false
     @State private var viewWidth: CGFloat = 0
@@ -110,7 +114,7 @@ struct HistoryListView: View {
                     Button {
                         showViewOptions = true
                     } label: {
-                        Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                        Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                     }
 
                     if !history.isEmpty {
@@ -124,7 +128,7 @@ struct HistoryListView: View {
                                 }
                             }
                         } label: {
-                            Label(String(localized: "home.history.clear"), systemImage: "trash")
+                            Label(AppLocalization.string("home.history.clear"), systemImage: "trash")
                         }
                     }
                 }
@@ -171,10 +175,11 @@ struct HistoryListView: View {
             }
             #endif
         }
+        .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .navigationTitle(String(localized: "home.history.title"))
+        .navigationTitle(AppLocalization.string("home.history.title"))
         .toolbarTitleDisplayMode(.inlineLarge)
-        .searchable(text: $searchText, prompt: Text(String(localized: "history.search.placeholder")))
+        .searchable(text: $searchText, prompt: Text(AppLocalization.string("history.search.placeholder")))
         .toolbar {
             #if os(macOS)
             // Pin the trailing group (search field + toolbar buttons) to the right edge,
@@ -188,7 +193,7 @@ struct HistoryListView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "historyViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -228,10 +233,10 @@ struct HistoryListView: View {
             isPresented: $showingClearConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "home.history.clear"), role: .destructive) {
+            Button(AppLocalization.string("home.history.clear"), role: .destructive) {
                 clearHistory()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
                 selectedClearOption = nil
             }
         }
@@ -253,9 +258,9 @@ struct HistoryListView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ContentUnavailableView {
-                Label(String(localized: "home.history.title"), systemImage: "clock")
+                Label(AppLocalization.string("home.history.title"), systemImage: "clock")
             } description: {
-                Text(String(localized: "home.history.empty"))
+                Text(AppLocalization.string("home.history.empty"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -305,14 +310,14 @@ struct HistoryListView: View {
             video: video,
             style: rowStyle,
             watchProgress: watchProgress(for: entry),
-            customMetadata: entry.isFinished || entry.isLive ? nil : String(localized: "home.history.remaining \(entry.remainingTime)")
+            customMetadata: entry.isFinished || entry.isLive ? nil : AppLocalization.string("home.history.remaining \(entry.remainingTime)")
         )
         .tappableVideo(
             video,
             startTime: entry.watchedSeconds,
             customActions: [
                 VideoContextAction(
-                    String(localized: "home.history.remove"),
+                    AppLocalization.string("home.history.remove"),
                     systemImage: "trash",
                     role: .destructive,
                     action: { removeEntry(entry) }
@@ -320,7 +325,7 @@ struct HistoryListView: View {
             ],
             context: .history,
             queueSource: historyQueueSource,
-            sourceLabel: String(localized: "queue.source.history"),
+            sourceLabel: AppLocalization.string("queue.source.history"),
             videoList: filteredVideos,
             videoIndex: index,
             loadMoreVideos: loadMoreHistoryCallback
@@ -344,7 +349,7 @@ struct HistoryListView: View {
                         startTime: entry.watchedSeconds,
                         customActions: [
                             VideoContextAction(
-                                String(localized: "home.history.remove"),
+                                AppLocalization.string("home.history.remove"),
                                 systemImage: "trash",
                                 role: .destructive,
                                 action: { removeEntry(entry) }
@@ -352,7 +357,7 @@ struct HistoryListView: View {
                         ],
                         context: .history,
                         queueSource: historyQueueSource,
-                        sourceLabel: String(localized: "queue.source.history"),
+                        sourceLabel: AppLocalization.string("queue.source.history"),
                         videoList: filteredVideos,
                         videoIndex: index,
                         loadMoreVideos: loadMoreHistoryCallback
@@ -367,14 +372,14 @@ struct HistoryListView: View {
 
     private var confirmationTitle: String {
         guard let option = selectedClearOption else {
-            return String(localized: "home.history.clear.confirm")
+            return AppLocalization.string("home.history.clear.confirm")
         }
 
         if option == .all {
-            return String(localized: "home.history.clear.confirm")
+            return AppLocalization.string("home.history.clear.confirm")
         }
 
-        return String(localized: "home.history.clear.confirm.timeRange \(option.localizedTitle)")
+        return AppLocalization.string("home.history.clear.confirm.timeRange \(option.localizedTitle)")
     }
 
     private func loadHistory() {
@@ -413,15 +418,15 @@ private enum ClearHistoryOption: CaseIterable {
     var localizedTitle: String {
         switch self {
         case .lastHour:
-            return String(localized: "home.history.clear.lastHour")
+            return AppLocalization.string("home.history.clear.lastHour")
         case .lastDay:
-            return String(localized: "home.history.clear.lastDay")
+            return AppLocalization.string("home.history.clear.lastDay")
         case .lastWeek:
-            return String(localized: "home.history.clear.lastWeek")
+            return AppLocalization.string("home.history.clear.lastWeek")
         case .lastMonth:
-            return String(localized: "home.history.clear.lastMonth")
+            return AppLocalization.string("home.history.clear.lastMonth")
         case .all:
-            return String(localized: "home.history.clear.all")
+            return AppLocalization.string("home.history.clear.all")
         }
     }
 

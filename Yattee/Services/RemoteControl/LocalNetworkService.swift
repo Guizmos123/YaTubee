@@ -120,7 +120,7 @@ final class LocalNetworkService {
         #elseif os(tvOS)
         return "Apple TV"
         #else
-        return "Yattee Device"
+        return "YaTubee Device"
         #endif
     }
 
@@ -449,7 +449,7 @@ final class LocalNetworkService {
 
                     let device = DiscoveredDevice(
                         id: serviceName,
-                        name: String(localized: "remoteControl.device.placeholder"),
+                        name: AppLocalization.string("remoteControl.device.placeholder"),
                         platform: .iOS,  // Default, will be updated when we get a response
                         currentVideoTitle: nil,
                         currentChannelName: nil,

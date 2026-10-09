@@ -215,7 +215,7 @@ struct TVPlayerProgressBar: View {
                         Circle()
                             .fill(.red)
                             .frame(width: 8, height: 8)
-                        Text(String(localized: "player.live"))
+                        Text(AppLocalization.string("player.live"))
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.red)
                     }

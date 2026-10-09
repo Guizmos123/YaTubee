@@ -21,7 +21,7 @@ struct PlayerControlsSettingsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(String(localized: "settings.playerControls.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -103,10 +103,10 @@ private struct PlayerControlsSettingsContent: View {
         .opaqueSettingsFormBackground()
         .id(refreshID)
         .alert(
-            String(localized: "settings.playerControls.error"),
+            AppLocalization.string("settings.playerControls.error"),
             isPresented: .constant(viewModel.error != nil)
         ) {
-            Button(String(localized: "settings.playerControls.ok")) {
+            Button(AppLocalization.string("settings.playerControls.ok")) {
                 viewModel.clearError()
             }
         } message: {
@@ -178,12 +178,12 @@ private struct PreviewSection: View {
             .listRowInsets(EdgeInsets())
 
             Picker(
-                String(localized: "settings.playerControls.previewOrientation"),
+                AppLocalization.string("settings.playerControls.previewOrientation"),
                 selection: $viewModel.isPreviewingLandscape
             ) {
-                Text(String(localized: "settings.playerControls.portrait"))
+                Text(AppLocalization.string("settings.playerControls.portrait"))
                     .tag(false)
-                Text(String(localized: "settings.playerControls.landscape"))
+                Text(AppLocalization.string("settings.playerControls.landscape"))
                     .tag(true)
             }
             .pickerStyle(.segmented)
@@ -212,7 +212,7 @@ private struct PresetSection: View {
                 })
             } label: {
                 HStack {
-                    Text(String(localized: "settings.playerControls.activePreset"))
+                    Text(AppLocalization.string("settings.playerControls.activePreset"))
                     Spacer()
                     Text(trackedPresetName)
                         .foregroundStyle(.secondary)
@@ -223,12 +223,12 @@ private struct PresetSection: View {
                 Button {
                     showCreateSheet = true
                 } label: {
-                    Text(String(localized: "settings.playerControls.newPreset"))
+                    Text(AppLocalization.string("settings.playerControls.newPreset"))
                 }
             }
         } footer: {
             if isBuiltInPreset {
-                Text(String(localized: "settings.playerControls.builtInPresetHint"))
+                Text(AppLocalization.string("settings.playerControls.builtInPresetHint"))
             }
         }
     }
@@ -247,7 +247,7 @@ private struct AppearanceSection: View {
             // The macOS bar draws its own glass capsule; the per-button style has no effect there.
             #if os(iOS)
             Picker(
-                String(localized: "settings.playerControls.style"),
+                AppLocalization.string("settings.playerControls.style"),
                 selection: $style
             ) {
                 ForEach(ControlsStyle.allCases, id: \.self) { styleOption in
@@ -262,7 +262,7 @@ private struct AppearanceSection: View {
             #endif
 
             Picker(
-                String(localized: "settings.playerControls.buttonSize"),
+                AppLocalization.string("settings.playerControls.buttonSize"),
                 selection: $buttonSize
             ) {
                 ForEach(ButtonSize.allCases, id: \.self) { size in
@@ -276,7 +276,7 @@ private struct AppearanceSection: View {
             }
 
             Picker(
-                String(localized: "settings.playerControls.fontStyle"),
+                AppLocalization.string("settings.playerControls.fontStyle"),
                 selection: $fontStyle
             ) {
                 ForEach(ControlsFontStyle.allCases, id: \.self) { fontStyleOption in
@@ -289,7 +289,7 @@ private struct AppearanceSection: View {
                 viewModel.updateGlobalSettingsSync { $0.fontStyle = newFontStyle }
             }
         } header: {
-            Text(String(localized: "settings.playerControls.appearance"))
+            Text(AppLocalization.string("settings.playerControls.appearance"))
         }
     }
 }
@@ -309,7 +309,7 @@ private struct LayoutSectionsSection: View {
             } label: {
                 HStack {
                     Label(
-                        String(localized: "settings.playerControls.topButtons"),
+                        AppLocalization.string("settings.playerControls.topButtons"),
                         systemImage: "rectangle.topthird.inset.filled"
                     )
                     Spacer()
@@ -324,12 +324,12 @@ private struct LayoutSectionsSection: View {
             } label: {
                 #if os(macOS)
                 Label(
-                    String(localized: "settings.playerControls.seekDurations", defaultValue: "Seek Durations"),
+                    AppLocalization.string("settings.playerControls.seekDurations", defaultValue: "Seek Durations"),
                     systemImage: "arrow.trianglehead.clockwise"
                 )
                 #else
                 Label(
-                    String(localized: "settings.playerControls.centerControls"),
+                    AppLocalization.string("settings.playerControls.centerControls"),
                     systemImage: "play.circle"
                 )
                 #endif
@@ -340,7 +340,7 @@ private struct LayoutSectionsSection: View {
                 ProgressBarSettingsView(viewModel: viewModel)
             } label: {
                 Label(
-                    String(localized: "settings.playerControls.progressBar"),
+                    AppLocalization.string("settings.playerControls.progressBar"),
                     systemImage: "slider.horizontal.below.rectangle"
                 )
             }
@@ -355,12 +355,12 @@ private struct LayoutSectionsSection: View {
                 HStack {
                     #if os(macOS)
                     Label(
-                        String(localized: "settings.playerControls.controlBar", defaultValue: "Control Bar"),
+                        AppLocalization.string("settings.playerControls.controlBar", defaultValue: "Control Bar"),
                         systemImage: "rectangle.bottomthird.inset.filled"
                     )
                     #else
                     Label(
-                        String(localized: "settings.playerControls.bottomButtons"),
+                        AppLocalization.string("settings.playerControls.bottomButtons"),
                         systemImage: "rectangle.bottomthird.inset.filled"
                     )
                     #endif
@@ -378,7 +378,7 @@ private struct LayoutSectionsSection: View {
             } label: {
                 HStack {
                     Label(
-                        String(localized: "settings.playerControls.playerPill"),
+                        AppLocalization.string("settings.playerControls.playerPill"),
                         systemImage: "capsule"
                     )
                     Spacer()
@@ -393,16 +393,16 @@ private struct LayoutSectionsSection: View {
                 MiniPlayerEditorView(viewModel: viewModel)
             } label: {
                 Label(
-                    String(localized: "settings.playerControls.miniPlayer"),
+                    AppLocalization.string("settings.playerControls.miniPlayer"),
                     systemImage: "pip"
                 )
             }
             .disabled(!viewModel.canEditActivePreset)
         } header: {
-            Text(String(localized: "settings.playerControls.layoutSections"))
+            Text(AppLocalization.string("settings.playerControls.layoutSections"))
         } footer: {
             if !viewModel.canEditActivePreset {
-                Text(String(localized: "settings.playerControls.duplicateToEdit"))
+                Text(AppLocalization.string("settings.playerControls.duplicateToEdit"))
             }
         }
     }
@@ -419,7 +419,7 @@ private struct CommentsPillSection: View {
     var body: some View {
         Section {
             Picker(
-                String(localized: "commentsPill.mode.title"),
+                AppLocalization.string("commentsPill.mode.title"),
                 selection: $commentsPillMode
             ) {
                 ForEach(CommentsPillMode.allCases, id: \.self) { mode in
@@ -454,7 +454,7 @@ private struct GesturesSectionsSection: View {
             } label: {
                 HStack {
                     Label(
-                        String(localized: "gestures.tap.title", defaultValue: "Tap Gestures"),
+                        AppLocalization.string("gestures.tap.title", defaultValue: "Tap Gestures"),
                         systemImage: "hand.tap"
                     )
                     Spacer()
@@ -462,7 +462,7 @@ private struct GesturesSectionsSection: View {
                         Text(viewModel.gesturesSettings.tapGestures.layout.layoutDescription)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text(String(localized: "common.disabled", defaultValue: "Disabled"))
+                        Text(AppLocalization.string("common.disabled", defaultValue: "Disabled"))
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -474,7 +474,7 @@ private struct GesturesSectionsSection: View {
             } label: {
                 HStack {
                     Label(
-                        String(localized: "gestures.seek.title", defaultValue: "Seek Gesture"),
+                        AppLocalization.string("gestures.seek.title", defaultValue: "Seek Gesture"),
                         systemImage: "hand.draw"
                     )
                     Spacer()
@@ -482,7 +482,7 @@ private struct GesturesSectionsSection: View {
                         Text(viewModel.gesturesSettings.seekGesture.sensitivity.displayName)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text(String(localized: "common.disabled", defaultValue: "Disabled"))
+                        Text(AppLocalization.string("common.disabled", defaultValue: "Disabled"))
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -494,29 +494,29 @@ private struct GesturesSectionsSection: View {
             } label: {
                 HStack {
                     Label(
-                        String(localized: "gestures.panscan.title", defaultValue: "Panscan Gesture"),
+                        AppLocalization.string("gestures.panscan.title", defaultValue: "Panscan Gesture"),
                         systemImage: "hand.pinch"
                     )
                     Spacer()
                     if viewModel.gesturesSettings.panscanGesture.isEnabled {
                         if viewModel.gesturesSettings.panscanGesture.snapToEnds {
-                            Text(String(localized: "gestures.panscan.snap", defaultValue: "Snap"))
+                            Text(AppLocalization.string("gestures.panscan.snap", defaultValue: "Snap"))
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text(String(localized: "gestures.panscan.freeZoom", defaultValue: "Free Zoom"))
+                            Text(AppLocalization.string("gestures.panscan.freeZoom", defaultValue: "Free Zoom"))
                                 .foregroundStyle(.secondary)
                         }
                     } else {
-                        Text(String(localized: "common.disabled", defaultValue: "Disabled"))
+                        Text(AppLocalization.string("common.disabled", defaultValue: "Disabled"))
                             .foregroundStyle(.tertiary)
                     }
                 }
             }
             .disabled(!viewModel.canEditActivePreset)
         } header: {
-            Text(String(localized: "gestures.section.title", defaultValue: "Gestures"))
+            Text(AppLocalization.string("gestures.section.title", defaultValue: "Gestures"))
         } footer: {
-            Text(String(localized: "gestures.section.footer", defaultValue: "Control playback with gestures when player controls are hidden."))
+            Text(AppLocalization.string("gestures.section.footer", defaultValue: "Control playback with gestures when player controls are hidden."))
         }
     }
 }
@@ -535,7 +535,7 @@ private struct SystemControlsSection: View {
     var body: some View {
         Section {
             Picker(
-                String(localized: "settings.playback.systemControls.mode"),
+                AppLocalization.string("settings.playback.systemControls.mode"),
                 selection: $systemControlsMode
             ) {
                 ForEach(SystemControlsMode.allCases, id: \.self) { mode in
@@ -554,7 +554,7 @@ private struct SystemControlsSection: View {
 
             if systemControlsMode == .seek {
                 Picker(
-                    String(localized: "settings.playback.systemControls.seekDuration"),
+                    AppLocalization.string("settings.playback.systemControls.seekDuration"),
                     selection: $systemControlsSeekDuration
                 ) {
                     ForEach(SystemControlsSeekDuration.allCases, id: \.self) { duration in
@@ -572,12 +572,12 @@ private struct SystemControlsSection: View {
                 }
             }
         } header: {
-            Text(String(localized: "settings.playback.systemControls.header"))
+            Text(AppLocalization.string("settings.playback.systemControls.header"))
         } footer: {
             if systemControlsMode == .seek {
-                Text(String(localized: "settings.playback.systemControls.seek.footer"))
+                Text(AppLocalization.string("settings.playback.systemControls.seek.footer"))
             } else {
-                Text(String(localized: "settings.playback.systemControls.skipTrack.footer"))
+                Text(AppLocalization.string("settings.playback.systemControls.skipTrack.footer"))
             }
         }
         .onAppear {
@@ -606,7 +606,7 @@ private struct VolumeSection: View {
     var body: some View {
         Section {
             Picker(
-                String(localized: "settings.playback.volume.mode"),
+                AppLocalization.string("settings.playback.volume.mode"),
                 selection: $volumeMode
             ) {
                 ForEach(VolumeMode.allCases, id: \.self) { mode in
@@ -626,12 +626,12 @@ private struct VolumeSection: View {
                 appEnvironment?.remoteControlCoordinator.broadcastStateUpdate()
             }
         } header: {
-            Text(String(localized: "settings.playback.volume.header"))
+            Text(AppLocalization.string("settings.playback.volume.header"))
         } footer: {
             if volumeMode == .mpv {
-                Text(String(localized: "settings.playback.volume.mpv.footer"))
+                Text(AppLocalization.string("settings.playback.volume.mpv.footer"))
             } else {
-                Text(String(localized: "settings.playback.volume.system.footer"))
+                Text(AppLocalization.string("settings.playback.volume.system.footer"))
             }
         }
         .onAppear {

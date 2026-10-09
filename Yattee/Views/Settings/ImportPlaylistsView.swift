@@ -52,7 +52,7 @@ struct ImportPlaylistsView: View {
     var body: some View {
         content
             #if !os(tvOS)
-            .navigationTitle(String(localized: "import.playlists.title"))
+            .reactiveNavigationTitle(AppLocalization.string("import.playlists.title"))
             #endif
             .accessibilityIdentifier(AccessibilityID.view)
             #if os(iOS)
@@ -64,40 +64,40 @@ struct ImportPlaylistsView: View {
                         Button {
                             showAddAllConfirmation = true
                         } label: {
-                            Label(String(localized: "import.playlists.addAll"), systemImage: "plus.circle")
+                            Label(AppLocalization.string("import.playlists.addAll"), systemImage: "plus.circle")
                         }
                         .accessibilityIdentifier(AccessibilityID.addAllButton)
                     }
                 }
             }
             .confirmationDialog(
-                String(localized: "import.playlists.addAllConfirmation \(unimportedPlaylists.count)"),
+                AppLocalization.string("import.playlists.addAllConfirmation \(unimportedPlaylists.count)"),
                 isPresented: $showAddAllConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(String(localized: "import.playlists.addAll")) {
+                Button(AppLocalization.string("import.playlists.addAll")) {
                     Task { await addAllPlaylists() }
                 }
             }
             .presentationCompactAdaptation(.sheet)
             .confirmationDialog(
-                String(localized: "import.playlists.mergeWarning.title"),
+                AppLocalization.string("import.playlists.mergeWarning.title"),
                 isPresented: $showMergeWarning,
                 titleVisibility: .visible
             ) {
-                Button(String(localized: "import.playlists.mergeWarning.merge")) {
+                Button(AppLocalization.string("import.playlists.mergeWarning.merge")) {
                     if let playlist = pendingMergePlaylist, let localPlaylist = existingLocalPlaylist {
                         Task { await performImport(playlist, into: localPlaylist) }
                     }
                 }
-                Button(String(localized: "common.cancel"), role: .cancel) {
+                Button(AppLocalization.string("common.cancel"), role: .cancel) {
                     pendingMergePlaylist = nil
                     existingLocalPlaylist = nil
                     importingPlaylistID = nil
                 }
             } message: {
                 if let playlist = pendingMergePlaylist {
-                    Text(String(localized: "import.playlists.mergeWarning.message \(playlist.title)"))
+                    Text(AppLocalization.string("import.playlists.mergeWarning.message \(playlist.title)"))
                 }
             }
             .presentationCompactAdaptation(.sheet)
@@ -124,7 +124,7 @@ struct ImportPlaylistsView: View {
     private var loadingView: some View {
         VStack(spacing: 16) {
             ProgressView()
-            Text(String(localized: "import.playlists.loading"))
+            Text(AppLocalization.string("import.playlists.loading"))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -133,11 +133,11 @@ struct ImportPlaylistsView: View {
 
     private func errorView(_ error: Error) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "import.playlists.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("import.playlists.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error.localizedDescription)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await loadPlaylists() }
             }
             .buttonStyle(.bordered)
@@ -148,9 +148,9 @@ struct ImportPlaylistsView: View {
 
     private var emptyView: some View {
         ContentUnavailableView(
-            String(localized: "import.playlists.emptyTitle"),
+            AppLocalization.string("import.playlists.emptyTitle"),
             systemImage: "list.bullet.rectangle",
-            description: Text(String(localized: "import.playlists.emptyDescription"))
+            description: Text(AppLocalization.string("import.playlists.emptyDescription"))
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier(AccessibilityID.emptyState)
@@ -204,7 +204,7 @@ struct ImportPlaylistsView: View {
                 Text(playlist.title)
                     .lineLimit(1)
 
-                Text(String(localized: "import.playlists.videoCount \(playlist.videoCount)"))
+                Text(AppLocalization.string("import.playlists.videoCount \(playlist.videoCount)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -241,11 +241,11 @@ struct ImportPlaylistsView: View {
                 .controlSize(.small)
 
             if let progress = importProgress {
-                Text(String(localized: "import.playlists.importingProgress \(progress.current) \(progress.total)"))
+                Text(AppLocalization.string("import.playlists.importingProgress \(progress.current) \(progress.total)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text(String(localized: "import.playlists.importing"))
+                Text(AppLocalization.string("import.playlists.importing"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -390,11 +390,11 @@ struct ImportPlaylistsView: View {
 
                 if skippedCount > 0 {
                     appEnvironment.toastManager.showSuccess(
-                        String(localized: "import.playlists.added.title"),
-                        subtitle: String(localized: "import.playlists.skipped.subtitle \(skippedCount)")
+                        AppLocalization.string("import.playlists.added.title"),
+                        subtitle: AppLocalization.string("import.playlists.skipped.subtitle \(skippedCount)")
                     )
                 } else {
-                    appEnvironment.toastManager.showSuccess(String(localized: "import.playlists.added.title"))
+                    appEnvironment.toastManager.showSuccess(AppLocalization.string("import.playlists.added.title"))
                 }
             }
         } catch {
@@ -402,7 +402,7 @@ struct ImportPlaylistsView: View {
                 importingPlaylistID = nil
                 importProgress = nil
                 appEnvironment.toastManager.showError(
-                    String(localized: "import.playlists.failed.title"),
+                    AppLocalization.string("import.playlists.failed.title"),
                     subtitle: error.localizedDescription
                 )
             }
@@ -429,9 +429,9 @@ struct ImportPlaylistsView: View {
         var errorDescription: String? {
             switch self {
             case .notLoggedIn:
-                return String(localized: "import.playlists.notLoggedIn")
+                return AppLocalization.string("import.playlists.notLoggedIn")
             case .notSupported:
-                return String(localized: "import.playlists.notSupported")
+                return AppLocalization.string("import.playlists.notSupported")
             }
         }
     }

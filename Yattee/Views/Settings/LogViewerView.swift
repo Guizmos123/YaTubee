@@ -26,7 +26,7 @@ struct LogViewerView: View {
             logList
         }
         .opaqueSettingsFormBackground()
-        .navigationTitle(String(localized: "settings.advanced.logs.title"))
+        .reactiveNavigationTitle(AppLocalization.string("settings.advanced.logs.title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -36,27 +36,27 @@ struct LogViewerView: View {
                 Button {
                     showingFilters = true
                 } label: {
-                    Label(String(localized: "settings.advanced.logs.filter"), systemImage: "line.3.horizontal.decrease.circle")
+                    Label(AppLocalization.string("settings.advanced.logs.filter"), systemImage: "line.3.horizontal.decrease.circle")
                 }
-                .help(String(localized: "settings.advanced.logs.filter"))
+                .help(AppLocalization.string("settings.advanced.logs.filter"))
             }
 
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showMacOSSavePanel()
                 } label: {
-                    Label(String(localized: "settings.advanced.logs.export"), systemImage: "square.and.arrow.up")
+                    Label(AppLocalization.string("settings.advanced.logs.export"), systemImage: "square.and.arrow.up")
                 }
-                .help(String(localized: "settings.advanced.logs.export"))
+                .help(AppLocalization.string("settings.advanced.logs.export"))
             }
 
             ToolbarItem(placement: .primaryAction) {
                 Button(role: .destructive) {
                     loggingService.clearLogs()
                 } label: {
-                    Label(String(localized: "settings.advanced.logs.clear"), systemImage: "trash")
+                    Label(AppLocalization.string("settings.advanced.logs.clear"), systemImage: "trash")
                 }
-                .help(String(localized: "settings.advanced.logs.clear"))
+                .help(AppLocalization.string("settings.advanced.logs.clear"))
             }
             #else
             ToolbarItem(placement: .primaryAction) {
@@ -64,13 +64,13 @@ struct LogViewerView: View {
                     Button {
                         showingFilters = true
                     } label: {
-                        Label(String(localized: "settings.advanced.logs.filter"), systemImage: "line.3.horizontal.decrease.circle")
+                        Label(AppLocalization.string("settings.advanced.logs.filter"), systemImage: "line.3.horizontal.decrease.circle")
                     }
 
                     Button {
                         showingExportSheet = true
                     } label: {
-                        Label(String(localized: "settings.advanced.logs.export"), systemImage: "square.and.arrow.up")
+                        Label(AppLocalization.string("settings.advanced.logs.export"), systemImage: "square.and.arrow.up")
                     }
 
                     Divider()
@@ -78,7 +78,7 @@ struct LogViewerView: View {
                     Button(role: .destructive) {
                         loggingService.clearLogs()
                     } label: {
-                        Label(String(localized: "settings.advanced.logs.clear"), systemImage: "trash")
+                        Label(AppLocalization.string("settings.advanced.logs.clear"), systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -106,7 +106,7 @@ struct LogViewerView: View {
     #if os(macOS)
     private func showMacOSSavePanel() {
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "Yattee Logs \(Date.now.formatted(.iso8601.year().month().day())).txt"
+        panel.nameFieldStringValue = "YaTubee Logs \(Date.now.formatted(.iso8601.year().month().day())).txt"
         panel.allowedContentTypes = [.plainText]
 
         if panel.runModal() == .OK, let url = panel.url {
@@ -124,7 +124,7 @@ struct LogViewerView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
 
-            TextField(String(localized: "settings.advanced.logs.search"), text: $loggingService.searchText)
+            TextField(AppLocalization.string("settings.advanced.logs.search"), text: $loggingService.searchText)
                 .textFieldStyle(.plain)
 
             if !loggingService.searchText.isEmpty {
@@ -147,12 +147,12 @@ struct LogViewerView: View {
         Group {
             if loggingService.filteredEntries.isEmpty {
                 ContentUnavailableView {
-                    Label(String(localized: "settings.advanced.logs.empty"), systemImage: "doc.text")
+                    Label(AppLocalization.string("settings.advanced.logs.empty"), systemImage: "doc.text")
                 } description: {
                     if loggingService.isEnabled {
-                        Text(String(localized: "settings.advanced.logs.empty.description"))
+                        Text(AppLocalization.string("settings.advanced.logs.empty.description"))
                     } else {
-                        Text(String(localized: "settings.advanced.logs.disabled"))
+                        Text(AppLocalization.string("settings.advanced.logs.disabled"))
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -241,14 +241,14 @@ private struct LogEntryDetailView: View {
             SettingsFormContainer {
                 SettingsFormSection("settings.advanced.logs.detail.info") {
                     HStack {
-                        Text(String(localized: "settings.advanced.logs.detail.timestamp"))
+                        Text(AppLocalization.string("settings.advanced.logs.detail.timestamp"))
                         Spacer()
                         Text(entry.timestamp.formatted(date: .abbreviated, time: .standard))
                             .foregroundStyle(.secondary)
                     }
 
                     HStack {
-                        Text(String(localized: "settings.advanced.logs.detail.level"))
+                        Text(AppLocalization.string("settings.advanced.logs.detail.level"))
                         Spacer()
                         HStack {
                             Image(systemName: entry.level.icon)
@@ -258,7 +258,7 @@ private struct LogEntryDetailView: View {
                     }
 
                     HStack {
-                        Text(String(localized: "settings.advanced.logs.detail.category"))
+                        Text(AppLocalization.string("settings.advanced.logs.detail.category"))
                         Spacer()
                         HStack {
                             Image(systemName: entry.category.icon)
@@ -289,7 +289,7 @@ private struct LogEntryDetailView: View {
                     }
                 }
             }
-            .navigationTitle(String(localized: "settings.advanced.logs.detail.title"))
+            .reactiveNavigationTitle(AppLocalization.string("settings.advanced.logs.detail.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -345,7 +345,7 @@ private struct LogFiltersSheet: View {
                 #endif
 
                 HStack {
-                    Button(String(localized: "settings.advanced.logs.filter.reset")) {
+                    Button(AppLocalization.string("settings.advanced.logs.filter.reset")) {
                         loggingService.resetFilters()
                     }
                     Spacer()
@@ -354,7 +354,7 @@ private struct LogFiltersSheet: View {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
-            .navigationTitle(String(localized: "settings.advanced.logs.filter.title"))
+            .reactiveNavigationTitle(AppLocalization.string("settings.advanced.logs.filter.title"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -363,7 +363,7 @@ private struct LogFiltersSheet: View {
                     Button(role: .cancel) {
                         dismiss()
                     } label: {
-                        Text(String(localized: "common.close"))
+                        Text(AppLocalization.string("common.close"))
                     }
                 }
             }

@@ -39,36 +39,36 @@ struct ResolvedLinkPromptsModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .confirmationDialog(
-                String(localized: "alert.resolvedShortLink.title"),
+                AppLocalization.string("alert.resolvedShortLink.title"),
                 isPresented: shortLinkBinding,
                 titleVisibility: .visible,
                 presenting: shouldHost ? appEnvironment?.navigationCoordinator.resolvedShortLinkPrompt : nil
             ) { url in
-                Button(String(localized: "alert.resolvedShortLink.openInYattee")) {
+                Button(AppLocalization.string("alert.resolvedShortLink.openInYattee")) {
                     NotificationCenter.default.post(name: .openDescriptionLink, object: url)
                 }
-                Button(String(localized: "alert.resolvedShortLink.openInBrowser")) {
+                Button(AppLocalization.string("alert.resolvedShortLink.openInBrowser")) {
                     openInSystemBrowser(url)
                 }
-                Button(String(localized: "common.cancel"), role: .cancel) {}
+                Button(AppLocalization.string("common.cancel"), role: .cancel) {}
             } message: { url in
-                Text(String(localized: "alert.resolvedShortLink.message \(url.absoluteString)"))
+                Text(AppLocalization.string("alert.resolvedShortLink.message \(url.absoluteString)"))
             }
             .confirmationDialog(
-                String(localized: "alert.ambiguousLink.title"),
+                AppLocalization.string("alert.ambiguousLink.title"),
                 isPresented: ambiguousBinding,
                 titleVisibility: .visible,
                 presenting: shouldHost ? appEnvironment?.navigationCoordinator.ambiguousExternalLinkPrompt : nil
             ) { url in
-                Button(String(localized: "alert.ambiguousLink.tryInYattee")) {
+                Button(AppLocalization.string("alert.ambiguousLink.tryInYattee")) {
                     NotificationCenter.default.post(name: .openDescriptionLink, object: url)
                 }
-                Button(String(localized: "alert.ambiguousLink.openInBrowser")) {
+                Button(AppLocalization.string("alert.ambiguousLink.openInBrowser")) {
                     openInSystemBrowser(url)
                 }
-                Button(String(localized: "common.cancel"), role: .cancel) {}
+                Button(AppLocalization.string("common.cancel"), role: .cancel) {}
             } message: { url in
-                Text(String(localized: "alert.ambiguousLink.message \(url.absoluteString)"))
+                Text(AppLocalization.string("alert.ambiguousLink.message \(url.absoluteString)"))
             }
     }
 

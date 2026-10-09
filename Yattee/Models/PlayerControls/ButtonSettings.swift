@@ -47,11 +47,11 @@ enum SliderBehavior: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .alwaysVisible:
-            return String(localized: "controls.slider.alwaysVisible")
+            return AppLocalization.string("controls.slider.alwaysVisible")
         case .expandOnTap:
-            return String(localized: "controls.slider.expandOnTap")
+            return AppLocalization.string("controls.slider.expandOnTap")
         case .autoExpandInLandscape:
-            return String(localized: "controls.slider.autoExpandInLandscape")
+            return AppLocalization.string("controls.slider.autoExpandInLandscape")
         }
     }
 }
@@ -78,9 +78,9 @@ enum SeekDirection: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .backward:
-            return String(localized: "controls.seek.backward")
+            return AppLocalization.string("controls.seek.backward")
         case .forward:
-            return String(localized: "controls.seek.forward")
+            return AppLocalization.string("controls.seek.forward")
         }
     }
 }
@@ -174,15 +174,15 @@ enum TimeDisplayFormat: String, Codable, Hashable, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .currentOnly:
-            return String(localized: "controls.time.currentOnly")
+            return AppLocalization.string("controls.time.currentOnly")
         case .currentAndTotal:
-            return String(localized: "controls.time.currentAndTotal")
+            return AppLocalization.string("controls.time.currentAndTotal")
         case .currentAndTotalExcludingSponsor:
-            return String(localized: "controls.time.currentAndTotalExcludingSponsor")
+            return AppLocalization.string("controls.time.currentAndTotalExcludingSponsor")
         case .currentAndRemaining:
-            return String(localized: "controls.time.currentAndRemaining")
+            return AppLocalization.string("controls.time.currentAndRemaining")
         case .currentAndRemainingExcludingSponsor:
-            return String(localized: "controls.time.currentAndRemainingExcludingSponsor")
+            return AppLocalization.string("controls.time.currentAndRemainingExcludingSponsor")
         }
     }
 }

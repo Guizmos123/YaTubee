@@ -430,7 +430,7 @@ struct ChannelView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "channelViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -480,16 +480,16 @@ struct ChannelView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .confirmationDialog(
-            String(localized: "channel.unsubscribe.confirmation.title"),
+            AppLocalization.string("channel.unsubscribe.confirmation.title"),
             isPresented: $showingUnsubscribeConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "channel.unsubscribe.confirmation.action"), role: .destructive) {
+            Button(AppLocalization.string("channel.unsubscribe.confirmation.action"), role: .destructive) {
                 unsubscribe()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "channel.unsubscribe.confirmation.message"))
+            Text(AppLocalization.string("channel.unsubscribe.confirmation.message"))
         }
         .presentationCompactAdaptation(.sheet)
     }
@@ -585,7 +585,7 @@ struct ChannelView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "channelViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -639,16 +639,16 @@ struct ChannelView: View {
             isPlayerExpanded: appEnvironment?.navigationCoordinator.isPlayerExpanded ?? false
         ))
         .confirmationDialog(
-            String(localized: "channel.unsubscribe.confirmation.title"),
+            AppLocalization.string("channel.unsubscribe.confirmation.title"),
             isPresented: $showingUnsubscribeConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "channel.unsubscribe.confirmation.action"), role: .destructive) {
+            Button(AppLocalization.string("channel.unsubscribe.confirmation.action"), role: .destructive) {
                 unsubscribe()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "channel.unsubscribe.confirmation.message"))
+            Text(AppLocalization.string("channel.unsubscribe.confirmation.message"))
         }
         .presentationCompactAdaptation(.sheet)
     }
@@ -677,16 +677,16 @@ struct ChannelView: View {
             }
         }
         .confirmationDialog(
-            String(localized: "channel.unsubscribe.confirmation.title"),
+            AppLocalization.string("channel.unsubscribe.confirmation.title"),
             isPresented: $showingUnsubscribeConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "channel.unsubscribe.confirmation.action"), role: .destructive) {
+            Button(AppLocalization.string("channel.unsubscribe.confirmation.action"), role: .destructive) {
                 unsubscribe()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "channel.unsubscribe.confirmation.message"))
+            Text(AppLocalization.string("channel.unsubscribe.confirmation.message"))
         }
     }
 
@@ -722,7 +722,7 @@ struct ChannelView: View {
                 Text(CountFormatter.compact(subscriberCount))
                     .fontWeight(.bold)
                 + Text(verbatim: " ")
-                + Text(String(localized: "channel.subscribers"))
+                + Text(AppLocalization.string("channel.subscribers"))
             }
 
             if !isDescriptionScrollLocked {
@@ -781,8 +781,8 @@ struct ChannelView: View {
         } label: {
             Label(
                 isSubscribed
-                    ? String(localized: "channel.menu.unsubscribe")
-                    : String(localized: "channel.menu.subscribe"),
+                    ? AppLocalization.string("channel.menu.unsubscribe")
+                    : AppLocalization.string("channel.menu.subscribe"),
                 systemImage: isSubscribed ? "person.fill.xmark" : "person.badge.plus"
             )
             .frame(maxWidth: .infinity, minHeight: 60)
@@ -813,7 +813,7 @@ struct ChannelView: View {
                 isSearchActive = true
             }
         }
-        let label = Label(String(localized: "search.title"), systemImage: "magnifyingglass")
+        let label = Label(AppLocalization.string("search.title"), systemImage: "magnifyingglass")
             .fontWeight(isSelected ? .bold : .regular)
             .lineLimit(1)
 
@@ -886,7 +886,7 @@ struct ChannelView: View {
     private var tvOSChannelSearchContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 24) {
-                TextField(String(localized: "search.placeholder"), text: $searchText)
+                TextField(AppLocalization.string("search.placeholder"), text: $searchText)
                     .textFieldStyle(.plain)
                     .focused($isTVSearchFieldFocused)
                     .onSubmit {
@@ -1192,8 +1192,8 @@ struct ChannelView: View {
             } label: {
                 Label(
                     isSubscribed
-                        ? String(localized: "channel.menu.unsubscribe")
-                        : String(localized: "channel.menu.subscribe"),
+                        ? AppLocalization.string("channel.menu.unsubscribe")
+                        : AppLocalization.string("channel.menu.subscribe"),
                     systemImage: isSubscribed ? "person.fill.xmark" : "person.badge.plus"
                 )
             }
@@ -1207,8 +1207,8 @@ struct ChannelView: View {
                 } label: {
                     Label(
                         notificationsEnabled
-                            ? String(localized: "channel.menu.disableNotifications")
-                            : String(localized: "channel.menu.enableNotifications"),
+                            ? AppLocalization.string("channel.menu.disableNotifications")
+                            : AppLocalization.string("channel.menu.enableNotifications"),
                         systemImage: notificationsEnabled
                             ? "bell.slash"
                             : "bell"
@@ -1255,7 +1255,7 @@ struct ChannelView: View {
             refreshSubscription()
         } catch {
             appEnvironment?.toastManager.showError(
-                String(localized: "channel.subscribe.error.title"),
+                AppLocalization.string("channel.subscribe.error.title"),
                 subtitle: error.localizedDescription
             )
         }
@@ -1271,7 +1271,7 @@ struct ChannelView: View {
                 subscription = nil
             } catch {
                 appEnvironment?.toastManager.showError(
-                    String(localized: "channel.unsubscribe.error.title"),
+                    AppLocalization.string("channel.unsubscribe.error.title"),
                     subtitle: error.localizedDescription
                 )
             }
@@ -1347,7 +1347,7 @@ struct ChannelView: View {
                         Text(CountFormatter.compact(subscriberCount))
                             .fontWeight(.bold)
                         + Text(verbatim: " ")
-                        + Text(String(localized: "channel.subscribers"))
+                        + Text(AppLocalization.string("channel.subscribers"))
                     }
 
                     // Description
@@ -1371,7 +1371,7 @@ struct ChannelView: View {
                 }
             } else {
                 ContentUnavailableView {
-                    Label(String(localized: "channel.noDescription"), systemImage: "text.alignleft")
+                    Label(AppLocalization.string("channel.noDescription"), systemImage: "text.alignleft")
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.vertical, 40)
@@ -1400,7 +1400,7 @@ struct ChannelView: View {
     private var videosListContent: some View {
         if videosLoaded && filteredVideos.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noVideos"), systemImage: "play.rectangle")
+                Label(AppLocalization.string("channel.noVideos"), systemImage: "play.rectangle")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1455,8 +1455,8 @@ struct ChannelView: View {
                                 .padding(.trailing, 8)
                         }
                         Text(isLoadingMore
-                            ? String(localized: "externalChannel.loadingMore")
-                            : String(localized: "externalChannel.loadMore"))
+                            ? AppLocalization.string("externalChannel.loadingMore")
+                            : AppLocalization.string("externalChannel.loadMore"))
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -1497,7 +1497,7 @@ struct ChannelView: View {
 
         if videosLoaded && filteredVideos.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noVideos"), systemImage: "play.rectangle")
+                Label(AppLocalization.string("channel.noVideos"), systemImage: "play.rectangle")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1539,7 +1539,7 @@ struct ChannelView: View {
 
         if playlistsLoaded && playlists.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noPlaylists"), systemImage: "list.bullet.rectangle")
+                Label(AppLocalization.string("channel.noPlaylists"), systemImage: "list.bullet.rectangle")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1602,7 +1602,7 @@ struct ChannelView: View {
 
         if playlistsLoaded && playlists.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noPlaylists"), systemImage: "list.bullet.rectangle")
+                Label(AppLocalization.string("channel.noPlaylists"), systemImage: "list.bullet.rectangle")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1645,7 +1645,7 @@ struct ChannelView: View {
 
         if shortsLoaded && filteredShorts.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noShorts"), systemImage: "bolt")
+                Label(AppLocalization.string("channel.noShorts"), systemImage: "bolt")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1722,7 +1722,7 @@ struct ChannelView: View {
 
         if shortsLoaded && filteredShorts.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noShorts"), systemImage: "bolt")
+                Label(AppLocalization.string("channel.noShorts"), systemImage: "bolt")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1765,7 +1765,7 @@ struct ChannelView: View {
 
         if streamsLoaded && filteredStreams.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noStreams"), systemImage: "video")
+                Label(AppLocalization.string("channel.noStreams"), systemImage: "video")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -1842,7 +1842,7 @@ struct ChannelView: View {
 
         if streamsLoaded && filteredStreams.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "channel.noStreams"), systemImage: "video")
+                Label(AppLocalization.string("channel.noStreams"), systemImage: "video")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 40)
@@ -2051,11 +2051,11 @@ struct ChannelView: View {
 
     private func errorView(_ error: String) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task {
                     await loadChannel()
                 }
@@ -2068,7 +2068,7 @@ struct ChannelView: View {
 
     private func formatSubscribers(_ count: Int) -> String {
         let formatted = CountFormatter.compact(count)
-        return String(localized: "channel.subscriberCount \(formatted)")
+        return AppLocalization.string("channel.subscriberCount \(formatted)")
     }
 
     /// Returns the appropriate instance for the channel's content source
@@ -2174,7 +2174,7 @@ struct ChannelView: View {
 
             // Only show error if both APIs failed and we have no cached data
             if channelAPIFailed && videosAPIFailed && channel == nil {
-                errorMessage = String(localized: "channelView.loadError")
+                errorMessage = AppLocalization.string("channelView.loadError")
             }
 
             isLoading = false
@@ -2190,7 +2190,7 @@ struct ChannelView: View {
         }
 
         guard let instance = appEnvironment.instancesManager.yatteeServerInstance else {
-            errorMessage = String(localized: "externalChannel.noYatteeServer")
+            errorMessage = AppLocalization.string("externalChannel.noYatteeServer")
             isLoading = false
             return
         }

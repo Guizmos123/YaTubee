@@ -77,7 +77,7 @@ struct ExpandedCommentsView: View {
                     #endif
 
                     // Header - height matches the floating X button (52pt)
-                    Text(String(localized: "player.comments"))
+                    Text(AppLocalization.string("player.comments"))
                         .font(.title2)
                         .fontWeight(.bold)
                         .frame(height: 52, alignment: .center)
@@ -237,7 +237,7 @@ struct ExpandedCommentsView: View {
                 Image(systemName: "bubble.left.and.exclamationmark.bubble.right")
                     .font(.title2)
                     .foregroundStyle(.secondary)
-                Text(String(localized: "comments.disabled"))
+                Text(AppLocalization.string("comments.disabled"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -249,10 +249,10 @@ struct ExpandedCommentsView: View {
                 Image(systemName: "exclamationmark.triangle")
                     .font(.title2)
                     .foregroundStyle(.secondary)
-                Text(String(localized: "comments.error"))
+                Text(AppLocalization.string("comments.error"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Button(String(localized: "common.retry")) {
+                Button(AppLocalization.string("common.retry")) {
                     Task { await loadComments() }
                 }
                 .buttonStyle(.bordered)
@@ -267,7 +267,7 @@ struct ExpandedCommentsView: View {
                     Image(systemName: "bubble.left.and.bubble.right")
                         .font(.title2)
                         .foregroundStyle(.secondary)
-                    Text(String(localized: "comments.empty"))
+                    Text(AppLocalization.string("comments.empty"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

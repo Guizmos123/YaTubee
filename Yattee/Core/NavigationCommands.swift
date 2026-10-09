@@ -26,7 +26,7 @@ struct NavigationCommands: Commands {
     }
 
     var body: some Commands {
-        CommandMenu(String(localized: "menu.navigation")) {
+        CommandMenu(AppLocalization.string("menu.navigation")) {
             // Home is always visible (required)
             homeButton
             if visibleItems.contains(.subscriptions) {
@@ -62,7 +62,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedTab = .home
         } label: {
-            Text(String(localized: "menu.navigation.home"))
+            Text(AppLocalization.string("menu.navigation.home"))
         }
         .keyboardShortcut("1", modifiers: [.command])
     }
@@ -71,7 +71,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedTab = .subscriptions
         } label: {
-            Text(String(localized: "menu.navigation.subscriptions"))
+            Text(AppLocalization.string("menu.navigation.subscriptions"))
         }
         .keyboardShortcut("2", modifiers: [.command])
     }
@@ -80,7 +80,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedTab = .search
         } label: {
-            Text(String(localized: "menu.navigation.search"))
+            Text(AppLocalization.string("menu.navigation.search"))
         }
         .keyboardShortcut("f", modifiers: [.command])
     }
@@ -89,7 +89,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedSidebarItem = .bookmarks
         } label: {
-            Text(String(localized: "menu.navigation.bookmarks"))
+            Text(AppLocalization.string("menu.navigation.bookmarks"))
         }
         .keyboardShortcut("3", modifiers: [.command])
     }
@@ -98,7 +98,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedSidebarItem = .history
         } label: {
-            Text(String(localized: "menu.navigation.history"))
+            Text(AppLocalization.string("menu.navigation.history"))
         }
         .keyboardShortcut("4", modifiers: [.command])
     }
@@ -107,7 +107,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedSidebarItem = .downloads
         } label: {
-            Text(String(localized: "menu.navigation.downloads"))
+            Text(AppLocalization.string("menu.navigation.downloads"))
         }
         .keyboardShortcut("5", modifiers: [.command])
     }
@@ -116,7 +116,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedSidebarItem = .manageChannels
         } label: {
-            Text(String(localized: "menu.navigation.channels"))
+            Text(AppLocalization.string("menu.navigation.channels"))
         }
         .keyboardShortcut("6", modifiers: [.command])
     }
@@ -125,7 +125,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedSidebarItem = .sources
         } label: {
-            Text(String(localized: "menu.navigation.sources"))
+            Text(AppLocalization.string("menu.navigation.sources"))
         }
         .keyboardShortcut("7", modifiers: [.command])
     }
@@ -134,7 +134,7 @@ struct NavigationCommands: Commands {
         Button {
             navigationCoordinator.selectedSidebarItem = .settings
         } label: {
-            Text(String(localized: "menu.navigation.settings"))
+            Text(AppLocalization.string("menu.navigation.settings"))
         }
         .keyboardShortcut("9", modifiers: [.command])
     }

@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - URLSessionDownloadDelegate
 
-extension DownloadManager: URLSessionDownloadDelegate {
+extension DownloadManager {
     /// Parse task description to extract downloadID and phase
     /// Format: "UUID:phase" e.g., "550e8400-e29b-41d4-a716-446655440000:video"
     private nonisolated func parseTaskDescription(_ description: String?) -> (downloadID: UUID, phase: DownloadPhase)? {

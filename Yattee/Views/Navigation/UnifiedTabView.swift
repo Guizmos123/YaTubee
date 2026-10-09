@@ -56,6 +56,10 @@ struct UnifiedTabView: View {
         appEnvironment?.settingsManager.zoomTransitionsEnabled ?? true
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     private var yatteeServerAuthHeader: String? {
         guard let server = appEnvironment?.instancesManager.enabledYatteeServerInstances.first else { return nil }
         return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: server)
@@ -66,6 +70,7 @@ struct UnifiedTabView: View {
             mainTabs
             sidebarSections
         }
+        .environment(\.locale, localizationLocale)
         .tabViewStyle(.sidebarAdaptable)
         .iOS26TabFeatures(shouldShowAccessory: shouldShowAccessory, settingsManager: appEnvironment?.settingsManager)
         .zoomTransitionNamespace(zoomTransition)
@@ -228,7 +233,7 @@ struct UnifiedTabView: View {
             Tab(value: SidebarItem.remoteControl) {
                 NavigationStack(path: $remoteControlPath) {
                     RemoteControlContentView(navigationStyle: .link)
-                        .navigationTitle(String(localized: "remoteControl.title"))
+                        .navigationTitle(AppLocalization.string("remoteControl.title"))
                         .withNavigationDestinations()
                 }
             } label: {
@@ -250,7 +255,7 @@ struct UnifiedTabView: View {
     @TabContentBuilder<SidebarItem>
     private var sidebarSections: some TabContent<SidebarItem> {
         // Unified Sources Section (sidebar only - shows instances + media sources)
-        TabSection(String(localized: "sidebar.section.sources")) {
+        TabSection(AppLocalization.string("sidebar.section.sources")) {
             ForEach(sidebarManager.sortedSourceItems) { item in
                 Tab(value: item) {
                     sourceContent(for: item)
@@ -267,7 +272,7 @@ struct UnifiedTabView: View {
         )
 
         // Channels Section (sidebar only - shows subscribed channels)
-        TabSection(String(localized: "sidebar.section.channels")) {
+        TabSection(AppLocalization.string("sidebar.section.channels")) {
             ForEach(sidebarManager.channelItems) { item in
                 Tab(value: item) {
                     channelContent(for: item)
@@ -284,7 +289,7 @@ struct UnifiedTabView: View {
         )
 
         // Playlists Section (sidebar only)
-        TabSection(String(localized: "sidebar.section.playlists")) {
+        TabSection(AppLocalization.string("sidebar.section.playlists")) {
             ForEach(sidebarManager.playlistItems) { item in
                 Tab(value: item) {
                     playlistContent(for: item)
@@ -314,6 +319,10 @@ extension View {
                 .tabViewBottomAccessory(isEnabled: shouldShowAccessory) {
                     MiniPlayerView(isTabAccessory: true)
                 }
+                .tabBarMinimizeBehavior(behavior)
+        } else if #available(iOS 26.0, *) {
+            let behavior = settingsManager?.miniPlayerMinimizeBehavior.tabBarMinimizeBehavior ?? .onScrollDown
+            self
                 .tabBarMinimizeBehavior(behavior)
         } else {
             self
@@ -381,12 +390,17 @@ struct UnifiedTabView: View {
         return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: server)
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     var body: some View {
         NavigationSplitView {
             sidebar
         } detail: {
             detailForSelection
         }
+        .environment(\.locale, localizationLocale)
         .zoomTransitionNamespace(zoomTransition)
         .onAppear {
             configureSidebarManager()
@@ -429,7 +443,7 @@ struct UnifiedTabView: View {
             }
 
             if !sidebarManager.hasNoSources && (settingsManager?.sidebarSourcesEnabled ?? true) {
-                Section(String(localized: "sidebar.section.sources")) {
+                Section(AppLocalization.string("sidebar.section.sources")) {
                     ForEach(sidebarManager.sortedSourceItems) { item in
                         NavigationLink(value: item) {
                             Label(item.title, systemImage: item.systemImage)
@@ -439,7 +453,7 @@ struct UnifiedTabView: View {
             }
 
             if !sidebarManager.channelItems.isEmpty && (settingsManager?.sidebarChannelsEnabled ?? true) {
-                Section(String(localized: "sidebar.section.channels")) {
+                Section(AppLocalization.string("sidebar.section.channels")) {
                     ForEach(sidebarManager.channelItems) { item in
                         NavigationLink(value: item) {
                             channelLabel(for: item)
@@ -449,7 +463,7 @@ struct UnifiedTabView: View {
             }
 
             if !sidebarManager.playlistItems.isEmpty && (settingsManager?.sidebarPlaylistsEnabled ?? true) {
-                Section(String(localized: "sidebar.section.playlists")) {
+                Section(AppLocalization.string("sidebar.section.playlists")) {
                     ForEach(sidebarManager.playlistItems) { item in
                         NavigationLink(value: item) {
                             playlistLabel(for: item)
@@ -520,7 +534,7 @@ struct UnifiedTabView: View {
         case .remoteControl:
             NavigationStack(path: $remoteControlPath) {
                 RemoteControlContentView(navigationStyle: .link)
-                    .navigationTitle(String(localized: "remoteControl.title"))
+                    .navigationTitle(AppLocalization.string("remoteControl.title"))
                     .withNavigationDestinations()
             }
         case .continueWatching:
@@ -595,11 +609,16 @@ struct UnifiedTabView: View {
         return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: server)
     }
 
+    private var localizationLocale: Locale {
+        appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
     var body: some View {
         TabView(selection: $selection) {
             mainTabs
             sidebarSections
         }
+        .environment(\.locale, localizationLocale)
         .tabViewStyle(.sidebarAdaptable)
         .zoomTransitionNamespace(zoomTransition)
         .onAppear {
@@ -850,7 +869,7 @@ struct UnifiedTabView: View {
     private var sidebarSections: some TabContent<SidebarItem> {
         // Sources Section (shows configured instances and media sources)
         if !sidebarManager.sortedSourceItems.isEmpty && (settingsManager?.sidebarSourcesEnabled ?? true) {
-            TabSection(String(localized: "sidebar.section.sources")) {
+            TabSection(AppLocalization.string("sidebar.section.sources")) {
                 ForEach(sidebarManager.sortedSourceItems) { item in
                     Tab(value: item) {
                         sourceContent(for: item)
@@ -863,7 +882,7 @@ struct UnifiedTabView: View {
 
         // Channels Section (shows subscribed channels)
         if !sidebarManager.channelItems.isEmpty && (settingsManager?.sidebarChannelsEnabled ?? true) {
-            TabSection(String(localized: "sidebar.section.channels")) {
+            TabSection(AppLocalization.string("sidebar.section.channels")) {
                 ForEach(sidebarManager.channelItems) { item in
                     Tab(value: item) {
                         channelContent(for: item)
@@ -876,7 +895,7 @@ struct UnifiedTabView: View {
 
         // Playlists Section
         if !sidebarManager.playlistItems.isEmpty && (settingsManager?.sidebarPlaylistsEnabled ?? true) {
-            TabSection(String(localized: "sidebar.section.playlists")) {
+            TabSection(AppLocalization.string("sidebar.section.playlists")) {
                 ForEach(sidebarManager.playlistItems) { item in
                     Tab(value: item) {
                         playlistContent(for: item)

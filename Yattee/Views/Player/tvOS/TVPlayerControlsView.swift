@@ -205,7 +205,7 @@ struct TVPlayerControlsView: View {
                 } label: {
                     TVActionButtonLabel(
                         systemImage: "gearshape",
-                        title: String(localized: "player.controls.settings")
+                        title: AppLocalization.string("player.controls.settings")
                     )
                 }
                 .buttonStyle(TVActionButtonStyle())
@@ -216,7 +216,7 @@ struct TVPlayerControlsView: View {
                 } label: {
                     TVActionButtonLabel(
                         systemImage: "info.circle",
-                        title: String(localized: "player.controls.info")
+                        title: AppLocalization.string("player.controls.info")
                     )
                 }
                 .buttonStyle(TVActionButtonStyle())
@@ -228,7 +228,7 @@ struct TVPlayerControlsView: View {
                     } label: {
                         TVActionButtonLabel(
                             systemImage: "bubble.left.and.bubble.right",
-                            title: String(localized: "player.controls.comments")
+                            title: AppLocalization.string("player.controls.comments")
                         )
                     }
                     .buttonStyle(TVActionButtonStyle())
@@ -241,7 +241,7 @@ struct TVPlayerControlsView: View {
                     } label: {
                         TVActionButtonLabel(
                             systemImage: "ant.circle",
-                            title: String(localized: "player.debug.titleShort")
+                            title: AppLocalization.string("player.debug.titleShort")
                         )
                     }
                     .buttonStyle(TVActionButtonStyle())
@@ -312,7 +312,7 @@ struct TVPlayerControlsView: View {
                     } label: {
                         TVActionButtonLabel(
                             systemImage: "list.bullet",
-                            title: String(localized: "queue.section.count \(state.queue.count)")
+                            title: AppLocalization.string("queue.section.count \(state.queue.count)")
                         )
                     }
                     .buttonStyle(TVActionButtonStyle())

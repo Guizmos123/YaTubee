@@ -32,11 +32,11 @@ enum SeekGestureSensitivity: String, Codable, CaseIterable, Hashable, Sendable {
     var displayName: String {
         switch self {
         case .low:
-            String(localized: "gestures.seek.sensitivity.low", defaultValue: "Low")
+            AppLocalization.string("gestures.seek.sensitivity.low", defaultValue: "Low")
         case .medium:
-            String(localized: "gestures.seek.sensitivity.medium", defaultValue: "Medium")
+            AppLocalization.string("gestures.seek.sensitivity.medium", defaultValue: "Medium")
         case .high:
-            String(localized: "gestures.seek.sensitivity.high", defaultValue: "High")
+            AppLocalization.string("gestures.seek.sensitivity.high", defaultValue: "High")
         }
     }
 
@@ -44,11 +44,11 @@ enum SeekGestureSensitivity: String, Codable, CaseIterable, Hashable, Sendable {
     var description: String {
         switch self {
         case .low:
-            String(localized: "gestures.seek.sensitivity.low.description", defaultValue: "Precise control")
+            AppLocalization.string("gestures.seek.sensitivity.low.description", defaultValue: "Precise control")
         case .medium:
-            String(localized: "gestures.seek.sensitivity.medium.description", defaultValue: "Balanced")
+            AppLocalization.string("gestures.seek.sensitivity.medium.description", defaultValue: "Balanced")
         case .high:
-            String(localized: "gestures.seek.sensitivity.high.description", defaultValue: "Fast navigation")
+            AppLocalization.string("gestures.seek.sensitivity.high.description", defaultValue: "Fast navigation")
         }
     }
 }

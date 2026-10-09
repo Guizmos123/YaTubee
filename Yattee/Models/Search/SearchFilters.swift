@@ -18,10 +18,10 @@ enum SearchSortOption: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .relevance: return String(localized: "search.sort.relevance")
-        case .rating: return String(localized: "search.sort.rating")
-        case .date: return String(localized: "search.sort.date")
-        case .views: return String(localized: "search.sort.views")
+        case .relevance: return AppLocalization.string("search.sort.relevance")
+        case .rating: return AppLocalization.string("search.sort.rating")
+        case .date: return AppLocalization.string("search.sort.date")
+        case .views: return AppLocalization.string("search.sort.views")
         }
     }
 }
@@ -39,12 +39,12 @@ enum SearchDateFilter: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .any: return String(localized: "search.date.any")
-        case .hour: return String(localized: "search.date.hour")
-        case .today: return String(localized: "search.date.today")
-        case .week: return String(localized: "search.date.week")
-        case .month: return String(localized: "search.date.month")
-        case .year: return String(localized: "search.date.year")
+        case .any: return AppLocalization.string("search.date.any")
+        case .hour: return AppLocalization.string("search.date.hour")
+        case .today: return AppLocalization.string("search.date.today")
+        case .week: return AppLocalization.string("search.date.week")
+        case .month: return AppLocalization.string("search.date.month")
+        case .year: return AppLocalization.string("search.date.year")
         }
     }
 }
@@ -60,10 +60,10 @@ enum SearchDurationFilter: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .any: return String(localized: "search.duration.any")
-        case .short: return String(localized: "search.duration.short")
-        case .medium: return String(localized: "search.duration.medium")
-        case .long: return String(localized: "search.duration.long")
+        case .any: return AppLocalization.string("search.duration.any")
+        case .short: return AppLocalization.string("search.duration.short")
+        case .medium: return AppLocalization.string("search.duration.medium")
+        case .long: return AppLocalization.string("search.duration.long")
         }
     }
 }
@@ -79,10 +79,10 @@ enum SearchContentType: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .all: return String(localized: "search.type.all")
-        case .video: return String(localized: "search.type.video")
-        case .playlist: return String(localized: "search.type.playlist")
-        case .channel: return String(localized: "search.type.channel")
+        case .all: return AppLocalization.string("search.type.all")
+        case .video: return AppLocalization.string("search.type.video")
+        case .playlist: return AppLocalization.string("search.type.playlist")
+        case .channel: return AppLocalization.string("search.type.channel")
         }
     }
 

@@ -38,8 +38,8 @@ struct PanelAlignmentButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(panelSide == .left
-            ? String(localized: "wideLayoutPanel.alignmentButton.moveRight")
-            : String(localized: "wideLayoutPanel.alignmentButton.moveLeft"))
+            ? AppLocalization.string("wideLayoutPanel.alignmentButton.moveRight")
+            : AppLocalization.string("wideLayoutPanel.alignmentButton.moveLeft"))
     }
 
     // MARK: - Haptic Feedback

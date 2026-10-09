@@ -76,7 +76,7 @@ struct QueueItemRow: View {
             Button(role: .destructive) {
                 onRemove()
             } label: {
-                Label(String(localized: "queue.item.remove"), systemImage: "trash")
+                Label(AppLocalization.string("queue.item.remove"), systemImage: "trash")
             }
         }
         #endif

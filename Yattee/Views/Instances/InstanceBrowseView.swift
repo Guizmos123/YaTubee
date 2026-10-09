@@ -95,10 +95,10 @@ struct InstanceBrowseView: View {
 
         var title: String {
             switch self {
-            case .popular: return String(localized: "popular.title")
-            case .trending: return String(localized: "trending.title")
-            case .feed: return String(localized: "feed.title")
-            case .playlists: return String(localized: "playlists.title")
+            case .popular: return AppLocalization.string("popular.title")
+            case .trending: return AppLocalization.string("trending.title")
+            case .feed: return AppLocalization.string("feed.title")
+            case .playlists: return AppLocalization.string("playlists.title")
             }
         }
 
@@ -164,7 +164,7 @@ struct InstanceBrowseView: View {
                     Button {
                         showViewOptions = true
                     } label: {
-                        Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                        Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                     }
                 }
                 .focusSection()
@@ -346,7 +346,7 @@ struct InstanceBrowseView: View {
                 Button {
                     showViewOptions = true
                 } label: {
-                    Label(String(localized: "viewOptions.title"), systemImage: "slider.horizontal.3")
+                    Label(AppLocalization.string("viewOptions.title"), systemImage: "slider.horizontal.3")
                 }
                 .liquidGlassTransitionSource(id: "instanceBrowseViewOptions", in: sheetTransition)
                 #if os(macOS)
@@ -450,7 +450,7 @@ struct InstanceBrowseView: View {
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .automatic),
-            prompt: Text(String(localized: "instance.browse.search.placeholder"))
+            prompt: Text(AppLocalization.string("instance.browse.search.placeholder"))
         )
         .onSubmit(of: .search) {
             searchViewModel?.cancelSuggestions()
@@ -461,7 +461,7 @@ struct InstanceBrowseView: View {
         #elseif !os(tvOS)
         .searchable(
             text: $searchText,
-            prompt: Text(String(localized: "instance.browse.search.placeholder"))
+            prompt: Text(AppLocalization.string("instance.browse.search.placeholder"))
         )
         .onSubmit(of: .search) {
             searchViewModel?.cancelSuggestions()
@@ -536,7 +536,7 @@ struct InstanceBrowseView: View {
         Button {
             showFilterSheet = true
         } label: {
-            Label(String(localized: "search.filters"), systemImage: (searchViewModel?.filters.isDefault ?? true)
+            Label(AppLocalization.string("search.filters"), systemImage: (searchViewModel?.filters.isDefault ?? true)
                 ? "line.3.horizontal.decrease.circle"
                 : "line.3.horizontal.decrease.circle.fill")
         }
@@ -670,7 +670,7 @@ struct InstanceBrowseView: View {
 
     private var tvOSFiltersMenu: some View {
         Menu {
-            Menu(String(localized: "search.sort")) {
+            Menu(AppLocalization.string("search.sort")) {
                 ForEach(SearchSortOption.allCases) { option in
                     Button {
                         searchViewModel?.filters.sort = option
@@ -685,7 +685,7 @@ struct InstanceBrowseView: View {
                 }
             }
 
-            Menu(String(localized: "search.uploadDate")) {
+            Menu(AppLocalization.string("search.uploadDate")) {
                 ForEach(SearchDateFilter.allCases) { option in
                     Button {
                         searchViewModel?.filters.date = option
@@ -700,7 +700,7 @@ struct InstanceBrowseView: View {
                 }
             }
 
-            Menu(String(localized: "search.duration")) {
+            Menu(AppLocalization.string("search.duration")) {
                 ForEach(SearchDurationFilter.allCases) { option in
                     Button {
                         searchViewModel?.filters.duration = option
@@ -723,11 +723,11 @@ struct InstanceBrowseView: View {
                 searchViewModel?.filters.type = currentType
                 Task { await searchViewModel?.search(query: searchText) }
             } label: {
-                Label(String(localized: "search.filters.reset"), systemImage: "arrow.counterclockwise")
+                Label(AppLocalization.string("search.filters.reset"), systemImage: "arrow.counterclockwise")
             }
             .disabled(searchViewModel?.filters.isDefault ?? true)
         } label: {
-            Label(String(localized: "search.filters"), systemImage: "line.3.horizontal.decrease")
+            Label(AppLocalization.string("search.filters"), systemImage: "line.3.horizontal.decrease")
         }
     }
     #else
@@ -921,9 +921,9 @@ struct InstanceBrowseView: View {
 
     private var playlistsEmptyView: some View {
         ContentUnavailableView {
-            Label(String(localized: "playlists.empty.title"), systemImage: "play.square.stack")
+            Label(AppLocalization.string("playlists.empty.title"), systemImage: "play.square.stack")
         } description: {
-            Text(String(localized: "playlists.empty.description"))
+            Text(AppLocalization.string("playlists.empty.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -932,9 +932,9 @@ struct InstanceBrowseView: View {
 
     private var emptyView: some View {
         ContentUnavailableView {
-            Label(String(localized: "common.noContent"), systemImage: "tray")
+            Label(AppLocalization.string("common.noContent"), systemImage: "tray")
         } description: {
-            Text(String(localized: "instance.browse.noVideos"))
+            Text(AppLocalization.string("instance.browse.noVideos"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -943,11 +943,11 @@ struct InstanceBrowseView: View {
 
     private func errorView(_ error: String) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await startContentLoad(forceRefresh: true) }
             }
             .buttonStyle(.bordered)
@@ -989,7 +989,7 @@ struct InstanceBrowseView: View {
                         .tappableVideo(
                             video,
                             queueSource: .search(query: searchText, continuation: nil),
-                            sourceLabel: String(localized: "queue.source.search \(searchText)"),
+                            sourceLabel: AppLocalization.string("queue.source.search \(searchText)"),
                             videoList: vm.videos,
                             videoIndex: videoIndex
                         )
@@ -1059,7 +1059,7 @@ struct InstanceBrowseView: View {
                     .tappableVideo(
                         video,
                         queueSource: .search(query: searchText, continuation: nil),
-                        sourceLabel: String(localized: "queue.source.search \(searchText)"),
+                        sourceLabel: AppLocalization.string("queue.source.search \(searchText)"),
                         videoList: vm.videos,
                         videoIndex: videoIndex
                     )
@@ -1112,9 +1112,9 @@ struct InstanceBrowseView: View {
 
     private var searchHintView: some View {
         ContentUnavailableView {
-            Label(String(localized: "search.hint.title"), systemImage: "magnifyingglass")
+            Label(AppLocalization.string("search.hint.title"), systemImage: "magnifyingglass")
         } description: {
-            Text(String(localized: "search.hint.description"))
+            Text(AppLocalization.string("search.hint.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1150,20 +1150,20 @@ struct InstanceBrowseView: View {
 
     private var searchEmptyView: some View {
         ContentUnavailableView {
-            Label(String(localized: "search.noResults.title"), systemImage: "magnifyingglass")
+            Label(AppLocalization.string("search.noResults.title"), systemImage: "magnifyingglass")
         } description: {
-            Text(String(localized: "search.noResults.description"))
+            Text(AppLocalization.string("search.noResults.description"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func searchErrorView(_ error: String) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "common.error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.string("common.error"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(error)
         } actions: {
-            Button(String(localized: "common.retry")) {
+            Button(AppLocalization.string("common.retry")) {
                 Task { await searchViewModel?.search(query: searchText) }
             }
             .buttonStyle(.bordered)
@@ -1223,7 +1223,7 @@ struct InstanceBrowseView: View {
                 prefetchBranding(for: videos)
             case .feed:
                 guard let credential = appEnvironment.credentialsManager(for: instance)?.credential(for: instance) else {
-                    errorMessage = String(localized: "feed.error.notLoggedIn")
+                    errorMessage = AppLocalization.string("feed.error.notLoggedIn")
                     isLoading = false
                     return
                 }
@@ -1277,7 +1277,7 @@ struct InstanceBrowseView: View {
                     hasMoreFeedResults = false
 
                 default:
-                    errorMessage = String(localized: "feed.error.notSupported")
+                    errorMessage = AppLocalization.string("feed.error.notSupported")
                     isLoading = false
                     return
                 }
@@ -1288,13 +1288,13 @@ struct InstanceBrowseView: View {
             case .playlists:
                 // Playlists are currently only supported for Invidious
                 guard instance.type == .invidious else {
-                    errorMessage = String(localized: "feed.error.notSupported")
+                    errorMessage = AppLocalization.string("feed.error.notSupported")
                     isLoading = false
                     return
                 }
 
                 guard let credential = appEnvironment.credentialsManager(for: instance)?.credential(for: instance) else {
-                    errorMessage = String(localized: "feed.error.notLoggedIn")
+                    errorMessage = AppLocalization.string("feed.error.notLoggedIn")
                     isLoading = false
                     return
                 }

@@ -51,7 +51,7 @@ struct HomeShortcutStyleView: View {
     var body: some View {
         List {
             Section {
-                Picker(String(localized: "home.settings.shortcuts.layout"), selection: $style) {
+                Picker(AppLocalization.string("home.settings.shortcuts.layout"), selection: $style) {
                     ForEach(HomeShortcutCardStyle.allCases, id: \.self) { style in
                         Text(style.displayName).tag(style)
                     }
@@ -60,11 +60,11 @@ struct HomeShortcutStyleView: View {
                 .pickerStyle(.segmented)
                 #endif
             } header: {
-                Text(String(localized: "home.settings.shortcuts.layout"))
+                Text(AppLocalization.string("home.settings.shortcuts.layout"))
             }
 
             Section {
-                Picker(String(localized: "home.settings.shortcuts.color"), selection: $color) {
+                Picker(AppLocalization.string("home.settings.shortcuts.color"), selection: $color) {
                     ForEach(HomeShortcutCardColor.allCases, id: \.self) { color in
                         Text(color.displayName).tag(color)
                     }
@@ -73,7 +73,7 @@ struct HomeShortcutStyleView: View {
                 .pickerStyle(.segmented)
                 #endif
             } header: {
-                Text(String(localized: "home.settings.shortcuts.color"))
+                Text(AppLocalization.string("home.settings.shortcuts.color"))
             }
 
             paletteSection
@@ -104,14 +104,14 @@ struct HomeShortcutStyleView: View {
                 .padding(.vertical, 4)
                 .allowsHitTesting(false)
             } header: {
-                Text(String(localized: "home.settings.shortcuts.style.preview"))
+                Text(AppLocalization.string("home.settings.shortcuts.style.preview"))
             }
         }
         #if os(macOS)
         .listStyle(.inset)
         #endif
         .opaqueSettingsFormBackground()
-        .navigationTitle(String(localized: "home.settings.shortcuts.style"))
+        .navigationTitle(AppLocalization.string("home.settings.shortcuts.style"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -125,7 +125,7 @@ struct HomeShortcutStyleView: View {
 
     private var paletteSection: some View {
         Section {
-            Picker(String(localized: "home.settings.shortcuts.palette"), selection: $palette) {
+            Picker(AppLocalization.string("home.settings.shortcuts.palette"), selection: $palette) {
                 ForEach(HomeShortcutColorfulPalette.allCases, id: \.self) { palette in
                     Text(palette.displayName).tag(palette)
                 }
@@ -135,7 +135,7 @@ struct HomeShortcutStyleView: View {
             swatchStrip(for: paletteSwatchColors)
                 .padding(.vertical, 4)
         } header: {
-            Text(String(localized: "home.settings.shortcuts.palette"))
+            Text(AppLocalization.string("home.settings.shortcuts.palette"))
         }
     }
 
@@ -165,7 +165,7 @@ struct HomeShortcutStyleView: View {
 
     private var customColorsSection: some View {
         Section {
-            Picker(String(localized: "home.shortcuts.palette.custom.mode"), selection: $customEditMode) {
+            Picker(AppLocalization.string("home.shortcuts.palette.custom.mode"), selection: $customEditMode) {
                 ForEach(CustomEditMode.allCases, id: \.self) { mode in
                     Text(mode.displayName).tag(mode)
                 }
@@ -185,12 +185,12 @@ struct HomeShortcutStyleView: View {
                     let seed = HomeShortcutColorfulPalette.customStarterColors.first ?? "#4D96FF"
                     customColors.append(seed)
                 } label: {
-                    Label(String(localized: "home.shortcuts.palette.custom.add"), systemImage: "plus.circle.fill")
+                    Label(AppLocalization.string("home.shortcuts.palette.custom.add"), systemImage: "plus.circle.fill")
                 }
 
             case .text:
                 TextField(
-                    String(localized: "home.shortcuts.palette.custom.placeholder"),
+                    AppLocalization.string("home.shortcuts.palette.custom.placeholder"),
                     text: customColorsText,
                     axis: .vertical
                 )
@@ -202,9 +202,9 @@ struct HomeShortcutStyleView: View {
                 .font(.body.monospaced())
             }
         } header: {
-            Text(String(localized: "home.shortcuts.palette.custom.header"))
+            Text(AppLocalization.string("home.shortcuts.palette.custom.header"))
         } footer: {
-            Text(String(localized: "home.shortcuts.palette.custom.footer"))
+            Text(AppLocalization.string("home.shortcuts.palette.custom.footer"))
         }
     }
 
@@ -322,7 +322,7 @@ struct HomeShortcutStyleView: View {
         case .channels:
             return formatCount(sampleCount(for: item), singular: "home.count.channel", plural: "home.count.channels")
         case .subscriptions:
-            return String(localized: "home.subscriptions.subtitle")
+            return AppLocalization.string("home.subscriptions.subtitle")
         case .mediaSources:
             return sampleCount(for: item) == 1 ? "1 source" : "\(sampleCount(for: item)) sources"
         case .instanceContent, .mediaSource:
@@ -334,7 +334,7 @@ struct HomeShortcutStyleView: View {
     private func formatCount(_ count: Int, singular: String.LocalizationValue, plural: String.LocalizationValue) -> String {
         let formattedCount = CountFormatter.compact(count)
         let key = count == 1 ? singular : plural
-        return String(localized: "\(formattedCount) \(String(localized: key))")
+        return AppLocalization.string("\(formattedCount) \(AppLocalization.string(key))")
     }
 }
 

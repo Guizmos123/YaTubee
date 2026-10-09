@@ -62,7 +62,7 @@ enum SubtitleFilePanel {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.message = String(localized: "stream.subtitles.loadFromFile.message")
+        panel.message = AppLocalization.string("stream.subtitles.loadFromFile.message")
 
         if panel.runModal() == .OK, let url = panel.url {
             onSelect(url)

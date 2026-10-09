@@ -62,7 +62,7 @@ struct AddLocalFolderView: View {
 
             actionSection
         }
-        .navigationTitle(String(localized: "sources.addLocalFolder"))
+        .reactiveNavigationTitle(AppLocalization.string("sources.addLocalFolder"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingFolderPicker) {
@@ -78,17 +78,17 @@ struct AddLocalFolderView: View {
     private var macOSBody: some View {
         Form {
             Section {
-                LabeledContent(String(localized: "sources.field.name")) {
+                LabeledContent(AppLocalization.string("sources.field.name")) {
                     TextField("", text: $name)
                 }
             } footer: {
-                Text(String(localized: "sources.footer.displayName"))
+                Text(AppLocalization.string("sources.footer.displayName"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                LabeledContent(String(localized: "sources.header.folder")) {
+                LabeledContent(AppLocalization.string("sources.header.folder")) {
                     HStack {
                         if let url = selectedFolderURL {
                             Text(url.path)
@@ -97,16 +97,16 @@ struct AddLocalFolderView: View {
                                 .foregroundStyle(.secondary)
                                 .font(.system(.body, design: .monospaced))
                         } else {
-                            Text(String(localized: "sources.selectFolder"))
+                            Text(AppLocalization.string("sources.selectFolder"))
                                 .foregroundStyle(.secondary)
                         }
-                        Button(String(localized: "sources.selectFolder")) {
+                        Button(AppLocalization.string("sources.selectFolder")) {
                             selectFolderMacOS()
                         }
                     }
                 }
             } footer: {
-                Text(String(localized: "sources.footer.folder"))
+                Text(AppLocalization.string("sources.footer.folder"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -120,11 +120,11 @@ struct AddLocalFolderView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle(String(localized: "sources.addLocalFolder"))
+        .reactiveNavigationTitle(AppLocalization.string("sources.addLocalFolder"))
         .toolbar {
             if usesToolbarActionButton {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "sources.addSource")) {
+                    Button(AppLocalization.string("sources.addSource")) {
                         addSource()
                     }
                     .disabled(!canAdd)
@@ -139,9 +139,9 @@ struct AddLocalFolderView: View {
 
     private var nameSection: some View {
         Section {
-            TextField(String(localized: "sources.field.name"), text: $name)
+            TextField(AppLocalization.string("sources.field.name"), text: $name)
         } footer: {
-            Text(String(localized: "sources.footer.displayName"))
+            Text(AppLocalization.string("sources.footer.displayName"))
         }
     }
 
@@ -155,7 +155,7 @@ struct AddLocalFolderView: View {
                     if let url = selectedFolderURL {
                         Label(url.lastPathComponent, systemImage: "folder.fill")
                     } else {
-                        Label(String(localized: "sources.selectFolder"), systemImage: "folder.badge.plus")
+                        Label(AppLocalization.string("sources.selectFolder"), systemImage: "folder.badge.plus")
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -170,16 +170,16 @@ struct AddLocalFolderView: View {
                     if let url = selectedFolderURL {
                         Label(url.lastPathComponent, systemImage: "folder.fill")
                     } else {
-                        Label(String(localized: "sources.selectFolder"), systemImage: "folder.badge.plus")
+                        Label(AppLocalization.string("sources.selectFolder"), systemImage: "folder.badge.plus")
                     }
                     Spacer()
                 }
             }
             #endif
         } header: {
-            Text(String(localized: "sources.header.folder"))
+            Text(AppLocalization.string("sources.header.folder"))
         } footer: {
-            Text(String(localized: "sources.footer.folder"))
+            Text(AppLocalization.string("sources.footer.folder"))
         }
     }
 
@@ -188,7 +188,7 @@ struct AddLocalFolderView: View {
             Button {
                 addSource()
             } label: {
-                Text(String(localized: "sources.addSource"))
+                Text(AppLocalization.string("sources.addSource"))
             }
             .disabled(!canAdd)
         }
@@ -240,7 +240,7 @@ struct AddLocalFolderView: View {
                 }
             } catch {
                 await MainActor.run {
-                    testResult = .failure(String(localized: "sources.error.folderAccess \(error.localizedDescription)"))
+                    testResult = .failure(AppLocalization.string("sources.error.folderAccess \(error.localizedDescription)"))
                 }
             }
         }

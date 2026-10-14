@@ -10,6 +10,54 @@ import Foundation
 import SwiftUI
 @testable import Yattee
 
+@Suite("Playback Thumbnail Status Tests")
+struct PlaybackThumbnailStatusTests {
+    @Test("Only active playback states produce a thumbnail indicator")
+    func activePlaybackStates() {
+        #expect(PlaybackThumbnailStatus(playbackState: .playing) == .playing)
+        #expect(PlaybackThumbnailStatus(playbackState: .paused) == .paused)
+        #expect(PlaybackThumbnailStatus(playbackState: .idle) == nil)
+        #expect(PlaybackThumbnailStatus(playbackState: .loading) == nil)
+        #expect(PlaybackThumbnailStatus(playbackState: .ready) == nil)
+        #expect(PlaybackThumbnailStatus(playbackState: .buffering) == nil)
+        #expect(PlaybackThumbnailStatus(playbackState: .ended) == nil)
+    }
+}
+
+@Suite("Home Presentation Settings Tests")
+struct HomePresentationSettingsTests {
+    @Test("Independent snapshots preserve presentation values through persistence")
+    func independentSnapshotsRoundTrip() throws {
+        let home = HomePresentationSettings(
+            shortcutLayout: .cards,
+            shortcutCardStyle: .regular,
+            shortcutCardColor: .soft,
+            shortcutColorfulPalette: .accent,
+            shortcutCustomPaletteColors: ["#007AFF"],
+            shortcutOrder: [.playlists, .history],
+            shortcutVisibility: [.playlists: true, .history: true],
+            sectionOrder: [.continueWatching, .history],
+            sectionVisibility: [.continueWatching: true, .history: true],
+            sectionItemsLimit: 5,
+            sectionLayout: .list
+        )
+        var more = home
+        more.shortcutLayout = .list
+        more.sectionItemsLimit = 10
+        more.sectionVisibility[.history] = false
+
+        #expect(home.shortcutLayout == .cards)
+        #expect(home.sectionItemsLimit == 5)
+        #expect(home.sectionVisibility[.history] == true)
+
+        let restored = try JSONDecoder().decode(
+            HomePresentationSettings.self,
+            from: JSONEncoder().encode(more)
+        )
+        #expect(restored == more)
+    }
+}
+
 // MARK: - App Localization Tests
 
 @Suite("App Localization Tests", .serialized)
@@ -38,6 +86,89 @@ struct AppLocalizationTests {
 
         defaults.set(AppLanguage.english.rawValue, forKey: key)
         #expect(AppLocalization.string("settings.title") == "Settings")
+    }
+
+    @Test("Visible formatters use the selected app language")
+    func localizedFormatters() {
+        let defaults = UserDefaults.standard
+        let key = SettingsKey.appLanguage.rawValue
+        let previousValue = defaults.object(forKey: key)
+        defer {
+            if let previousValue {
+                defaults.set(previousValue, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+
+        let twoHoursAgo = Date().addingTimeInterval(-2 * 60 * 60)
+
+        defaults.set(AppLanguage.english.rawValue, forKey: key)
+        #expect(CountFormatter.compact(1_500) == "1.5K")
+        #expect(RelativeDateFormatter.string(for: twoHoursAgo, unitsStyle: .full).contains("ago"))
+
+        defaults.set(AppLanguage.french.rawValue, forKey: key)
+        #expect(CountFormatter.compact(1_500) == "1,5K")
+        #expect(RelativeDateFormatter.string(for: twoHoursAgo, unitsStyle: .full).contains("il y a"))
+    }
+}
+
+// MARK: - Notification and Badge Preference Tests
+
+@Suite("Notification and Badge Preference Tests", .serialized)
+@MainActor
+struct NotificationAndBadgePreferenceTests {
+    private static let keys: [SettingsKey] = [
+        .notificationsIncludeShorts,
+        .videoTabBadgeEnabled,
+        .appIconBadgeEnabled,
+        .badgesIncludeShorts,
+    ]
+
+    private func withCleanDefaults(_ body: (SettingsManager) throws -> Void) rethrows {
+        for key in Self.keys {
+            UserDefaults.standard.removeObject(forKey: key.rawValue)
+        }
+        defer {
+            for key in Self.keys {
+                UserDefaults.standard.removeObject(forKey: key.rawValue)
+            }
+        }
+        try body(SettingsManager())
+    }
+
+    @Test("New notification and badge preferences have the product defaults")
+    func defaultValues() {
+        withCleanDefaults { settings in
+            #expect(settings.notificationsIncludeShorts == false)
+            #expect(settings.videoTabBadgeEnabled == true)
+            #expect(settings.appIconBadgeEnabled == false)
+            #expect(settings.badgesIncludeShorts == false)
+        }
+    }
+
+    @Test("Notification and badge Shorts preferences remain independent")
+    func independentShortsPreferences() {
+        withCleanDefaults { settings in
+            settings.notificationsIncludeShorts = true
+            #expect(settings.notificationsIncludeShorts == true)
+            #expect(settings.badgesIncludeShorts == false)
+
+            settings.badgesIncludeShorts = true
+            settings.notificationsIncludeShorts = false
+            #expect(settings.notificationsIncludeShorts == false)
+            #expect(settings.badgesIncludeShorts == true)
+        }
+    }
+
+    @Test("Badge destinations remain independent")
+    func independentBadgeDestinations() {
+        withCleanDefaults { settings in
+            settings.videoTabBadgeEnabled = false
+            settings.appIconBadgeEnabled = true
+            #expect(settings.videoTabBadgeEnabled == false)
+            #expect(settings.appIconBadgeEnabled == true)
+        }
     }
 }
 

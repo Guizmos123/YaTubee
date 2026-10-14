@@ -141,7 +141,8 @@ struct TVPlayerControlsView: View {
                     author: video.author,
                     size: 80,
                     yatteeServerURL: yatteeServerURL,
-                    source: video.id.source
+                    source: video.id.source,
+                    authHeader: yatteeServerAuthHeader
                 )
             }
 
@@ -192,6 +193,14 @@ struct TVPlayerControlsView: View {
 
     private var yatteeServerURL: URL? {
         appEnvironment?.instancesManager.yatteeServerInstances.first { $0.isEnabled }?.url
+    }
+
+    private var yatteeServerAuthHeader: String? {
+        guard let appEnvironment,
+              let server = appEnvironment.instancesManager.yatteeServerInstances.first(where: { $0.isEnabled }) else {
+            return nil
+        }
+        return appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: server)
     }
 
     // MARK: - Action Buttons

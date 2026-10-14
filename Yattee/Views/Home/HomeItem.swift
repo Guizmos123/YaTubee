@@ -11,7 +11,7 @@ import SwiftUI
 // MARK: - Home Shortcut Layout
 
 /// Layout mode for the shortcuts section in the Home view.
-enum HomeShortcutLayout: String, CaseIterable, Sendable {
+enum HomeShortcutLayout: String, CaseIterable, Codable, Sendable {
     case list
     case cards
 
@@ -35,7 +35,7 @@ enum HomeShortcutLayout: String, CaseIterable, Sendable {
 /// Layout for shortcut cards in the Home view (cards layout only). Controls
 /// only how the icon / title / subtitle / counter are positioned — the color
 /// emphasis is a separate setting (`HomeShortcutCardColor`).
-enum HomeShortcutCardStyle: String, CaseIterable, Sendable {
+enum HomeShortcutCardStyle: String, CaseIterable, Codable, Sendable {
     /// Horizontal card: icon leading, title with a count subtitle beside it.
     case compact
     /// "Reminders-style" card: icon top-leading, count top-trailing, title bottom.
@@ -53,7 +53,7 @@ enum HomeShortcutCardStyle: String, CaseIterable, Sendable {
 
 /// Color emphasis for shortcut cards, independent of layout. The actual color
 /// comes from the selected `HomeShortcutColorfulPalette`.
-enum HomeShortcutCardColor: String, CaseIterable, Sendable {
+enum HomeShortcutCardColor: String, CaseIterable, Codable, Sendable {
     /// Light tinted background, palette-colored icon, neutral (primary/secondary) text.
     case soft
     /// Solid palette fill with a gentle sheen, white icon/text.
@@ -72,7 +72,7 @@ enum HomeShortcutCardColor: String, CaseIterable, Sendable {
 /// Palette used by the "regular" card style. Colors are applied by grid
 /// position (wrapping by palette length), so a card's color depends on where
 /// it sits, not on which shortcut it is.
-enum HomeShortcutColorfulPalette: String, CaseIterable, Sendable {
+enum HomeShortcutColorfulPalette: String, CaseIterable, Codable, Sendable {
     /// Uniform fill using the user's accent color on every card.
     case accent
     /// Reproduces the original per-position look (SwiftUI named colors).
@@ -138,14 +138,16 @@ enum HomeShortcutColorfulPalette: String, CaseIterable, Sendable {
 // MARK: - Home Section Layout
 
 /// Layout mode for the configurable home sections (Continue Watching, Feed, etc.).
-enum HomeSectionLayout: String, CaseIterable, Sendable {
+enum HomeSectionLayout: String, CaseIterable, Codable, Sendable {
     case list
     case grid
+    case large
 
     var displayName: LocalizedStringKey {
         switch self {
         case .list: return "home.sections.layout.list"
         case .grid: return "home.sections.layout.grid"
+        case .large: return "home.sections.layout.large"
         }
     }
 
@@ -153,6 +155,7 @@ enum HomeSectionLayout: String, CaseIterable, Sendable {
         switch self {
         case .list: return "list.bullet"
         case .grid: return "square.grid.2x2"
+        case .large: return "rectangle.landscape"
         }
     }
 

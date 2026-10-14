@@ -20,7 +20,6 @@ final class SubscriptionAccountValidator {
     private let invidiousCredentialsManager: InvidiousCredentialsManager
     private let pipedCredentialsManager: PipedCredentialsManager
     private let toastManager: ToastManager
-    private let feedCache: SubscriptionFeedCache
 
     // MARK: - Observation State
 
@@ -33,15 +32,13 @@ final class SubscriptionAccountValidator {
         instancesManager: InstancesManager,
         invidiousCredentialsManager: InvidiousCredentialsManager,
         pipedCredentialsManager: PipedCredentialsManager,
-        toastManager: ToastManager,
-        feedCache: SubscriptionFeedCache
+        toastManager: ToastManager
     ) {
         self.settingsManager = settingsManager
         self.instancesManager = instancesManager
         self.invidiousCredentialsManager = invidiousCredentialsManager
         self.pipedCredentialsManager = pipedCredentialsManager
         self.toastManager = toastManager
-        self.feedCache = feedCache
 
         startObserving()
     }
@@ -59,11 +56,12 @@ final class SubscriptionAccountValidator {
     var availableAccounts: [SubscriptionAccount] {
         var accounts: [SubscriptionAccount] = []
 
-        // Add local if Yattee Server is configured and enabled
-        let hasYatteeServer = instancesManager.instances.contains {
-            $0.type == .yatteeServer && $0.isEnabled
+        // Local subscriptions can be aggregated by Yattee Server or a public
+        // Invidious instance and therefore do not require an authenticated account.
+        let hasLocalFeedSource = instancesManager.instances.contains {
+            ($0.type == .yatteeServer || $0.type == .invidious) && $0.isEnabled
         }
-        if hasYatteeServer {
+        if hasLocalFeedSource {
             accounts.append(.local)
         }
 
@@ -117,7 +115,6 @@ final class SubscriptionAccountValidator {
         // Find first available account to switch to
         if let newAccount = availableAccounts.first {
             settingsManager.subscriptionAccount = newAccount
-            feedCache.handleAccountChange()
 
             let newName = displayName(for: newAccount)
             LoggingService.shared.info(
@@ -133,7 +130,6 @@ final class SubscriptionAccountValidator {
             // No valid accounts available - set to local anyway
             // The feed will show an appropriate error state
             settingsManager.subscriptionAccount = .local
-            feedCache.handleAccountChange()
 
             LoggingService.shared.warning(
                 "No valid subscription accounts available, defaulting to local",

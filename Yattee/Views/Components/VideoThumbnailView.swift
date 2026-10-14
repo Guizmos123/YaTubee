@@ -6,7 +6,45 @@
 //
 
 import SwiftUI
+import Nuke
 import NukeUI
+
+enum PlaybackThumbnailStatus: Equatable, Sendable {
+    case playing
+    case paused
+
+    init?(playbackState: PlaybackState) {
+        switch playbackState {
+        case .playing:
+            self = .playing
+        case .paused:
+            self = .paused
+        default:
+            return nil
+        }
+    }
+}
+
+struct PiPPlaybackStatusOverlay: View {
+    let isPaused: Bool
+
+    var body: some View {
+        Color.black.opacity(0.58)
+            .overlay {
+                Text(
+                    isPaused
+                        ? LocalizedStringKey("player.pip.paused")
+                        : LocalizedStringKey("player.pip.nowPlaying")
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .padding(.horizontal, 4)
+            }
+            .allowsHitTesting(false)
+    }
+}
 
 /// A `LazyImage` that steps through candidate URLs, advancing to the next
 /// (lower-quality) one when a load fails.
@@ -40,6 +78,49 @@ struct FallbackLazyImage<Content: View>: View {
     }
 }
 
+/// A `LazyImage` variant that preserves complete `ImageRequest` values, including
+/// authentication headers, while retrying ordered image candidates.
+struct FallbackLazyImageRequest<Content: View>: View {
+    let requests: [ImageRequest]
+    let onSuccess: ((ImageResponse) -> Void)?
+    @ViewBuilder let content: (LazyImageState) -> Content
+
+    @State private var candidateIndex = 0
+
+    init(
+        requests: [ImageRequest],
+        onSuccess: ((ImageResponse) -> Void)? = nil,
+        @ViewBuilder content: @escaping (LazyImageState) -> Content
+    ) {
+        self.requests = requests
+        self.onSuccess = onSuccess
+        self.content = content
+    }
+
+    private var currentRequest: ImageRequest? {
+        guard requests.indices.contains(candidateIndex) else { return requests.last }
+        return requests[candidateIndex]
+    }
+
+    private var requestURLs: [URL?] {
+        requests.map(\.url)
+    }
+
+    var body: some View {
+        LazyImage(request: currentRequest) { state in
+            content(state)
+        }
+        .onCompletion { result in
+            if case .success(let response) = result {
+                onSuccess?(response)
+            } else if candidateIndex < requests.count - 1 {
+                candidateIndex += 1
+            }
+        }
+        .onChange(of: requestURLs) { candidateIndex = 0 }
+    }
+}
+
 /// A reusable video thumbnail view with 16:9 aspect ratio.
 ///
 /// Supports optional overlays for:
@@ -48,7 +129,13 @@ struct FallbackLazyImage<Content: View>: View {
 /// - Download status (completed checkmark or progress indicator)
 /// - Live badge
 struct VideoThumbnailView: View {
+    @Environment(\.appEnvironment) private var appEnvironment
+
     let url: URL?
+
+    /// Stable YouTube/source video identifier used to limit the PiP treatment
+    /// to the thumbnail representing the currently playing video.
+    var videoID: String? = nil
 
     /// Lower-quality URLs to try, in priority order, if `url` fails to load.
     ///
@@ -74,6 +161,16 @@ struct VideoThumbnailView: View {
     private var candidates: [URL] {
         var seen = Set<URL>()
         return ([url] + fallbackURLs).compactMap { $0 }.filter { seen.insert($0).inserted }
+    }
+
+    private var playbackThumbnailStatus: PlaybackThumbnailStatus? {
+        guard let videoID,
+              let playerService = appEnvironment?.playerService,
+              playerService.state.currentVideo?.id.videoID == videoID else {
+            return nil
+        }
+
+        return PlaybackThumbnailStatus(playbackState: playerService.state.playbackState)
     }
 
     var body: some View {
@@ -115,6 +212,14 @@ struct VideoThumbnailView: View {
         .overlay(alignment: .topLeading) {
             watchedCheckmark
         }
+        .overlay {
+            if let playbackThumbnailStatus {
+                PiPPlaybackStatusOverlay(
+                    isPaused: playbackThumbnailStatus == .paused
+                )
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
 
     // MARK: - Overlays

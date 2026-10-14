@@ -207,6 +207,11 @@ actor ContentService: ContentServiceProtocol {
         try await api(for: instance).channel(id: id, instance: instance)
     }
 
+    func channelLatestVideos(id: String, instance: Instance) async throws -> [Video] {
+        guard instance.type == .invidious else { throw APIError.notSupported }
+        return try await invidiousAPI(for: instance).channelLatestVideos(id: id, instance: instance)
+    }
+
     func channelVideos(id: String, instance: Instance, continuation: String? = nil) async throws -> ChannelVideosPage {
         try await api(for: instance).channelVideos(id: id, instance: instance, continuation: continuation)
     }

@@ -99,6 +99,7 @@ struct DeArrowVideoThumbnail: View {
     var body: some View {
         VideoThumbnailView(
             url: thumbnailCandidates.primary,
+            videoID: video.id.videoID,
             fallbackURLs: thumbnailCandidates.fallbacks,
             cornerRadius: cornerRadius,
             watchProgress: watchProgress,

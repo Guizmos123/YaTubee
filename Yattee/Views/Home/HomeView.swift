@@ -8,6 +8,12 @@
 import SwiftUI
 
 struct HomeView: View {
+    let customizationContext: HomeCustomizationContext
+
+    init(customizationContext: HomeCustomizationContext = .home) {
+        self.customizationContext = customizationContext
+    }
+
     @Environment(\.appEnvironment) private var appEnvironment
     @Environment(\.scenePhase) private var scenePhase
     #if !os(tvOS) && !os(macOS)
@@ -33,6 +39,10 @@ struct HomeView: View {
     private var dataManager: DataManager? { appEnvironment?.dataManager }
     private var settingsManager: SettingsManager? { appEnvironment?.settingsManager }
 
+    private var presentationSettings: HomePresentationSettings? {
+        settingsManager?.presentationSettings(for: customizationContext)
+    }
+
     private var accentColor: Color {
         appEnvironment?.settingsManager.resolvedAccentColor ?? .accentColor
     }
@@ -50,23 +60,23 @@ struct HomeView: View {
     }
 
     private var sectionItemsLimit: Int {
-        settingsManager?.homeSectionItemsLimit ?? SettingsManager.defaultHomeSectionItemsLimit
+        presentationSettings?.sectionItemsLimit ?? SettingsManager.defaultHomeSectionItemsLimit
     }
 
     /// Check if any shortcuts are visible
     private var hasVisibleShortcuts: Bool {
         guard let settings = settingsManager else { return true }
-        return !settings.visibleShortcuts().isEmpty
+        return !settings.presentationSettings(for: customizationContext).visibleShortcuts.isEmpty
     }
 
     /// The current layout for shortcuts (list or cards)
     private var shortcutLayout: HomeShortcutLayout {
-        settingsManager?.homeShortcutLayout ?? .cards
+        presentationSettings?.shortcutLayout ?? .cards
     }
 
     /// The current layout for home sections (list or grid)
     private var sectionLayout: HomeSectionLayout {
-        settingsManager?.homeSectionLayout ?? HomeSectionLayout.platformDefault
+        presentationSettings?.sectionLayout ?? HomeSectionLayout.platformDefault
     }
 
     /// List style from centralized settings.
@@ -78,11 +88,22 @@ struct HomeView: View {
         appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
     }
 
+    private var navigationTitle: String {
+        switch customizationContext {
+        case .home:
+            AppLocalization.string("tabs.home")
+        case .more:
+            AppLocalization.string("tabs.more")
+        }
+    }
+
     var body: some View {
         mainContent
+        .environment(\.homeShortcutCardStyle, presentationSettings?.shortcutCardStyle ?? .regular)
+        .environment(\.homeShortcutCardColor, presentationSettings?.shortcutCardColor ?? .soft)
         .environment(\.locale, localizationLocale)
         #if !os(tvOS)
-        .reactiveNavigationTitle(AppLocalization.string("tabs.home"))
+        .reactiveNavigationTitle(navigationTitle)
         .navigationSubtitleIfAvailable(
             settingsManager?.incognitoModeEnabled == true
                 ? AppLocalization.string("home.incognitoMode.subtitle")
@@ -134,7 +155,7 @@ struct HomeView: View {
         #if !os(tvOS)
         .sheet(isPresented: $showingCustomizeHome) {
             NavigationStack {
-                HomeSettingsView()
+                HomeSettingsView(customizationContext: customizationContext)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button(AppLocalization.string("common.done")) {
@@ -157,7 +178,9 @@ struct HomeView: View {
             }
         }
         .task {
-            await feedCache.loadFromDiskIfNeeded()
+            if let appEnvironment {
+                await feedCache.loadFromDiskIfNeeded(using: appEnvironment)
+            }
             await appEnvironment?.homeInstanceCache.loadFromDiskIfNeeded()
             await refreshHomeInstanceContent()
         }
@@ -198,7 +221,7 @@ struct HomeView: View {
     /// True on tvOS when no Home section would render content — prevents a focus trap
     /// on fresh installs where the detail pane would otherwise be completely empty.
     private var isHomeEmpty: Bool {
-        let sections = settingsManager?.visibleSections() ?? HomeSectionItem.defaultOrder.filter { HomeSectionItem.defaultVisibility[$0] == true }
+        let sections = presentationSettings?.visibleSections ?? HomeSectionItem.defaultOrder.filter { HomeSectionItem.defaultVisibility[$0] == true }
         for section in sections {
             switch section {
             case .continueWatching:
@@ -279,7 +302,7 @@ struct HomeView: View {
         }
         #endif
 
-        ForEach(settingsManager?.visibleSections() ?? HomeSectionItem.defaultOrder.filter { HomeSectionItem.defaultVisibility[$0] == true }) { section in
+        ForEach(presentationSettings?.visibleSections ?? HomeSectionItem.defaultOrder.filter { HomeSectionItem.defaultVisibility[$0] == true }) { section in
             sectionView(for: section)
         }
 
@@ -396,7 +419,7 @@ struct HomeView: View {
         let gridSpacing: CGFloat = 8
         #endif
 
-        let shortcuts = settingsManager?.visibleShortcuts() ?? HomeShortcutItem.defaultOrder
+        let shortcuts = presentationSettings?.visibleShortcuts ?? HomeShortcutItem.defaultOrder
 
         return LazyVGrid(columns: columns, spacing: gridSpacing) {
             ForEach(Array(shortcuts.enumerated()), id: \.element.id) { index, shortcut in
@@ -423,14 +446,14 @@ struct HomeView: View {
     /// position from the selected palette (custom colors and accent color when
     /// applicable).
     private func colorfulColor(atPosition position: Int) -> Color {
-        let palette = settingsManager?.homeShortcutColorfulPalette ?? .accent
-        let customHex = settingsManager?.homeShortcutCustomPaletteColors ?? []
+        let palette = presentationSettings?.shortcutColorfulPalette ?? .accent
+        let customHex = presentationSettings?.shortcutCustomPaletteColors ?? []
         let accentColor = settingsManager?.resolvedAccentColor ?? .accentColor
         return HomeShortcutColorfulPalette.color(forPosition: position, palette: palette, customHex: customHex, accentColor: accentColor)
     }
 
     private var shortcutsList: some View {
-        let shortcuts = settingsManager?.visibleShortcuts() ?? HomeShortcutItem.defaultOrder
+        let shortcuts = presentationSettings?.visibleShortcuts ?? HomeShortcutItem.defaultOrder
         return ForEach(Array(shortcuts.enumerated()), id: \.element) { index, shortcut in
             VideoListRow(
                 isLast: index == shortcuts.count - 1,
@@ -454,9 +477,11 @@ struct HomeView: View {
     private func hideShortcutButton(for shortcut: HomeShortcutItem) -> some View {
         Button {
             guard let settingsManager else { return }
-            var visibility = settingsManager.homeShortcutVisibility
+            var presentation = settingsManager.presentationSettings(for: customizationContext)
+            var visibility = presentation.shortcutVisibility
             visibility[shortcut] = false
-            settingsManager.homeShortcutVisibility = visibility
+            presentation.shortcutVisibility = visibility
+            settingsManager.setPresentationSettings(presentation, for: customizationContext)
         } label: {
             Label(AppLocalization.string("home.hideShortcut"), systemImage: "eye.slash")
         }
@@ -1091,11 +1116,12 @@ struct HomeView: View {
                 appEnvironment?.navigationCoordinator.navigate(to: .continueWatching)
             }
 
-            if sectionLayout == .grid {
+            if sectionLayout != .list {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: continueWatchingQueueSource,
                     sourceLabel: AppLocalization.string("queue.source.continueWatching"),
+                    layout: sectionLayout,
                     loadMoreVideos: loadMoreContinueWatchingCallback
                 )
             } else {
@@ -1149,11 +1175,12 @@ struct HomeView: View {
                 appEnvironment?.navigationCoordinator.navigate(to: .subscriptionsFeed)
             }
 
-            if sectionLayout == .grid {
+            if sectionLayout != .list {
                 HomeHorizontalCards(
                     videos: limitedVideos,
                     queueSource: feedQueueSource,
                     sourceLabel: AppLocalization.string("queue.source.subscriptions"),
+                    layout: sectionLayout,
                     loadMoreVideos: loadMoreFeedCallback
                 )
             } else {
@@ -1192,11 +1219,12 @@ struct HomeView: View {
                 appEnvironment?.navigationCoordinator.navigate(to: .bookmarks)
             }
 
-            if sectionLayout == .grid {
+            if sectionLayout != .list {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: recentBookmarksQueueSource,
                     sourceLabel: AppLocalization.string("queue.source.bookmarks"),
+                    layout: sectionLayout,
                     loadMoreVideos: loadMoreRecentBookmarksCallback
                 )
             } else {
@@ -1251,11 +1279,12 @@ struct HomeView: View {
                 appEnvironment?.navigationCoordinator.navigate(to: .history)
             }
 
-            if sectionLayout == .grid {
+            if sectionLayout != .list {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: recentHistoryQueueSource,
                     sourceLabel: AppLocalization.string("queue.source.history"),
+                    layout: sectionLayout,
                     loadMoreVideos: loadMoreRecentHistoryCallback
                 )
             } else {
@@ -1314,11 +1343,12 @@ struct HomeView: View {
                 appEnvironment?.navigationCoordinator.navigate(to: .downloads)
             }
 
-            if sectionLayout == .grid {
+            if sectionLayout != .list {
                 HomeHorizontalCards(
                     videos: videoList,
                     queueSource: .manual,
                     sourceLabel: AppLocalization.string("queue.source.downloads"),
+                    layout: sectionLayout,
                     loadMoreVideos: loadMoreRecentDownloadsCallback
                 )
             } else {
@@ -1402,11 +1432,12 @@ struct HomeView: View {
                 #endif
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                if sectionLayout == .grid {
+                if sectionLayout != .list {
                     HomeHorizontalCards(
                         videos: limitedVideos,
                         queueSource: instanceQueueSource(instanceID: instanceID, contentType: contentType),
                         sourceLabel: contentType.localizedTitle,
+                        layout: sectionLayout,
                         loadMoreVideos: loadMoreInstanceContentCallback
                     )
                 } else {
@@ -1518,7 +1549,7 @@ struct HomeView: View {
         guard let appEnvironment else { return }
 
         // Get all visible instance content sections from settings
-        let visibleSections = settingsManager?.visibleSections() ?? []
+        let visibleSections = presentationSettings?.visibleSections ?? []
 
         for section in visibleSections {
             if case .instanceContent(let instanceID, let contentType) = section {

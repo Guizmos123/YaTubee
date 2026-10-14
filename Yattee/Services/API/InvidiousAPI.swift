@@ -122,6 +122,15 @@ actor InvidiousAPI: InstanceAPI {
         return response.toChannel(baseURL: instance.url)
     }
 
+    func channelLatestVideos(id: String, instance: Instance) async throws -> [Video] {
+        let endpoint = GenericEndpoint.get("/api/v1/channels/\(id)")
+        let response: InvidiousChannel = try await httpClient.fetch(endpoint, baseURL: instance.url)
+        guard let latestVideos = response.latestVideos else {
+            throw APIError.decodingError("Invidious channel response omitted latestVideos")
+        }
+        return latestVideos.map { $0.toVideo(baseURL: instance.url) }
+    }
+
     func channelVideos(id: String, instance: Instance, continuation: String?) async throws -> ChannelVideosPage {
         var query: [String: String] = [:]
         if let continuation {
@@ -1438,6 +1447,7 @@ private struct InvidiousChannel: Decodable, Sendable {
     let authorThumbnails: [InvidiousThumbnail]?
     let authorBanners: [InvidiousThumbnail]?
     let authorVerified: Bool?
+    let latestVideos: [InvidiousVideo]?
 
     nonisolated func toChannel(baseURL: URL) -> Channel {
         Channel(

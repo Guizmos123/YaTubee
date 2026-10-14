@@ -81,6 +81,7 @@ enum SettingsKey: String, CaseIterable {
     case homeSectionVisibility
     case homeSectionItemsLimit
     case homeSectionLayout
+    case moreHomePresentation
 
     // Top Shelf (tvOS)
     case topShelfSections
@@ -141,6 +142,12 @@ enum SettingsKey: String, CaseIterable {
     // Onboarding
     case onboardingCompleted
 
+    // Notifications and badges (local-only)
+    case notificationsIncludeShorts
+    case videoTabBadgeEnabled
+    case appIconBadgeEnabled
+    case badgesIncludeShorts
+
     /// Whether this key should have platform-specific prefixes.
     /// Platform-specific keys are stored under a `iOS.` / `macOS.` / `tvOS.` prefix
     /// in both UserDefaults and iCloud, so each platform family syncs independently.
@@ -153,6 +160,7 @@ enum SettingsKey: String, CaseIterable {
              .homeShortcutOrder, .homeShortcutVisibility, .homeShortcutLayout, .homeShortcutCardStyle,
              .homeShortcutCardColor, .homeShortcutColorfulPalette, .homeShortcutCustomPaletteColors,
              .homeSectionOrder, .homeSectionVisibility, .homeSectionItemsLimit, .homeSectionLayout,
+             .moreHomePresentation,
              // Top Shelf — tvOS only
              .topShelfSections,
              // Tab bar (compact size class) layout
@@ -180,7 +188,9 @@ enum SettingsKey: String, CaseIterable {
         case .appLanguage,
              .remoteControlCustomDeviceName, .remoteControlHideWhenBackgrounded,
              .activeControlsPresetID,  // Per-device preset selection
-             .onboardingCompleted:  // Per-device onboarding state
+             .onboardingCompleted,  // Per-device onboarding state
+             .notificationsIncludeShorts, .videoTabBadgeEnabled,
+             .appIconBadgeEnabled, .badgesIncludeShorts:
             return true
         default:
             return false

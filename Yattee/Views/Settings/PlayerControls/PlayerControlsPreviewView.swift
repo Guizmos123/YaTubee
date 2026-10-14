@@ -7,6 +7,23 @@
 
 import SwiftUI
 
+// MARK: - Shared Preview Background
+
+/// Background shared by the player controls and mini-player previews in Settings.
+struct PlayerControlsPreviewBackdrop: View {
+    let opacity: Double
+
+    var body: some View {
+        Image("PlayerControlsPreviewBackground")
+            .resizable()
+            .scaledToFill()
+            .clipped()
+            .overlay {
+                Color.black.opacity(opacity)
+            }
+    }
+}
+
 // MARK: - Preview Theme Modifier
 
 /// A view modifier that applies the controls theme color scheme to preview.
@@ -148,15 +165,8 @@ struct PlayerControlsPreviewView: View {
     @ViewBuilder
     private func previewContentView(width: CGFloat, height: CGFloat) -> some View {
         // Video background
-        Image("PlayerControlsPreviewBackground")
-            .resizable()
-            .scaledToFill()
+        PlayerControlsPreviewBackdrop(opacity: layout.globalSettings.controlsFadeOpacity)
             .frame(width: width, height: height)
-            .clipped()
-            .overlay {
-                // Solid color shade matching the controls opacity setting
-                Color.black.opacity(layout.globalSettings.controlsFadeOpacity)
-            }
             .overlay {
                 // Controls overlay using ZStack for precise positioning
                 ZStack {
@@ -253,19 +263,23 @@ struct PlayerControlsPreviewView: View {
     }
 
     /// Center button sizes - matches PlayerControlsView hardcoded values
+    private var previewCenterVisualScale: CGFloat {
+        layout.globalSettings.buttonSize == .small ? 0.7 : 1
+    }
+
     private var previewSeekButtonSize: CGFloat {
         let hasBackground = layout.globalSettings.buttonBackground.glassStyle != nil
-        return (hasBackground ? 64 : 56) * previewScale
+        return (hasBackground ? 64 : 56) * previewScale * previewCenterVisualScale
     }
 
     private var previewPlayButtonSize: CGFloat {
         let hasBackground = layout.globalSettings.buttonBackground.glassStyle != nil
-        return (hasBackground ? 82 : 72) * previewScale
+        return (hasBackground ? 82 : 72) * previewScale * previewCenterVisualScale
     }
 
     /// Font sizes for center buttons - matches PlayerControlsView hardcoded values
-    private var previewSeekFontSize: CGFloat { 36 * previewScale }
-    private var previewPlayFontSize: CGFloat { 56 * previewScale }
+    private var previewSeekFontSize: CGFloat { 36 * previewScale * previewCenterVisualScale }
+    private var previewPlayFontSize: CGFloat { 56 * previewScale * previewCenterVisualScale }
 
     private var previewButtonSpacing: CGFloat { 8 }
 

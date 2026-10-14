@@ -395,6 +395,26 @@ extension SettingsManager {
         }
     }
 
+    private static let localFeedSourcePreferenceKey = "localFeedSourcePreference"
+
+    var localFeedSourcePreference: LocalFeedSourcePreference {
+        get {
+            if let cached = _localFeedSourcePreference { return cached }
+            guard let data = localDefaults.data(forKey: Self.localFeedSourcePreferenceKey),
+                  let preference = try? JSONDecoder().decode(LocalFeedSourcePreference.self, from: data) else {
+                return .automatic
+            }
+            _localFeedSourcePreference = preference
+            return preference
+        }
+        set {
+            _localFeedSourcePreference = newValue
+            if let data = try? JSONEncoder().encode(newValue) {
+                localDefaults.set(data, forKey: Self.localFeedSourcePreferenceKey)
+            }
+        }
+    }
+
     // MARK: - Notification Settings
 
     /// Whether background notifications are enabled. Default is false.
@@ -439,6 +459,55 @@ extension SettingsManager {
         }
     }
 
+    /// Whether confirmed Shorts are eligible for notifications. Default is false.
+    /// The notification pipeline will consume this preference in a later step.
+    var notificationsIncludeShorts: Bool {
+        get {
+            if let cached = _notificationsIncludeShorts { return cached }
+            return bool(for: .notificationsIncludeShorts, default: false)
+        }
+        set {
+            _notificationsIncludeShorts = newValue
+            set(newValue, for: .notificationsIncludeShorts)
+        }
+    }
+
+    /// Whether the Videos tab should display its future novelty badge. Default is true.
+    var videoTabBadgeEnabled: Bool {
+        get {
+            if let cached = _videoTabBadgeEnabled { return cached }
+            return bool(for: .videoTabBadgeEnabled, default: true)
+        }
+        set {
+            _videoTabBadgeEnabled = newValue
+            set(newValue, for: .videoTabBadgeEnabled)
+        }
+    }
+
+    /// Whether the app icon should display its future novelty badge. Default is false.
+    var appIconBadgeEnabled: Bool {
+        get {
+            if let cached = _appIconBadgeEnabled { return cached }
+            return bool(for: .appIconBadgeEnabled, default: false)
+        }
+        set {
+            _appIconBadgeEnabled = newValue
+            set(newValue, for: .appIconBadgeEnabled)
+        }
+    }
+
+    /// Whether confirmed Shorts are eligible for future badges. Default is false.
+    var badgesIncludeShorts: Bool {
+        get {
+            if let cached = _badgesIncludeShorts { return cached }
+            return bool(for: .badgesIncludeShorts, default: false)
+        }
+        set {
+            _badgesIncludeShorts = newValue
+            set(newValue, for: .badgesIncludeShorts)
+        }
+    }
+
     /// The last time background notification check was performed.
     /// This is separate from the main feed cache's lastUpdated timestamp.
     var lastBackgroundCheck: Date? {
@@ -461,6 +530,103 @@ extension SettingsManager {
         }
         set {
             localDefaults.set(newValue, forKey: "lastNotifiedVideoPerChannel")
+        }
+    }
+
+    /// Bounded ledger of videos whose notification outcome is final.
+    /// Values are commit timestamps. Existing installations continue to use
+    /// `lastNotifiedVideoPerChannel` as a compatibility deduplication source.
+    var processedNotificationVideos: [String: TimeInterval] {
+        get {
+            localDefaults.dictionary(forKey: "processedNotificationVideos") as? [String: TimeInterval] ?? [:]
+        }
+        set {
+            localDefaults.set(newValue, forKey: "processedNotificationVideos")
+        }
+    }
+
+    /// Bounded retry ledger for upcoming videos and failed submissions.
+    var pendingNotificationVideos: [String: TimeInterval] {
+        get {
+            localDefaults.dictionary(forKey: "pendingNotificationVideos") as? [String: TimeInterval] ?? [:]
+        }
+        set {
+            localDefaults.set(newValue, forKey: "pendingNotificationVideos")
+        }
+    }
+
+    /// Bounded payloads for notification submissions that must be retried even
+    /// when the originating video has disappeared from a later feed response.
+    var pendingNotificationRecords: [String: PendingNotificationRecord] {
+        get {
+            guard let data = localDefaults.data(forKey: "pendingNotificationRecords"),
+                  let records = try? JSONDecoder().decode(
+                      [String: PendingNotificationRecord].self,
+                      from: data
+                  ) else {
+                return [:]
+            }
+            return records
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            localDefaults.set(data, forKey: "pendingNotificationRecords")
+        }
+    }
+
+    /// Transactional notification state partitioned by subscription account.
+    /// Legacy global values are copied once into the first active scope and are
+    /// intentionally retained for rollback compatibility.
+    func notificationRefreshState(for scope: String) -> NotificationRefreshPersistentState {
+        var states = notificationRefreshStates
+        if let state = states[scope] {
+            return state
+        }
+
+        let state: NotificationRefreshPersistentState
+        if states.isEmpty {
+            state = NotificationRefreshPersistentState(
+                lastCheck: lastBackgroundCheck,
+                processedVideos: processedNotificationVideos,
+                pendingVideos: pendingNotificationVideos,
+                pendingRecords: pendingNotificationRecords
+            )
+            states[scope] = state
+            notificationRefreshStates = states
+        } else {
+            state = NotificationRefreshPersistentState(
+                lastCheck: nil,
+                processedVideos: [:],
+                pendingVideos: [:],
+                pendingRecords: [:]
+            )
+        }
+        return state
+    }
+
+    func setNotificationRefreshState(
+        _ state: NotificationRefreshPersistentState,
+        for scope: String
+    ) {
+        var states = notificationRefreshStates
+        states[scope] = state
+        notificationRefreshStates = states
+    }
+
+    private var notificationRefreshStates: [String: NotificationRefreshPersistentState] {
+        get {
+            guard let data = localDefaults.data(forKey: "notificationRefreshStates.v2"),
+                  let states = try? JSONDecoder().decode(
+                      [String: NotificationRefreshPersistentState].self,
+                      from: data
+                  ) else {
+                return [:]
+            }
+            return states
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            localDefaults.set(data, forKey: "notificationRefreshStates.v2")
         }
     }
 

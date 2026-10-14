@@ -597,7 +597,8 @@ struct MacOSControlsSectionRenderer: View {
                             author: video.author,
                             size: context == .overlay ? 36 : frameSize * 0.9,
                             yatteeServerURL: actions.yatteeServerURL,
-                            source: video.id.source
+                            source: video.id.source,
+                            authHeader: actions.yatteeServerAuthHeader
                         )
                     }
 

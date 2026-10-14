@@ -290,6 +290,7 @@ struct MacOSControlBar: View {
                 currentAudioStream: nil,
                 isAutoPlayNextEnabled: true,
                 yatteeServerURL: nil,
+                yatteeServerAuthHeader: nil,
                 deArrowBrandingProvider: nil
             ),
             onSeek: { _ in }

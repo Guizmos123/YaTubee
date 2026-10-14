@@ -11,6 +11,7 @@ import Foundation
 enum TabBarItem: String, CaseIterable, Codable, Identifiable, Sendable {
     case subscriptions
     case channels
+    case more
     case bookmarks
     case playlists
     case history
@@ -23,12 +24,12 @@ enum TabBarItem: String, CaseIterable, Codable, Identifiable, Sendable {
 
     /// Default order for tab bar items.
     static var defaultOrder: [TabBarItem] {
-        [.subscriptions, .channels, .bookmarks, .playlists, .history, .continueWatching, .sources, .downloads, .settings]
+        [.subscriptions, .channels, .more, .bookmarks, .playlists, .history, .continueWatching, .sources, .downloads, .settings]
     }
 
     /// Default visibility (only subscriptions visible by default).
     static var defaultVisibility: [TabBarItem: Bool] {
-        [.subscriptions: false, .channels: false, .bookmarks: false, .playlists: false, .history: false, .downloads: true, .sources: true, .settings: false, .continueWatching: false]
+        [.subscriptions: false, .channels: false, .more: true, .bookmarks: false, .playlists: false, .history: false, .downloads: true, .sources: true, .settings: false, .continueWatching: false]
     }
 
     /// SF Symbol icon name.
@@ -36,6 +37,7 @@ enum TabBarItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .subscriptions: "play.square.stack.fill"
         case .channels: "person.crop.rectangle.stack.fill"
+        case .more: "ellipsis"
         case .bookmarks: "bookmark.fill"
         case .playlists: "list.bullet.rectangle"
         case .history: "clock"
@@ -51,6 +53,7 @@ enum TabBarItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .subscriptions: AppLocalization.string("tabBar.item.subscriptions")
         case .channels: AppLocalization.string("tabBar.item.channels")
+        case .more: AppLocalization.string("tabs.more")
         case .bookmarks: AppLocalization.string("tabBar.item.bookmarks")
         case .playlists: AppLocalization.string("tabBar.item.playlists")
         case .history: AppLocalization.string("tabBar.item.history")

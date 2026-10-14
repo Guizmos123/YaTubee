@@ -152,6 +152,13 @@ struct VideoInfoView: View {
         instancesManager?.yatteeServerInstances.first { $0.isEnabled }?.url
     }
 
+    private var yatteeServerAuthHeader: String? {
+        guard let server = instancesManager?.yatteeServerInstances.first(where: { $0.isEnabled }) else {
+            return nil
+        }
+        return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: server)
+    }
+
     /// Whether this video is from YouTube (global YouTube provider).
     private var isYouTube: Bool {
         guard let video = displayedVideo else { return false }
@@ -1029,7 +1036,8 @@ struct VideoInfoView: View {
                 author: enrichedAuthor,
                 size: 40,
                 yatteeServerURL: yatteeServerURL,
-                source: video.authorSource
+                source: video.authorSource,
+                authHeader: yatteeServerAuthHeader
             )
 
             VStack(alignment: .leading, spacing: 2) {

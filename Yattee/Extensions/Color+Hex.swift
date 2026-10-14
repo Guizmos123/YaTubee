@@ -61,11 +61,29 @@ private struct HomeShortcutColorfulColorKey: EnvironmentKey {
     static let defaultValue: Color? = nil
 }
 
+private struct HomeShortcutCardStyleKey: EnvironmentKey {
+    static let defaultValue = HomeShortcutCardStyle.regular
+}
+
+private struct HomeShortcutCardColorKey: EnvironmentKey {
+    static let defaultValue = HomeShortcutCardColor.soft
+}
+
 extension EnvironmentValues {
     /// The colorful-style fill color resolved from the shortcut's grid position.
     /// When set, it overrides a card's fixed `colorfulColor`.
     var homeShortcutColorfulColor: Color? {
         get { self[HomeShortcutColorfulColorKey.self] }
         set { self[HomeShortcutColorfulColorKey.self] = newValue }
+    }
+
+    var homeShortcutCardStyle: HomeShortcutCardStyle {
+        get { self[HomeShortcutCardStyleKey.self] }
+        set { self[HomeShortcutCardStyleKey.self] = newValue }
+    }
+
+    var homeShortcutCardColor: HomeShortcutCardColor {
+        get { self[HomeShortcutCardColorKey.self] }
+        set { self[HomeShortcutCardColorKey.self] = newValue }
     }
 }

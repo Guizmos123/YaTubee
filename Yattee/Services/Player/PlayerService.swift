@@ -10,6 +10,34 @@ import AVFoundation
 import Combine
 import SwiftUI
 
+#if os(iOS) || os(tvOS)
+/// Serializes potentially blocking AVAudioSession configuration away from the main actor.
+/// AVAudioSession's async activation API is only available on iOS/tvOS 27+, while YaTubee
+/// supports iOS/tvOS 18, so the synchronous calls are bridged through a dedicated queue.
+final class AudioSessionCoordinator: @unchecked Sendable {
+    static let shared = AudioSessionCoordinator()
+
+    private let queue = DispatchQueue(label: "com.app.yatubee.audio-session")
+
+    private init() {}
+
+    func activatePlaybackSession() async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let session = AVAudioSession.sharedInstance()
+                    try session.setCategory(.playback, mode: .moviePlayback, options: [])
+                    try session.setActive(true, options: [])
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+}
+#endif
+
 /// Protocol for player service delegate callbacks.
 @MainActor
 protocol PlayerServiceDelegate: AnyObject {
@@ -253,7 +281,7 @@ final class PlayerService {
         }
 
         // Set up audio session when playback actually starts (not at app launch)
-        setupAudioSession()
+        await setupAudioSession()
 
         let isNewVideo = state.currentVideo?.id != video.id
 
@@ -503,7 +531,7 @@ final class PlayerService {
             #if os(iOS) || os(tvOS)
             if let mpvBackend = backend as? MPVBackend {
                 LoggingService.shared.logPlayer("Ensuring audio session active before Now Playing setup")
-                mpvBackend.ensureAudioSessionActive()
+                await mpvBackend.ensureAudioSessionActive()
             }
             #endif
 
@@ -2007,12 +2035,10 @@ final class PlayerService {
         }
     }
 
-    private func setupAudioSession() {
+    private func setupAudioSession() async {
         #if os(iOS) || os(tvOS)
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .moviePlayback)
-            try session.setActive(true)
+            try await AudioSessionCoordinator.shared.activatePlaybackSession()
 
             #if os(tvOS)
             nowPlayingService.refreshSystemControlsForCurrentAudioRoute(reason: "audio session activation")
@@ -2027,7 +2053,7 @@ final class PlayerService {
             // Register for audio interruption notifications (phone calls, alarms, etc.)
             NotificationCenter.default.addObserver(
                 forName: AVAudioSession.interruptionNotification,
-                object: session,
+                object: AVAudioSession.sharedInstance(),
                 queue: .main
             ) { [weak self] notification in
                 // Extract values before async boundary to satisfy Sendable requirements
@@ -2040,7 +2066,7 @@ final class PlayerService {
 
                 Task { @MainActor [weak self] in
                     LoggingService.shared.debug("Audio interruption notification received, type: \(type.rawValue), options: \(optionsValue ?? 0)", category: .player)
-                    self?.handleAudioSessionInterruption(type: type, optionsValue: optionsValue)
+                    await self?.handleAudioSessionInterruption(type: type, optionsValue: optionsValue)
                 }
             }
         } catch {
@@ -2050,7 +2076,7 @@ final class PlayerService {
     }
 
     #if os(iOS) || os(tvOS)
-    private func handleAudioSessionInterruption(type: AVAudioSession.InterruptionType, optionsValue: UInt?) {
+    private func handleAudioSessionInterruption(type: AVAudioSession.InterruptionType, optionsValue: UInt?) async {
         LoggingService.shared.debug("handleAudioSessionInterruption called, current playbackState: \(state.playbackState), wasInterrupted: \(wasInterrupted)", category: .player)
 
         switch type {
@@ -2075,7 +2101,7 @@ final class PlayerService {
                     LoggingService.shared.debug("Auto-resuming playback after interruption", category: .player)
                     // Reactivate audio session before resuming - iOS requires this after interruption
                     do {
-                        try AVAudioSession.sharedInstance().setActive(true)
+                        try await AudioSessionCoordinator.shared.activatePlaybackSession()
                         LoggingService.shared.debug("Audio session reactivated successfully", category: .player)
                     } catch {
                         LoggingService.shared.error("Failed to reactivate audio session: \(error.localizedDescription)", category: .player)

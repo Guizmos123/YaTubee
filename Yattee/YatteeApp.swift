@@ -62,7 +62,7 @@ struct YatteeApp: App {
 
         // Register background tasks early — Apple requires BGTaskScheduler.register()
         // to be called during the app launch sequence, before the run loop starts.
-        appEnvironment.backgroundRefreshManager.registerBackgroundTasks()
+        AppEnvironment.shared.backgroundRefreshManager.registerBackgroundTasks()
     }
 
     var body: some Scene {

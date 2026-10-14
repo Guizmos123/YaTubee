@@ -54,14 +54,23 @@ final class BackgroundRefreshManager {
 
     #if os(iOS)
     private func registerIOSBackgroundTask() {
-        BGTaskScheduler.shared.register(
+        let registered = BGTaskScheduler.shared.register(
             forTaskWithIdentifier: Self.backgroundTaskIdentifier,
             using: nil
         ) { [weak self] task in
             guard let task = task as? BGAppRefreshTask else { return }
             self?.handleIOSBackgroundTask(task)
         }
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.recordRegistration(registered)
+        LoggingService.shared.info(
+            "Registered iOS background task | success: \(registered)",
+            category: .notifications
+        )
+        refreshPendingTaskDiagnostics()
+        #else
         LoggingService.shared.info("Registered iOS background task", category: .notifications)
+        #endif
     }
 
     func scheduleIOSBackgroundRefresh() {
@@ -72,10 +81,20 @@ final class BackgroundRefreshManager {
 
         do {
             try BGTaskScheduler.shared.submit(request)
+            #if DEBUG
+            LoggingService.shared.info(
+                "Scheduled iOS background refresh | identifier: \(request.identifier) | earliestBeginDate: \(String(describing: request.earliestBeginDate))",
+                category: .notifications
+            )
+            #else
             LoggingService.shared.info("Scheduled iOS background refresh", category: .notifications)
+            #endif
         } catch {
             LoggingService.shared.logNotificationError("Failed to schedule background refresh", error: error)
         }
+        #if DEBUG
+        refreshPendingTaskDiagnostics()
+        #endif
     }
 
     func cancelIOSBackgroundRefresh() {
@@ -85,29 +104,70 @@ final class BackgroundRefreshManager {
     }
 
     private func handleIOSBackgroundTask(_ task: BGAppRefreshTask) {
+        let runID = UUID()
+        #if DEBUG
+        LoggingService.shared.info("iOS background task started | runID: \(runID.uuidString)", category: .notifications)
+        #else
         LoggingService.shared.info("iOS background task started", category: .notifications)
+        #endif
 
         // Schedule the next refresh immediately
         scheduleIOSBackgroundRefresh()
 
         // Create a task to perform the refresh
         let refreshTask = Task { @MainActor in
-            await backgroundRefresher.performBackgroundRefresh()
+            await backgroundRefresher.performBackgroundRefresh(origin: "BGTaskScheduler", runID: runID)
         }
 
         // Set expiration handler
         task.expirationHandler = {
+            #if DEBUG
+            LoggingService.shared.warning("iOS background task expired | runID: \(runID.uuidString)", category: .notifications)
+            Task { @MainActor in
+                NotificationPipelineDiagnostic.shared.recordExpiration(runID: runID)
+            }
+            #else
             LoggingService.shared.warning("iOS background task expired", category: .notifications)
+            #endif
             refreshTask.cancel()
         }
 
         // Wait for completion
         Task {
-            _ = await refreshTask.result
-            task.setTaskCompleted(success: !refreshTask.isCancelled)
-            LoggingService.shared.info("iOS background task completed", category: .notifications)
+            let succeeded = await refreshTask.value
+            task.setTaskCompleted(success: succeeded && !refreshTask.isCancelled)
+            #if DEBUG
+            LoggingService.shared.info(
+                "iOS background task completed | runID: \(runID.uuidString) | success: \(succeeded && !refreshTask.isCancelled)",
+                category: .notifications
+            )
+            #else
+            LoggingService.shared.info(
+                "iOS background task completed | success: \(succeeded && !refreshTask.isCancelled)",
+                category: .notifications
+            )
+            #endif
         }
     }
+
+    #if DEBUG
+    func refreshPendingTaskDiagnostics() {
+        BGTaskScheduler.shared.getPendingTaskRequests { requests in
+            let details = requests.map {
+                "\($0.identifier) | earliestBeginDate: \(String(describing: $0.earliestBeginDate))"
+            }
+            LoggingService.shared.debug(
+                "Pending iOS background requests | count: \(requests.count) | \(details.joined(separator: "; "))",
+                category: .notifications
+            )
+            Task { @MainActor in
+                NotificationPipelineDiagnostic.shared.recordPendingRequests(
+                    requests.map { (identifier: $0.identifier, earliestBeginDate: $0.earliestBeginDate) }
+                )
+            }
+        }
+    }
+    #endif
     #endif
 
     // MARK: - macOS Implementation
@@ -133,8 +193,8 @@ final class BackgroundRefreshManager {
 
             Task { @MainActor in
                 LoggingService.shared.info("macOS background activity started", category: .notifications)
-                await self.backgroundRefresher.performBackgroundRefresh()
-                completion(.finished)
+                let succeeded = await self.backgroundRefresher.performBackgroundRefresh(origin: "NSBackgroundActivityScheduler")
+                completion(succeeded ? .finished : .deferred)
                 LoggingService.shared.info("macOS background activity completed", category: .notifications)
             }
         }

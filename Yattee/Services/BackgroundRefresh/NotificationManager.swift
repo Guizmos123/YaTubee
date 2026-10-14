@@ -28,7 +28,19 @@ final class NotificationManager: NSObject {
     private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
 
     var isAuthorized: Bool {
-        authorizationStatus == .authorized || authorizationStatus == .provisional
+        Self.permitsNotificationSubmission(authorizationStatus)
+    }
+
+    /// Whether iOS permits this app to submit presentable local notifications.
+    static func permitsNotificationSubmission(_ status: UNAuthorizationStatus) -> Bool {
+        switch status {
+        case .authorized, .provisional, .ephemeral:
+            return true
+        case .denied, .notDetermined:
+            return false
+        @unknown default:
+            return false
+        }
     }
 
     /// UserDefaults key for pending navigation flag.
@@ -81,15 +93,24 @@ final class NotificationManager: NSObject {
     // MARK: - Notification Scheduling
 
     /// Sends a single combined notification for new videos.
-    func sendNotification(for videos: [(video: Video, channelName: String)]) async {
+    @discardableResult
+    func sendNotification(
+        for videos: [(video: Video, channelName: String)],
+        diagnosticRunID: UUID? = nil
+    ) async -> Bool {
         await refreshAuthorizationStatus()
 
         guard isAuthorized else {
             LoggingService.shared.debug("Skipping notification: not authorized", category: .notifications)
-            return
+            #if DEBUG
+            if let diagnosticRunID {
+                NotificationPipelineDiagnostic.shared.recordSubmission("rejected:notAuthorized", runID: diagnosticRunID)
+            }
+            #endif
+            return false
         }
 
-        guard !videos.isEmpty else { return }
+        guard !videos.isEmpty else { return false }
 
         let content = UNMutableNotificationContent()
         content.sound = .default
@@ -102,16 +123,13 @@ final class NotificationManager: NSObject {
             let video = videos[0].video
             let channelName = videos[0].channelName
             content.title = channelName
-            content.body = String(
-                format: NSLocalizedString("notification.singleVideo %@", comment: "Notification body for single video"),
-                video.title
-            )
+            content.body = localizedFormat("notification.singleVideo %@", video.title)
         } else if totalCount <= 3 {
             // 2-3 videos: List each video as "Author: Title" on separate lines
             content.title = AppLocalization.string("notification.newVideos.title")
             let videoLines = videos.map { item in
-                String(
-                    format: NSLocalizedString("notification.videoItem %@ %@", comment: "Video item: Author: Title"),
+                localizedFormat(
+                    "notification.videoItem %@ %@",
                     item.channelName,
                     item.video.title
                 )
@@ -125,8 +143,8 @@ final class NotificationManager: NSObject {
             if channelCount == 1, let (channelName, channelVideos) = groupedByChannel.first {
                 // Multiple videos from one channel: "4 new videos from X"
                 content.title = AppLocalization.string("notification.newVideos.title")
-                content.body = String(
-                    format: NSLocalizedString("notification.multipleVideosOneChannel %lld %@", comment: "Multiple videos from one channel"),
+                content.body = localizedFormat(
+                    "notification.multipleVideosOneChannel %lld %@",
                     channelVideos.count,
                     channelName
                 )
@@ -139,16 +157,16 @@ final class NotificationManager: NSObject {
                     .map { $0.key }
 
                 if channelNames.count == 2 {
-                    content.body = String(
-                        format: NSLocalizedString("notification.twoChannels %@ %@", comment: "Two channels notification"),
+                    content.body = localizedFormat(
+                        "notification.twoChannels %@ %@",
                         channelNames[0],
                         channelNames[1]
                     )
                 } else {
                     let allButLast = channelNames.dropLast().joined(separator: ", ")
                     let last = channelNames.last ?? ""
-                    content.body = String(
-                        format: NSLocalizedString("notification.multipleChannels %@ %@", comment: "Multiple channels notification"),
+                    content.body = localizedFormat(
+                        "notification.multipleChannels %@ %@",
                         allButLast,
                         last
                     )
@@ -166,8 +184,23 @@ final class NotificationManager: NSObject {
             try await UNUserNotificationCenter.current().add(request)
             let uniqueChannels = Set(videos.map { $0.channelName }).count
             LoggingService.shared.info("Sent notification for \(videos.count) videos from \(uniqueChannels) channels", category: .notifications)
+            #if DEBUG
+            if let diagnosticRunID {
+                NotificationPipelineDiagnostic.shared.recordSubmission("accepted", runID: diagnosticRunID)
+            }
+            #endif
+            return true
         } catch {
             LoggingService.shared.logNotificationError("Failed to schedule notification", error: error)
+            #if DEBUG
+            if let diagnosticRunID {
+                NotificationPipelineDiagnostic.shared.recordSubmission(
+                    "error:\(String(describing: type(of: error)))",
+                    runID: diagnosticRunID
+                )
+            }
+            #endif
+            return false
         }
     }
 
@@ -184,10 +217,7 @@ final class NotificationManager: NSObject {
 
         let content = UNMutableNotificationContent()
         content.title = "Test Channel"
-        content.body = String(
-            format: NSLocalizedString("notification.singleVideo %@", comment: ""),
-            "Test Video Title"
-        )
+        content.body = localizedFormat("notification.singleVideo %@", "Test Video Title")
         content.sound = .default
         content.categoryIdentifier = Self.notificationCategoryIdentifier
 
@@ -212,7 +242,7 @@ final class NotificationManager: NSObject {
 
         let refresher = BackgroundFeedRefresher(notificationManager: self)
         refresher.setAppEnvironment(appEnvironment)
-        await refresher.performBackgroundRefresh()
+        await refresher.performBackgroundRefresh(origin: "manualDebug")
 
         LoggingService.shared.info("Manual background refresh completed", category: .notifications)
     }
@@ -233,6 +263,17 @@ final class NotificationManager: NSObject {
         )
 
         UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
+    private func localizedFormat(
+        _ key: String.LocalizationValue,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: AppLocalization.string(key),
+            locale: AppLocalization.selectedLocale,
+            arguments: arguments
+        )
     }
     #endif
 }

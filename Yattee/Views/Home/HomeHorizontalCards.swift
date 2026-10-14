@@ -2,17 +2,17 @@
 //  HomeHorizontalCards.swift
 //  Yattee
 //
-//  Horizontal shelf of video cards for Home sections in grid layout mode.
+//  Horizontal shelf of video cards for Home section card layouts.
 //
 
 import SwiftUI
 
-/// A horizontally scrolling row of `VideoCardView` cards used by Home sections
-/// when `HomeSectionLayout.grid` is selected.
+/// A horizontally scrolling row of `VideoCardView` cards used by Home sections.
 struct HomeHorizontalCards: View {
     let videos: [Video]
     let queueSource: QueueSource
     let sourceLabel: String
+    var layout: HomeSectionLayout = .grid
     var loadMoreVideos: LoadMoreVideosCallback? = nil
 
     #if os(tvOS)
@@ -27,12 +27,25 @@ struct HomeHorizontalCards: View {
     private let verticalPadding: CGFloat = 8
     #endif
 
+    private var cardSpacing: CGFloat {
+        layout == .large ? 12 : spacing
+    }
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .top, spacing: spacing) {
+            LazyHStack(alignment: .top, spacing: cardSpacing) {
                 ForEach(Array(videos.enumerated()), id: \.element.id) { index, video in
-                    VideoCardView(video: video, isCompact: true)
-                        .frame(width: cardWidth, height: cardHeight, alignment: .top)
+                    Group {
+                        if layout == .large {
+                            VideoCardView(video: video)
+                                .containerRelativeFrame(.horizontal) { availableWidth, _ in
+                                    availableWidth * 0.8
+                                }
+                        } else {
+                            VideoCardView(video: video, isCompact: true)
+                                .frame(width: cardWidth, height: cardHeight, alignment: .top)
+                        }
+                    }
                         .tappableVideo(
                             video,
                             queueSource: queueSource,

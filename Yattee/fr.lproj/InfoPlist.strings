@@ -1,0 +1,2 @@
+/* Description de l’autorisation d’accès au réseau local */
+"NSLocalNetworkUsageDescription" = "YaTubee utilise le réseau local pour détecter et contrôler la lecture sur d’autres appareils YaTubee.";

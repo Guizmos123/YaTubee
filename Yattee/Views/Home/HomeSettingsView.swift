@@ -10,6 +10,12 @@ import SwiftUI
 struct HomeSettingsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
 
+    let customizationContext: HomeCustomizationContext
+
+    init(customizationContext: HomeCustomizationContext = .home) {
+        self.customizationContext = customizationContext
+    }
+
     // Local state for editing (copied from settings on appear, saved on dismiss)
     @State private var shortcutLayout: HomeShortcutLayout = .cards
     @State private var shortcutCardStyle: HomeShortcutCardStyle = .regular
@@ -326,25 +332,44 @@ struct HomeSettingsView: View {
         guard let settings = settingsManager,
               let env = appEnvironment else { return }
 
-        shortcutLayout = settings.homeShortcutLayout
-        shortcutCardStyle = settings.homeShortcutCardStyle
-        shortcutCardColor = settings.homeShortcutCardColor
-        shortcutColorfulPalette = settings.homeShortcutColorfulPalette
-        shortcutCustomPaletteColors = settings.homeShortcutCustomPaletteColors
-        shortcutOrder = settings.homeShortcutOrder
-        shortcutVisibility = settings.homeShortcutVisibility
-        sectionOrder = settings.homeSectionOrder
-        sectionVisibility = settings.homeSectionVisibility
-        sectionItemsLimit = settings.homeSectionItemsLimit
-        sectionLayout = settings.homeSectionLayout
+        let presentation = settings.presentationSettings(for: customizationContext)
+        shortcutLayout = presentation.shortcutLayout
+        shortcutCardStyle = presentation.shortcutCardStyle
+        shortcutCardColor = presentation.shortcutCardColor
+        shortcutColorfulPalette = presentation.shortcutColorfulPalette
+        shortcutCustomPaletteColors = presentation.shortcutCustomPaletteColors
+        shortcutOrder = presentation.shortcutOrder
+        shortcutVisibility = presentation.shortcutVisibility
+        sectionOrder = presentation.sectionOrder
+        sectionVisibility = presentation.sectionVisibility
+        sectionItemsLimit = presentation.sectionItemsLimit
+        sectionLayout = presentation.sectionLayout
 
         // Load available items
         let instances = env.instancesManager.instances
-        availableShortcutsByInstance = settings.allAvailableShortcuts(instances: instances)
-        availableSectionsByInstance = settings.allAvailableSections(instances: instances)
+        availableShortcutsByInstance = instances.compactMap { instance in
+            let existingIDs = Set(shortcutOrder.map(\.id))
+            let cards = settings.availableContentTypes(for: instance).compactMap { contentType in
+                let card = HomeShortcutItem.instanceContent(instanceID: instance.id, contentType: contentType)
+                return existingIDs.contains(card.id) ? nil : card
+            }
+            return cards.isEmpty ? nil : (instance, cards)
+        }
+        availableSectionsByInstance = instances.compactMap { instance in
+            let existingIDs = Set(sectionOrder.map(\.id))
+            let sections = settings.availableContentTypes(for: instance).compactMap { contentType in
+                let section = HomeSectionItem.instanceContent(instanceID: instance.id, contentType: contentType)
+                return existingIDs.contains(section.id) ? nil : section
+            }
+            return sections.isEmpty ? nil : (instance, sections)
+        }
 
         let sources = env.mediaSourcesManager.sources
-        availableShortcutsByMediaSource = settings.allAvailableMediaSourceShortcuts(sources: sources)
+        let existingShortcutIDs = Set(shortcutOrder.map(\.id))
+        availableShortcutsByMediaSource = sources.compactMap { source in
+            let card = HomeShortcutItem.mediaSource(sourceID: source.id)
+            return existingShortcutIDs.contains(card.id) ? nil : (source, [card])
+        }
     }
 
     private func saveSettingsIfLoaded() {
@@ -354,17 +379,22 @@ struct HomeSettingsView: View {
 
     private func saveSettings() {
         guard let settings = settingsManager else { return }
-        settings.homeShortcutLayout = shortcutLayout
-        settings.homeShortcutCardStyle = shortcutCardStyle
-        settings.homeShortcutCardColor = shortcutCardColor
-        settings.homeShortcutColorfulPalette = shortcutColorfulPalette
-        settings.homeShortcutCustomPaletteColors = shortcutCustomPaletteColors
-        settings.homeShortcutOrder = shortcutOrder
-        settings.homeShortcutVisibility = shortcutVisibility
-        settings.homeSectionOrder = sectionOrder
-        settings.homeSectionVisibility = sectionVisibility
-        settings.homeSectionItemsLimit = sectionItemsLimit
-        settings.homeSectionLayout = sectionLayout
+        settings.setPresentationSettings(
+            HomePresentationSettings(
+                shortcutLayout: shortcutLayout,
+                shortcutCardStyle: shortcutCardStyle,
+                shortcutCardColor: shortcutCardColor,
+                shortcutColorfulPalette: shortcutColorfulPalette,
+                shortcutCustomPaletteColors: shortcutCustomPaletteColors,
+                shortcutOrder: shortcutOrder,
+                shortcutVisibility: shortcutVisibility,
+                sectionOrder: sectionOrder,
+                sectionVisibility: sectionVisibility,
+                sectionItemsLimit: sectionItemsLimit,
+                sectionLayout: sectionLayout
+            ),
+            for: customizationContext
+        )
     }
 
     // MARK: - Available Item Management
@@ -376,17 +406,7 @@ struct HomeSettingsView: View {
             shortcutVisibility[card] = true  // Visible by default
         }
         
-        // Persist to settings
-        switch card {
-        case .instanceContent(let instanceID, let contentType):
-            settingsManager?.addToHome(instanceID: instanceID, contentType: contentType, asCard: true)
-        case .mediaSource(let sourceID):
-            settingsManager?.addToHome(sourceID: sourceID, asCard: true)
-        default:
-            break
-        }
-        
-        // Reload available items
+        saveSettings()
         loadSettings()
     }
     
@@ -397,15 +417,7 @@ struct HomeSettingsView: View {
             sectionVisibility[section] = true  // Visible by default
         }
         
-        // Persist to settings
-        switch section {
-        case .instanceContent(let instanceID, let contentType):
-            settingsManager?.addToHome(instanceID: instanceID, contentType: contentType, asCard: false)
-        default:
-            break
-        }
-
-        // Reload available items
+        saveSettings()
         loadSettings()
     }
 
@@ -414,17 +426,12 @@ struct HomeSettingsView: View {
         shortcutOrder.removeAll { $0.id == card.id }
         shortcutVisibility.removeValue(forKey: card)
         
-        // Persist to settings
-        switch card {
-        case .instanceContent(let instanceID, let contentType):
-            settingsManager?.removeFromHome(instanceID: instanceID, contentType: contentType)
-        case .mediaSource(let sourceID):
-            settingsManager?.removeFromHome(sourceID: sourceID)
-        default:
-            break
+        if case .instanceContent(let instanceID, let contentType) = card {
+            let matchingSection = HomeSectionItem.instanceContent(instanceID: instanceID, contentType: contentType)
+            sectionOrder.removeAll { $0.id == matchingSection.id }
+            sectionVisibility.removeValue(forKey: matchingSection)
         }
-        
-        // Reload available items
+        saveSettings()
         loadSettings()
     }
     
@@ -433,15 +440,12 @@ struct HomeSettingsView: View {
         sectionOrder.removeAll { $0.id == section.id }
         sectionVisibility.removeValue(forKey: section)
         
-        // Persist to settings
-        switch section {
-        case .instanceContent(let instanceID, let contentType):
-            settingsManager?.removeFromHome(instanceID: instanceID, contentType: contentType)
-        default:
-            break
+        if case .instanceContent(let instanceID, let contentType) = section {
+            let matchingShortcut = HomeShortcutItem.instanceContent(instanceID: instanceID, contentType: contentType)
+            shortcutOrder.removeAll { $0.id == matchingShortcut.id }
+            shortcutVisibility.removeValue(forKey: matchingShortcut)
         }
-
-        // Reload available items
+        saveSettings()
         loadSettings()
     }
 

@@ -310,11 +310,17 @@ struct ControlsSectionRenderer: View {
         buttonSize.pointSize * 1.15
     }
 
+    /// Visual glass diameter. Small keeps the existing layout/tap frame while using a tighter bubble.
+    private var buttonGlassVisualSize: CGFloat {
+        buttonSize == .small ? 36 : buttonBackgroundSize
+    }
+
     // MARK: - Controls Lock Button
 
     @ViewBuilder
     private var controlsLockButton: some View {
         let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let visualFrameSize = buttonBackground.glassStyle != nil ? buttonGlassVisualSize : frameSize
 
         if isLocked {
             // Locked state: show progress ring, hold to unlock
@@ -322,15 +328,16 @@ struct ControlsSectionRenderer: View {
                 Image(systemName: "lock")
                     .font(.system(size: buttonSize.iconSize))
                     .foregroundStyle(.red)
-                    .frame(width: frameSize, height: frameSize)
+                    .frame(width: visualFrameSize, height: visualFrameSize)
                     .modifier(OptionalGlassBackgroundModifier(style: buttonBackground, theme: theme))
+                    .frame(width: frameSize, height: frameSize)
                     .overlay {
                         // Progress ring overlay - doesn't affect layout
                         Circle()
                             .trim(from: 0, to: unlockProgress)
                             .stroke(Color.white, lineWidth: 2)
                             .rotationEffect(.degrees(-90))
-                            .frame(width: frameSize + 4, height: frameSize + 4)
+                            .frame(width: visualFrameSize + 4, height: visualFrameSize + 4)
                             .opacity(unlockProgress > 0 ? 1 : 0)
                     }
                     .contentShape(buttonBackground.glassStyle != nil ? AnyShape(Circle()) : AnyShape(Rectangle()))
@@ -397,9 +404,10 @@ struct ControlsSectionRenderer: View {
             Image(systemName: systemImage)
                 .font(.system(size: buttonSize.iconSize))
                 .foregroundStyle(tint)
-                .frame(width: buttonBackgroundSize, height: buttonBackgroundSize)
+                .frame(width: buttonGlassVisualSize, height: buttonGlassVisualSize)
                 .glassBackground(glassStyle, in: .circle, fallback: .ultraThinMaterial, colorScheme: theme.colorScheme)
-                .contentShape(Circle())
+                .frame(width: buttonBackgroundSize, height: buttonBackgroundSize)
+                .contentShape(Rectangle())
         } else {
             Image(systemName: systemImage)
                 .font(.system(size: buttonSize.iconSize))
@@ -416,9 +424,10 @@ struct ControlsSectionRenderer: View {
             volumeImage
                 .font(.system(size: buttonSize.iconSize))
                 .foregroundStyle(tint)
-                .frame(width: buttonBackgroundSize, height: buttonBackgroundSize)
+                .frame(width: buttonGlassVisualSize, height: buttonGlassVisualSize)
                 .glassBackground(glassStyle, in: .circle, fallback: .ultraThinMaterial, colorScheme: theme.colorScheme)
-                .contentShape(Circle())
+                .frame(width: buttonBackgroundSize, height: buttonBackgroundSize)
+                .contentShape(Rectangle())
         } else {
             volumeImage
                 .font(.system(size: buttonSize.iconSize))
@@ -444,9 +453,10 @@ struct ControlsSectionRenderer: View {
             brightnessImage
                 .font(.system(size: buttonSize.iconSize))
                 .foregroundStyle(.white)
-                .frame(width: buttonBackgroundSize, height: buttonBackgroundSize)
+                .frame(width: buttonGlassVisualSize, height: buttonGlassVisualSize)
                 .glassBackground(glassStyle, in: .circle, fallback: .ultraThinMaterial, colorScheme: theme.colorScheme)
-                .contentShape(Circle())
+                .frame(width: buttonBackgroundSize, height: buttonBackgroundSize)
+                .contentShape(Rectangle())
         } else {
             brightnessImage
                 .font(.system(size: buttonSize.iconSize))
@@ -465,15 +475,17 @@ struct ControlsSectionRenderer: View {
     @ViewBuilder
     private var panelToggleButtonContent: some View {
         let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let visualFrameSize = buttonBackground.glassStyle != nil ? buttonGlassVisualSize : frameSize
         Group {
             Image(systemName: actions.panelToggleIcon)
                 .font(.system(size: buttonSize.iconSize))
                 .foregroundStyle(.white)
                 .scaleEffect(x: actions.panelSide == .right ? 1 : -1)
         }
-        .frame(width: frameSize, height: frameSize)
+        .frame(width: visualFrameSize, height: visualFrameSize)
         .modifier(OptionalGlassBackgroundModifier(style: buttonBackground, theme: theme))
-        .contentShape(buttonBackground.glassStyle != nil ? AnyShape(Circle()) : AnyShape(Rectangle()))
+        .frame(width: frameSize, height: frameSize)
+        .contentShape(Rectangle())
     }
 
     /// Title/Author button content showing video title and source info.
@@ -490,7 +502,8 @@ struct ControlsSectionRenderer: View {
                     author: video.author,
                     size: imageSize,
                     yatteeServerURL: actions.yatteeServerURL,
-                    source: video.id.source
+                    source: video.id.source,
+                    authHeader: actions.yatteeServerAuthHeader
                 )
             }
 
@@ -523,12 +536,14 @@ struct ControlsSectionRenderer: View {
     @ViewBuilder
     private func playPreviousButtonContent() -> some View {
         let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let visualFrameSize = buttonBackground.glassStyle != nil ? buttonGlassVisualSize : frameSize
         Image(systemName: "backward.fill")
             .font(.system(size: buttonSize.iconSize))
             .foregroundStyle(.white)
-            .frame(width: frameSize, height: frameSize)
+            .frame(width: visualFrameSize, height: visualFrameSize)
             .modifier(OptionalGlassBackgroundModifier(style: buttonBackground, theme: theme))
-            .contentShape(buttonBackground.glassStyle != nil ? AnyShape(Circle()) : AnyShape(Rectangle()))
+            .frame(width: frameSize, height: frameSize)
+            .contentShape(Rectangle())
             .symbolEffect(.bounce.down.byLayer, options: .nonRepeating, value: playPreviousTapCount)
     }
 
@@ -536,12 +551,14 @@ struct ControlsSectionRenderer: View {
     @ViewBuilder
     private func playNextButtonContent() -> some View {
         let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let visualFrameSize = buttonBackground.glassStyle != nil ? buttonGlassVisualSize : frameSize
         Image(systemName: "forward.fill")
             .font(.system(size: buttonSize.iconSize))
             .foregroundStyle(.white)
-            .frame(width: frameSize, height: frameSize)
+            .frame(width: visualFrameSize, height: visualFrameSize)
             .modifier(OptionalGlassBackgroundModifier(style: buttonBackground, theme: theme))
-            .contentShape(buttonBackground.glassStyle != nil ? AnyShape(Circle()) : AnyShape(Rectangle()))
+            .frame(width: frameSize, height: frameSize)
+            .contentShape(Rectangle())
             .symbolEffect(.bounce.down.byLayer, options: .nonRepeating, value: playNextTapCount)
     }
 
@@ -549,13 +566,15 @@ struct ControlsSectionRenderer: View {
     @ViewBuilder
     private func playPauseButtonContent() -> some View {
         let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let visualFrameSize = buttonBackground.glassStyle != nil ? buttonGlassVisualSize : frameSize
         Image(systemName: playPauseIcon)
             .contentTransition(.symbolEffect(.replace, options: .speed(2)))
             .font(.system(size: buttonSize.iconSize))
             .foregroundStyle(.white)
-            .frame(width: frameSize, height: frameSize)
+            .frame(width: visualFrameSize, height: visualFrameSize)
             .modifier(OptionalGlassBackgroundModifier(style: buttonBackground, theme: theme))
-            .contentShape(buttonBackground.glassStyle != nil ? AnyShape(Circle()) : AnyShape(Rectangle()))
+            .frame(width: frameSize, height: frameSize)
+            .contentShape(Rectangle())
     }
 
     /// Icon for play/pause button based on current playback state.
@@ -574,9 +593,9 @@ struct ControlsSectionRenderer: View {
         let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
         if buttonBackground.glassStyle != nil {
             AirPlayButton()
-                .frame(width: buttonSize.pointSize, height: buttonSize.pointSize)
-                .frame(width: frameSize, height: frameSize)
+                .frame(width: buttonGlassVisualSize, height: buttonGlassVisualSize)
                 .modifier(OptionalGlassBackgroundModifier(style: buttonBackground, theme: theme))
+                .frame(width: frameSize, height: frameSize)
         } else {
             AirPlayButton()
                 .frame(width: frameSize, height: frameSize)
@@ -829,7 +848,8 @@ struct ControlsSectionRenderer: View {
     @ViewBuilder
     private var playbackSpeedMenu: some View {
         let hasText = actions.playbackRateDisplay != nil
-        let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let hitTargetSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let frameSize = buttonBackground.glassStyle != nil && !hasText ? buttonGlassVisualSize : hitTargetSize
 
         Menu {
             ForEach(PlaybackRate.allCases) { rate in
@@ -848,6 +868,7 @@ struct ControlsSectionRenderer: View {
             playbackSpeedLabel(hasText: hasText, frameSize: frameSize)
         }
         .menuIndicator(.hidden)
+        .frame(minWidth: hitTargetSize, minHeight: hitTargetSize)
     }
 
     @ViewBuilder
@@ -952,7 +973,8 @@ struct ControlsSectionRenderer: View {
                 accentColor: .white,
                 buttonSize: buttonSize.pointSize,
                 buttonBackgroundStyle: buttonBackground,
-                theme: theme
+                theme: theme,
+                glassVisualSize: buttonBackground.glassStyle != nil ? buttonGlassVisualSize : nil
             )
         }
     }
@@ -973,6 +995,7 @@ struct ControlsSectionRenderer: View {
     @ViewBuilder
     private func seekButton(settings: SeekSettings, config: ControlButtonConfiguration) -> some View {
         let frameSize = buttonBackground.glassStyle != nil ? buttonBackgroundSize : buttonSize.pointSize
+        let visualFrameSize = buttonBackground.glassStyle != nil ? buttonGlassVisualSize : frameSize
 
         Button {
             seekTapCount += 1
@@ -987,9 +1010,10 @@ struct ControlsSectionRenderer: View {
             Image(systemName: settings.systemImage)
                 .font(.system(size: buttonSize.iconSize))
                 .foregroundStyle(.white)
-                .frame(width: frameSize, height: frameSize)
+                .frame(width: visualFrameSize, height: visualFrameSize)
                 .modifier(OptionalGlassBackgroundModifier(style: buttonBackground, theme: theme))
-                .contentShape(buttonBackground.glassStyle != nil ? AnyShape(Circle()) : AnyShape(Rectangle()))
+                .frame(width: frameSize, height: frameSize)
+                .contentShape(Rectangle())
                 .symbolEffect(.rotate.byLayer, options: .speed(2).nonRepeating, value: seekTapCount)
         }
     }

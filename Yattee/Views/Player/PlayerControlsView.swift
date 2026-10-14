@@ -380,6 +380,15 @@ struct PlayerControlsView: View {
     }
 
     /// Build the consolidated actions for the section renderer
+    private var yatteeServer: Instance? {
+        appEnvironment?.instancesManager.yatteeServerInstances.first { $0.isEnabled }
+    }
+
+    private var yatteeServerAuthHeader: String? {
+        guard let yatteeServer else { return nil }
+        return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: yatteeServer)
+    }
+
     private var controlsActions: PlayerControlsActions {
         PlayerControlsActions(
             playerState: playerState,
@@ -408,7 +417,8 @@ struct PlayerControlsView: View {
             isPanscanAllowed: isPanscanAllowed,
             isAutoPlayNextEnabled: appEnvironment?.settingsManager.queueAutoPlayNext ?? true,
             isAudioModeEnabled: appEnvironment?.settingsManager.audioOnlyModeEnabled ?? false,
-            yatteeServerURL: appEnvironment?.instancesManager.yatteeServerInstances.first { $0.isEnabled }?.url,
+            yatteeServerURL: yatteeServer?.url,
+            yatteeServerAuthHeader: yatteeServerAuthHeader,
             deArrowBrandingProvider: appEnvironment?.deArrowBrandingProvider,
             onClose: onClose,
             onToggleDebug: onToggleDebug,
@@ -681,6 +691,7 @@ struct PlayerControlsView: View {
         let buttonBackground = activeLayout.globalSettings.buttonBackground
         let theme = activeLayout.globalSettings.theme
         let hasBackground = buttonBackground.glassStyle != nil
+        let visualScale: CGFloat = activeLayout.globalSettings.buttonSize == .small ? 0.7 : 1
 
         // Base sizes - scale down in compact mode to prevent overlapping with top/bottom bars
         let baseSpacing: CGFloat
@@ -708,8 +719,15 @@ struct PlayerControlsView: View {
         let spacing = baseSpacing * scale
         let seekButtonSize = baseSeekButtonSize * scale
         let playButtonSize = basePlayButtonSize * scale
-        let seekFontSize = baseSeekFontSize * scale
-        let playFontSize = basePlayFontSize * scale
+        let seekFontSize = baseSeekFontSize * scale * visualScale
+        let playFontSize = basePlayFontSize * scale * visualScale
+        let usesSmallGlass = activeLayout.globalSettings.buttonSize == .small && hasBackground
+        let seekVisualSize = usesSmallGlass ? 36 : seekButtonSize * visualScale
+        // Keep the same internal glass spacing as the validated Small seek buttons.
+        let smallGlassContentPadding = (seekVisualSize - seekFontSize) / 2
+        let playVisualSize = usesSmallGlass
+            ? playFontSize + 2 * smallGlassContentPadding
+            : playButtonSize * visualScale
 
         return HStack(spacing: spacing) {
             // Skip backward - conditionally shown based on layout settings
@@ -722,7 +740,8 @@ struct PlayerControlsView: View {
                     centerButtonContent(
                         systemImage: settings.seekBackwardSystemImage,
                         fontSize: seekFontSize,
-                        frameSize: seekButtonSize,
+                        visualFrameSize: seekVisualSize,
+                        hitTargetSize: seekButtonSize,
                         buttonBackground: buttonBackground,
                         theme: theme
                     )
@@ -747,7 +766,8 @@ struct PlayerControlsView: View {
                         centerButtonContent(
                             systemImage: playPauseIcon,
                             fontSize: playFontSize,
-                            frameSize: playButtonSize,
+                            visualFrameSize: playVisualSize,
+                            hitTargetSize: playButtonSize,
                             buttonBackground: buttonBackground,
                             theme: theme
                         )
@@ -759,7 +779,8 @@ struct PlayerControlsView: View {
                     centerButtonContent(
                         systemImage: playPauseIcon,
                         fontSize: playFontSize,
-                        frameSize: playButtonSize,
+                        visualFrameSize: playVisualSize,
+                        hitTargetSize: playButtonSize,
                         buttonBackground: buttonBackground,
                         theme: theme
                     )
@@ -782,7 +803,8 @@ struct PlayerControlsView: View {
                     centerButtonContent(
                         systemImage: settings.seekForwardSystemImage,
                         fontSize: seekFontSize,
-                        frameSize: seekButtonSize,
+                        visualFrameSize: seekVisualSize,
+                        hitTargetSize: seekButtonSize,
                         buttonBackground: buttonBackground,
                         theme: theme
                     )
@@ -814,7 +836,8 @@ struct PlayerControlsView: View {
     private func centerButtonContent(
         systemImage: String,
         fontSize: CGFloat,
-        frameSize: CGFloat,
+        visualFrameSize: CGFloat,
+        hitTargetSize: CGFloat,
         buttonBackground: ButtonBackgroundStyle,
         theme: ControlsTheme
     ) -> some View {
@@ -823,15 +846,16 @@ struct PlayerControlsView: View {
                 .contentTransition(.symbolEffect(.replace, options: .speed(2)))
                 .font(.system(size: fontSize))
                 .foregroundStyle(.white)
-                .frame(width: frameSize, height: frameSize)
+                .frame(width: visualFrameSize, height: visualFrameSize)
                 .glassBackground(glassStyle, in: .circle, fallback: .ultraThinMaterial, colorScheme: theme.colorScheme)
-                .contentShape(Circle())
+                .frame(width: hitTargetSize, height: hitTargetSize)
+                .contentShape(Rectangle())
         } else {
             Image(systemName: systemImage)
                 .contentTransition(.symbolEffect(.replace, options: .speed(2)))
                 .font(.system(size: fontSize))
                 .foregroundStyle(.white)
-                .frame(width: frameSize, height: frameSize)
+                .frame(width: hitTargetSize, height: hitTargetSize)
                 .contentShape(Rectangle())
         }
     }
@@ -854,9 +878,6 @@ struct PlayerControlsView: View {
 
     private var bottomBar: some View {
         VStack(spacing: 4) {
-            // Progress bar (stays hardcoded - not customizable)
-            progressBar
-
             // Dynamic button row from layout configuration
             ControlsSectionRenderer(
                 section: activeLayout.bottomSection,
@@ -864,17 +885,23 @@ struct PlayerControlsView: View {
                 globalSettings: activeLayout.globalSettings,
                 controlsVisible: shouldShowControls
             )
+
+            // Progress bar stays fixed below the configurable controls.
+            progressBar
         }
     }
 
     private var progressBar: some View {
-        GeometryReader { geometry in
+        let visualHeight: CGFloat = 6
+        let interactionHeight: CGFloat = 28
+
+        return GeometryReader { geometry in
             ZStack(alignment: .bottomLeading) {
                 if playerState.isLive {
                     // For live streams, show simple red indicator (no scrubbing)
                     Rectangle()
                         .fill(.red.opacity(0.6))
-                        .frame(height: 4)
+                        .frame(height: visualHeight)
                         .clipShape(Capsule())
                 } else {
                     // Regular VOD progress bar with chapter segments
@@ -883,7 +910,7 @@ struct PlayerControlsView: View {
                         duration: playerState.duration,
                         currentTime: (isDragging || isPendingSeek) ? dragProgress * playerState.duration : playerState.currentTime,
                         bufferedTime: playerState.bufferedTime,
-                        height: 4,
+                        height: visualHeight,
                         gapWidth: 2,
                         playedColor: activeLayout.progressBarSettings.playedColor.color,
                         bufferedColor: .white.opacity(0.5),
@@ -904,7 +931,7 @@ struct PlayerControlsView: View {
                         .allowsHitTesting(false)
                 }
             }
-            .frame(height: 20)
+            .frame(height: interactionHeight)
             .contentShape(Rectangle())
             // Only allow interaction for non-live streams and when controls are not locked
             .allowsHitTesting(!playerState.isLive && !playerState.isControlsLocked)
@@ -957,7 +984,7 @@ struct PlayerControlsView: View {
                 }
             }
         }
-        .frame(height: 20)
+        .frame(height: interactionHeight)
     }
 
     @ViewBuilder

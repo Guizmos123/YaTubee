@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CryptoKit
 
 /// Persistent feed cache that stores subscription videos on disk.
 /// This is a local-only cache (not synced to iCloud) for fast feed loading.
@@ -32,23 +33,30 @@ actor FeedCache {
         cacheDirectory.appendingPathComponent(cacheFileName)
     }
 
+    private func cacheFileURL(for scopeKey: String?) -> URL {
+        guard let scopeKey else { return cacheFileURL }
+        let digest = SHA256.hash(data: Data(scopeKey.utf8)).map { String(format: "%02x", $0) }.joined()
+        return cacheDirectory.appendingPathComponent("subscription_feed_\(digest).json")
+    }
+
     // MARK: - Public API
 
     /// Loads the cached feed from disk.
     /// Returns nil if no cache exists or if it's corrupted.
-    func load() async -> FeedCacheData? {
+    func load(scopeKey: String? = nil) async -> FeedCacheData? {
+        let fileURL = cacheFileURL(for: scopeKey)
         // Return in-memory cache if available
-        if let cachedData {
+        if let cachedData, cachedData.scopeKey == scopeKey || scopeKey == nil {
             return cachedData
         }
 
         // Try to load from disk
-        guard fileManager.fileExists(atPath: cacheFileURL.path) else {
+        guard fileManager.fileExists(atPath: fileURL.path) else {
             return nil
         }
 
         do {
-            let data = try Data(contentsOf: cacheFileURL)
+            let data = try Data(contentsOf: fileURL)
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             let cacheData = try decoder.decode(FeedCacheData.self, from: data)
@@ -58,14 +66,14 @@ actor FeedCache {
             return cacheData
         } catch {
             // Cache is corrupted, remove it
-            try? fileManager.removeItem(at: cacheFileURL)
+            try? fileManager.removeItem(at: fileURL)
             return nil
         }
     }
 
     /// Saves the feed to disk.
-    func save(videos: [Video], lastUpdated: Date) async {
-        let cacheData = FeedCacheData(videos: videos, lastUpdated: lastUpdated)
+    func save(videos: [Video], lastUpdated: Date, scopeKey: String?) async {
+        let cacheData = FeedCacheData(videos: videos, lastUpdated: lastUpdated, scopeKey: scopeKey)
 
         // Update in-memory cache
         cachedData = cacheData
@@ -77,7 +85,7 @@ actor FeedCache {
             encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(cacheData)
             let sizeMB = Double(data.count) / (1024 * 1024)
-            try data.write(to: cacheFileURL, options: .atomic)
+            try data.write(to: cacheFileURL(for: scopeKey), options: .atomic)
             await MainActor.run {
                 LoggingService.shared.debug(
                     "FeedCache.save: Wrote \(videos.count) videos (\(String(format: "%.2f", sizeMB)) MB) to disk, lastUpdated: \(lastUpdated)",
@@ -98,7 +106,8 @@ actor FeedCache {
     /// Clears the feed cache from both memory and disk.
     func clear() async {
         cachedData = nil
-        try? fileManager.removeItem(at: cacheFileURL)
+        try? fileManager.removeItem(at: cacheDirectory)
+        try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }
 
     /// Invalidates the cache by clearing the lastUpdated timestamp.
@@ -107,7 +116,17 @@ actor FeedCache {
         guard var data = cachedData else { return }
         data.lastUpdated = .distantPast
         cachedData = data
-        await save(videos: data.videos, lastUpdated: .distantPast)
+        await save(videos: data.videos, lastUpdated: .distantPast, scopeKey: data.scopeKey)
+    }
+}
+
+enum FeedCacheScopePolicy {
+    static func accepts(
+        storedScope: String?,
+        expectedScope: String,
+        allowsLegacyUnscopedCache: Bool
+    ) -> Bool {
+        storedScope == expectedScope || (storedScope == nil && allowsLegacyUnscopedCache)
     }
 }
 
@@ -117,4 +136,5 @@ actor FeedCache {
 struct FeedCacheData: Codable {
     var videos: [Video]
     var lastUpdated: Date
+    var scopeKey: String?
 }

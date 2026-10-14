@@ -535,6 +535,7 @@ private struct PipedVideo: Decodable, Sendable {
             thumbnails: Thumbnail.fallbackChain(for: thumbnail.flatMap { URL(string: $0) }),
             isLive: duration == -1,
             isUpcoming: false,
+            contentKind: VideoContentKind(pipedIsShort: isShort),
             scheduledStartTime: nil
         )
     }

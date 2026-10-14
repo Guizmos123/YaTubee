@@ -12,6 +12,7 @@ import AppKit
 
 struct SubscriptionsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
+    @Environment(\.scenePhase) private var scenePhase
     @Namespace private var sheetTransition
     #if os(tvOS)
     @FocusState private var focusedVideoID: String?
@@ -26,10 +27,24 @@ struct SubscriptionsView: View {
     @State private var errorMessage: String?
     @State private var watchEntriesMap: [String: WatchEntry] = [:]
     @State private var showViewOptions = false
+    @State private var noveltyBadgeState = FeedNoveltyBadgeState.shared
+    #if DEBUG
+    @State private var noveltyBadgeDiagnostic = FeedNoveltyBadgeDiagnosticState.shared
+    #endif
+    @State private var visibleVideoIDs: Set<String> = []
+    @State private var pendingConsultedVideoIDs: Set<String> = []
+    @State private var feedSyncCapsuleState: FeedSyncCapsuleState?
+    @State private var feedSyncCapsuleDismissTask: Task<Void, Never>?
+    @State private var hasObservedFeedSynchronization = false
+    let isTabActive: Bool
     #if os(macOS)
     @State private var showSubscriptionsData = false
     @State private var pendingSubscriptionsData = false
     #endif
+
+    init(isTabActive: Bool = false) {
+        self.isTabActive = isTabActive
+    }
 
     // View options (persisted)
     @AppStorage("subscriptionsLayout") private var layout: VideoListLayout = .list
@@ -56,6 +71,19 @@ struct SubscriptionsView: View {
 
     private var localizationLocale: Locale {
         appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+    }
+
+    private var activeNoveltyScope: FeedNoveltyScope? {
+        FeedNoveltyScope.active(in: appEnvironment)
+    }
+
+    private var activeNoveltyCount: Int {
+        #if DEBUG
+        if noveltyBadgeDiagnostic.scope == activeNoveltyScope {
+            return noveltyBadgeDiagnostic.remainingCount
+        }
+        #endif
+        return noveltyBadgeState.count(for: activeNoveltyScope)
     }
 
     // Grid layout configuration
@@ -174,7 +202,6 @@ struct SubscriptionsView: View {
     }
 
     private var dataManager: DataManager? { appEnvironment?.dataManager }
-    private var subscriptionService: SubscriptionService? { appEnvironment?.subscriptionService }
     private var accentColor: Color { appEnvironment?.settingsManager.resolvedAccentColor ?? .accentColor }
     private var yatteeServer: Instance? {
         appEnvironment?.instancesManager.enabledYatteeServerInstances.first
@@ -220,75 +247,13 @@ struct SubscriptionsView: View {
         return subscriptions.first { $0.channelID == channelID }
     }
 
-    /// Banner showing feed loading progress when server is fetching channels.
-    @ViewBuilder
-    private var feedStatusBanner: some View {
-        switch feedCache.feedLoadState {
-        case .partiallyLoaded(let ready, let pending, let errors):
-            let total = ready + pending + errors
-            HStack(spacing: 8) {
-                if pending > 0 {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
-                if errors > 0 {
-                    Text("subscriptions.loadingFeedWithErrors \(ready) \(total) \(errors)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                } else {
-                    Text("subscriptions.loadingFeed \(ready) \(total)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            #if os(tvOS)
-            .background(Color.black.opacity(0.3))
-            #endif
-
-        case .error(let error):
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle")
-                Text(errorMessage(for: error))
-                    .font(.caption)
-            }
-            .foregroundStyle(.red)
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            #if os(tvOS)
-            .background(Color.black.opacity(0.3))
-            #endif
-
-        case .loadingMore:
-            HStack(spacing: 8) {
-                ProgressView()
-                    .scaleEffect(0.8)
-                Text(AppLocalization.string("subscriptions.loadingMore"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            #if os(tvOS)
-            .background(Color.black.opacity(0.3))
-            #endif
-
-        default:
-            EmptyView()
-        }
-    }
-
     /// Converts feed error to localized message.
     private func errorMessage(for error: FeedLoadState.FeedLoadError) -> String {
         switch error {
         case .yatteeServerRequired:
             return AppLocalization.string("subscriptions.error.yatteeServerRequired")
+        case .compatibleSourceRequired:
+            return AppLocalization.string("subscriptions.error.compatibleSourceRequired")
         case .notAuthenticated:
             return AppLocalization.string("subscriptions.error.notAuthenticated")
         case .networkError(let message):
@@ -429,6 +394,23 @@ struct SubscriptionsView: View {
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
+
+                    VStack {
+                        if let feedSyncCapsuleState {
+                            feedSyncCapsule(for: feedSyncCapsuleState)
+                                .transition(
+                                    .move(edge: .top)
+                                        .combined(with: .opacity)
+                                        .combined(with: .scale(scale: 0.94, anchor: .top))
+                                )
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .allowsHitTesting(false)
+                    .zIndex(2)
                     #endif
                 }
                 #if !os(tvOS)
@@ -516,36 +498,54 @@ struct SubscriptionsView: View {
                         loadWatchEntries()
                     }
                     .onChange(of: appEnvironment?.settingsManager.subscriptionAccount) { _, _ in
-                        // Clear cache and refresh when subscription account changes
-                        feedCache.handleAccountChange()
-                        subscriptions = []
-                        subscriptionsLoaded = false
-                        Task {
-                            guard let appEnvironment else { return }
-                            await loadSubscriptionsAsync()
-                            await feedCache.refresh(using: appEnvironment)
-                        }
+                        #if DEBUG
+                        noveltyBadgeDiagnostic.finish()
+                        #endif
+                        visibleVideoIDs.removeAll()
+                        pendingConsultedVideoIDs.removeAll()
+                        // The main feed always uses local subscriptions. A remote
+                        // account change must not replace its list or cache.
+                        loadSubscriptions()
                     }
+                    .onChange(of: isTabActive) { _, isActive in
+                        consultVisibleNoveltiesIfEligible()
+                        #if os(iOS)
+                        if isActive {
+                            updateFeedSyncCapsule(for: feedSyncObservation)
+                        } else {
+                            resetFeedSyncCapsulePresentation()
+                        }
+                        #endif
+                    }
+                    .onChange(of: scenePhase) { _, _ in
+                        consultVisibleNoveltiesIfEligible()
+                    }
+                    .onChange(of: activeNoveltyCount) { _, _ in
+                        consultVisibleNoveltiesIfEligible()
+                    }
+                    #if DEBUG
+                    .onChange(of: Set(feedCache.videos.map { $0.id.id })) { _, availableIDs in
+                        noveltyBadgeDiagnostic.finishIfContextChanged(
+                            scope: activeNoveltyScope,
+                            availableVideoIDs: availableIDs
+                        )
+                    }
+                    #endif
                 .task(id: instanceConfigurationID) {
                     LoggingService.shared.debug("SubscriptionsView task triggered, instanceConfigurationID: \(instanceConfigurationID)", category: .general)
                     await loadSubscriptionsAsync()
 
-                    await feedCache.loadFromDiskIfNeeded()
-
-                    let hasYatteeServer = appEnvironment?.instancesManager.instances.contains {
-                        $0.type == .yatteeServer && $0.isEnabled
-                    } ?? false
+                    if let appEnvironment {
+                        await feedCache.loadFromDiskIfNeeded(using: appEnvironment)
+                    }
 
                     let cacheValid = feedCache.isCacheValid(using: appEnvironment?.settingsManager)
                     LoggingService.shared.debug(
-                        "hasYatteeServer: \(hasYatteeServer), cacheValid: \(cacheValid), isLoading: \(feedCache.isLoading)",
+                        "cacheValid: \(cacheValid), isLoading: \(feedCache.isLoading)",
                         category: .general
                     )
 
-                    if hasYatteeServer {
-                        LoggingService.shared.info("Yattee Server detected, forcing feed refresh", category: .general)
-                        await loadFeed(forceRefresh: true)
-                    } else if !cacheValid && !feedCache.isLoading {
+                    if !cacheValid && !feedCache.isLoading {
                         LoggingService.shared.info("Cache invalid and not loading, refreshing feed", category: .general)
                         await loadFeed(forceRefresh: false)
                     } else {
@@ -557,6 +557,14 @@ struct SubscriptionsView: View {
                         proxy.scrollTo("top", anchor: .top)
                     }
                 }
+                #if os(iOS)
+                .onChange(of: feedSyncObservation, initial: true) { _, observation in
+                    updateFeedSyncCapsule(for: observation)
+                }
+                .onDisappear {
+                    resetFeedSyncCapsulePresentation()
+                }
+                #endif
                 #if os(tvOS)
                 .onChange(of: filteredVideos.first?.id.videoID, initial: true) { _, newValue in
                     // Work around tvOS ScrollView + prefersDefaultFocus bug: set initial focus
@@ -579,8 +587,8 @@ struct SubscriptionsView: View {
 
     private var listContent: some View {
         VideoListContainer(listStyle: listStyle, rowStyle: rowStyle) {
-            // Header: status banner with scroll anchor
-            feedStatusBanner
+            Color.clear
+                .frame(height: 0)
                 .id("top")
 
             // Section header (channel link is shown in the inline header on tvOS)
@@ -620,6 +628,8 @@ struct SubscriptionsView: View {
             switch feedError {
             case .yatteeServerRequired:
                 yatteeServerRequiredView
+            case .compatibleSourceRequired:
+                gridErrorView(AppLocalization.string("subscriptions.error.compatibleSourceRequired"))
             case .notAuthenticated:
                 notAuthenticatedView
             case .networkError(let message):
@@ -664,19 +674,13 @@ struct SubscriptionsView: View {
                     #else
                     .videoSwipeActions(video: video)
                     #endif
+                    #if os(iOS)
+                    .onScrollVisibilityChange(threshold: 0.5) { isVisible in
+                        updateVisibility(of: video.id.id, isVisible: isVisible)
+                    }
+                    #endif
                 }
 
-                // Infinite scroll trigger for Invidious feed
-                if feedCache.hasMorePages && !feedCache.isLoading {
-                    Color.clear
-                        .frame(height: 1)
-                        .onAppear {
-                            Task {
-                                guard let appEnvironment else { return }
-                                await feedCache.loadMoreInvidiousFeed(using: appEnvironment)
-                            }
-                        }
-                }
             }
         } else if feedCache.hasLoadedOnce {
             gridEmptyView
@@ -690,7 +694,8 @@ struct SubscriptionsView: View {
     private var gridContent: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                feedStatusBanner
+                Color.clear
+                    .frame(height: 0)
                     .id("top")
 
                 // Section header (channel link is shown in the inline header on tvOS)
@@ -710,6 +715,8 @@ struct SubscriptionsView: View {
                     switch feedError {
                     case .yatteeServerRequired:
                         yatteeServerRequiredView
+                    case .compatibleSourceRequired:
+                        gridErrorView(AppLocalization.string("subscriptions.error.compatibleSourceRequired"))
                     case .notAuthenticated:
                         notAuthenticatedView
                     case .networkError(let message):
@@ -779,6 +786,7 @@ struct SubscriptionsView: View {
                     name: subscription.name,
                     avatarURL: subscription.avatarURL,
                     serverURL: yatteeServerURL,
+                    source: subscription.contentSource,
                     isSelected: selectedChannelID == subscription.channelID,
                     avatarSize: channelStripSize.avatarSize,
                     onTap: {
@@ -850,6 +858,7 @@ struct SubscriptionsView: View {
                             serverURL: yatteeServerURL,
                             authHeader: yatteeServerAuthHeader,
                             channelID: subscription.channelID,
+                            source: subscription.contentSource,
                             isAllChannels: false,
                             isSelected: selectedChannelID == subscription.channelID,
                             onTap: {
@@ -924,6 +933,7 @@ struct SubscriptionsView: View {
                 serverURL: yatteeServerURL,
                 authHeader: yatteeServerAuthHeader,
                 channelID: subscription.channelID,
+                source: subscription.contentSource,
                 isAllChannels: false
             )
             .tag(Optional(subscription.channelID))
@@ -1074,6 +1084,7 @@ struct SubscriptionsView: View {
                         serverURL: yatteeServerURL,
                         authHeader: yatteeServerAuthHeader,
                         channelID: subscription.channelID,
+                        source: subscription.contentSource,
                         isAllChannels: false,
                         isSelected: selectedChannelID == subscription.channelID
                     ) {
@@ -1140,6 +1151,7 @@ struct SubscriptionsView: View {
         serverURL: URL?,
         authHeader: String?,
         channelID: String?,
+        source: ContentSource? = nil,
         isAllChannels: Bool,
         isSelected: Bool,
         action: @escaping () -> Void
@@ -1151,6 +1163,7 @@ struct SubscriptionsView: View {
                 serverURL: serverURL,
                 authHeader: authHeader,
                 channelID: channelID,
+                source: source,
                 isAllChannels: isAllChannels,
                 isSelected: isSelected
             )
@@ -1200,20 +1213,14 @@ struct SubscriptionsView: View {
                     #if os(tvOS)
                     .focused($focusedVideoID, equals: video.id.videoID)
                     #endif
+                    #if os(iOS)
+                    .onScrollVisibilityChange(threshold: 0.5) { isVisible in
+                        updateVisibility(of: video.id.id, isVisible: isVisible)
+                    }
+                    #endif
                 }
             }
 
-            // Infinite scroll trigger for Invidious feed
-            if feedCache.hasMorePages && !feedCache.isLoading {
-                Color.clear
-                    .frame(height: 1)
-                    .onAppear {
-                        Task {
-                            guard let appEnvironment else { return }
-                            await feedCache.loadMoreInvidiousFeed(using: appEnvironment)
-                        }
-                    }
-            }
         }
     }
 
@@ -1226,11 +1233,7 @@ struct SubscriptionsView: View {
 
     @ViewBuilder
     private var feedSectionHeaderLabel: some View {
-        if feedCache.isLoading, let progress = feedCache.loadingProgress {
-            Text("subscriptions.updatingChannels \(progress.loaded) \(progress.total)")
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-        } else if isSidebarVisible {
+        if isSidebarVisible {
             EmptyView()
         } else if let subscription = selectedSubscription {
             Button {
@@ -1260,6 +1263,152 @@ struct SubscriptionsView: View {
             .buttonStyle(.plain)
         }
     }
+
+    #if os(iOS)
+    private var feedSyncObservation: FeedSyncObservation {
+        FeedSyncObservation(
+            loadState: feedCache.feedLoadState,
+            isLoading: feedCache.isLoading,
+            hasCachedVideos: !feedCache.videos.isEmpty
+        )
+    }
+
+    @ViewBuilder
+    private func feedSyncCapsule(for state: FeedSyncCapsuleState) -> some View {
+        HStack(spacing: 10) {
+            switch state {
+            case .synchronizing:
+                Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                    .foregroundStyle(accentColor)
+                    .symbolEffect(.rotate, options: .repeating)
+
+                Text(AppLocalization.string("subscriptions.feedSync.synchronizing"))
+
+            case .progress(let completed, let total):
+                Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                    .foregroundStyle(accentColor)
+                    .symbolEffect(.rotate, options: .repeating)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(AppLocalization.string("subscriptions.feedSync.synchronizing"))
+                        Spacer(minLength: 4)
+                        Text(verbatim: "\(Int((Double(completed) / Double(total)) * 100))%")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+
+                    ProgressView(value: Double(completed), total: Double(total))
+                        .progressViewStyle(.linear)
+                        .frame(height: 2)
+                }
+                .frame(width: 210)
+
+            case .success:
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text(AppLocalization.string("subscriptions.feedSync.upToDate"))
+
+            case .partial:
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.orange)
+                Text(AppLocalization.string("subscriptions.feedSync.incomplete"))
+
+            case .error:
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                Text(AppLocalization.string("subscriptions.feedSync.error"))
+            }
+        }
+        .font(.subheadline.weight(.medium))
+        .lineLimit(1)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .glassBackground(.regular, in: .capsule, fallback: .regularMaterial)
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func updateFeedSyncCapsule(for observation: FeedSyncObservation) {
+        guard isTabActive else {
+            resetFeedSyncCapsulePresentation()
+            return
+        }
+
+        switch observation.loadState {
+        case .loading:
+            hasObservedFeedSynchronization = true
+            presentFeedSyncCapsule(.synchronizing)
+
+        case .partiallyLoaded(let ready, let pending, let errors):
+            if observation.isLoading {
+                hasObservedFeedSynchronization = true
+                let total = ready + pending + errors
+                if pending > 0, total > 0 {
+                    presentFeedSyncCapsule(.progress(completed: ready, total: total))
+                } else {
+                    presentFeedSyncCapsule(.synchronizing)
+                }
+            } else {
+                guard hasObservedFeedSynchronization else { return }
+                hasObservedFeedSynchronization = false
+                presentFeedSyncCapsule(.partial, dismissAfter: .seconds(3))
+            }
+
+        case .ready:
+            guard hasObservedFeedSynchronization else { return }
+            hasObservedFeedSynchronization = false
+            presentFeedSyncCapsule(.success, dismissAfter: .seconds(2))
+
+        case .error:
+            guard hasObservedFeedSynchronization else { return }
+            hasObservedFeedSynchronization = false
+            if observation.hasCachedVideos {
+                presentFeedSyncCapsule(.error, dismissAfter: .seconds(3))
+            } else {
+                dismissFeedSyncCapsule()
+            }
+
+        case .idle, .loadingMore:
+            hasObservedFeedSynchronization = false
+            dismissFeedSyncCapsule()
+        }
+    }
+
+    private func presentFeedSyncCapsule(
+        _ state: FeedSyncCapsuleState,
+        dismissAfter delay: Duration? = nil
+    ) {
+        feedSyncCapsuleDismissTask?.cancel()
+        feedSyncCapsuleDismissTask = nil
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+            feedSyncCapsuleState = state
+        }
+
+        guard let delay else { return }
+        feedSyncCapsuleDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled, feedSyncCapsuleState == state else { return }
+            dismissFeedSyncCapsule()
+        }
+    }
+
+    private func dismissFeedSyncCapsule() {
+        feedSyncCapsuleDismissTask?.cancel()
+        feedSyncCapsuleDismissTask = nil
+        withAnimation(.easeOut(duration: 0.22)) {
+            feedSyncCapsuleState = nil
+        }
+    }
+
+    private func resetFeedSyncCapsulePresentation() {
+        feedSyncCapsuleDismissTask?.cancel()
+        feedSyncCapsuleDismissTask = nil
+        feedSyncCapsuleState = nil
+        hasObservedFeedSynchronization = false
+    }
+    #endif
 
     // MARK: - Loading/Error/Empty Views
 
@@ -1327,13 +1476,9 @@ struct SubscriptionsView: View {
     // MARK: - Data Loading
 
     private func loadSubscriptions() {
-        // For local account, load from DataManager
-        // For Invidious, subscriptions will be loaded async in loadSubscriptionsAsync
-        if appEnvironment?.settingsManager.subscriptionAccount.type == .local {
-            subscriptions = dataManager?.subscriptions() ?? []
-            subscriptionsLoaded = true
-            sidebarExpected = subscriptions.count > 1
-        }
+        subscriptions = dataManager?.subscriptions() ?? []
+        subscriptionsLoaded = true
+        sidebarExpected = subscriptions.count > 1
 
         if let selectedID = selectedChannelID,
            !subscriptions.contains(where: { $0.channelID == selectedID }) {
@@ -1341,40 +1486,51 @@ struct SubscriptionsView: View {
         }
     }
 
-    /// Loads subscriptions asynchronously from the current provider.
-    /// For Invidious, this fetches from the API and creates temporary Subscription objects for UI.
+    /// Keeps the async call site used by the view lifecycle while sourcing the
+    /// list exclusively from local SwiftData storage.
     private func loadSubscriptionsAsync() async {
-        guard let subscriptionService, let appEnvironment else { return }
-
-        // For local account, just load from DataManager (fast)
-        if appEnvironment.settingsManager.subscriptionAccount.type == .local {
-            subscriptions = dataManager?.subscriptions() ?? []
-            subscriptionsLoaded = true
-            sidebarExpected = subscriptions.count > 1
-            return
-        }
-
-        // For Invidious, fetch from API
-        do {
-            let channels = try await subscriptionService.fetchSubscriptions()
-            // Convert channels to Subscription objects for UI (not persisted)
-            subscriptions = channels.map { Subscription.from(channel: $0) }
-            subscriptionsLoaded = true
-            sidebarExpected = subscriptions.count > 1
-        } catch {
-            LoggingService.shared.error(
-                "Failed to load subscriptions: \(error.localizedDescription)",
-                category: .general
-            )
-            subscriptions = []
-            subscriptionsLoaded = true
-            sidebarExpected = false
-        }
+        loadSubscriptions()
     }
 
     private func loadWatchEntries() {
         watchEntriesMap = dataManager?.watchEntriesMap() ?? [:]
     }
+
+    #if os(iOS)
+    private func updateVisibility(of videoID: String, isVisible: Bool) {
+        if isVisible {
+            visibleVideoIDs.insert(videoID)
+            consultVisibleNoveltiesIfEligible()
+        } else {
+            visibleVideoIDs.remove(videoID)
+        }
+    }
+
+    private func consultVisibleNoveltiesIfEligible() {
+        let candidates = visibleVideoIDs.subtracting(pendingConsultedVideoIDs)
+        guard FeedNoveltyConsultationPolicy.shouldConsult(
+            isTabActive: isTabActive,
+            isSceneActive: scenePhase == .active,
+            visibleVideoIDs: candidates
+        ), let scope = activeNoveltyScope else { return }
+
+        #if DEBUG
+        if noveltyBadgeDiagnostic.scope == scope {
+            noveltyBadgeDiagnostic.markVisible(videoIDs: candidates, in: scope)
+            return
+        }
+        #endif
+
+        pendingConsultedVideoIDs.formUnion(candidates)
+        Task {
+            await FeedNoveltyRegistry.shared.markConsulted(
+                videoIDs: candidates,
+                in: scope
+            )
+            pendingConsultedVideoIDs.subtract(candidates)
+        }
+    }
+    #endif
 
     private func loadFeed(forceRefresh: Bool) async {
         guard let appEnvironment else { return }
@@ -1388,18 +1544,8 @@ struct SubscriptionsView: View {
     }
 
     private func unsubscribeChannel(_ channelID: String) {
-        Task {
-            do {
-                try await subscriptionService?.unsubscribe(from: channelID)
-                // Remove from local list immediately for responsiveness
-                subscriptions.removeAll { $0.channelID == channelID }
-            } catch {
-                LoggingService.shared.error(
-                    "Failed to unsubscribe: \(error.localizedDescription)",
-                    category: .general
-                )
-            }
-        }
+        dataManager?.unsubscribe(from: channelID)
+        subscriptions.removeAll { $0.channelID == channelID }
     }
 
     @Sendable
@@ -1407,6 +1553,22 @@ struct SubscriptionsView: View {
         return ([], nil)
     }
 }
+
+#if os(iOS)
+private struct FeedSyncObservation: Equatable {
+    let loadState: FeedLoadState
+    let isLoading: Bool
+    let hasCachedVideos: Bool
+}
+
+private enum FeedSyncCapsuleState: Equatable {
+    case synchronizing
+    case progress(completed: Int, total: Int)
+    case success
+    case partial
+    case error
+}
+#endif
 
 // MARK: - Preview
 

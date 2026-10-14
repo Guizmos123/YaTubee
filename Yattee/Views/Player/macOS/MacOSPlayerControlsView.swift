@@ -139,6 +139,14 @@ struct MacOSPlayerControlsView: View {
         appEnvironment?.instancesManager.yatteeServerInstances.first { $0.isEnabled }?.url
     }
 
+    private var yatteeServerAuthHeader: String? {
+        guard let appEnvironment,
+              let server = appEnvironment.instancesManager.yatteeServerInstances.first(where: { $0.isEnabled }) else {
+            return nil
+        }
+        return appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: server)
+    }
+
     // MARK: - Top Bar
 
     /// Top row rendered from the active preset's top section (title/author,
@@ -213,6 +221,7 @@ struct MacOSPlayerControlsView: View {
             isAutoPlayNextEnabled: appEnvironment?.settingsManager.queueAutoPlayNext ?? true,
             isAudioModeEnabled: appEnvironment?.settingsManager.audioOnlyModeEnabled ?? false,
             yatteeServerURL: yatteeServerURL,
+            yatteeServerAuthHeader: yatteeServerAuthHeader,
             deArrowBrandingProvider: appEnvironment?.deArrowBrandingProvider,
             onClose: onClose,
             onToggleDebug: { [self] in

@@ -123,7 +123,10 @@ extension NavigationDestination {
         case .manageChannels:
             ManageChannelsView()
         case .search(let query):
-            SearchView(initialQuery: query)
+            SearchView(
+                initialQuery: query,
+                automaticallyFocusSearchField: query.isEmpty
+            )
         case .externalVideo(let url):
             ExternalVideoView(url: url)
         case .directMedia(let url):

@@ -16,16 +16,12 @@ struct MiniPlayerEditorView: View {
 
     var body: some View {
         List {
-            MiniPlayerPreviewView(
-                buttons: viewModel.miniPlayerButtons,
-                showVideo: showVideo
-            )
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-
+            previewSection
             videoSection
-            buttonsSection
-            addButtonSection
+            if viewModel.miniPlayerStyle.supportsCustomizableButtons {
+                buttonsSection
+                addButtonSection
+            }
         }
         .reactiveNavigationTitle(AppLocalization.string("settings.playerControls.miniPlayer"))
         #if os(iOS)
@@ -39,6 +35,36 @@ struct MiniPlayerEditorView: View {
         }
         .onChange(of: viewModel.activePreset?.id) { _, _ in
             syncLocalState()
+        }
+    }
+
+    // MARK: - Preview and Style
+
+    private var previewSection: some View {
+        Section {
+            MiniPlayerPreviewView(
+                style: viewModel.miniPlayerStyle,
+                buttons: viewModel.miniPlayerButtons,
+                controlsFadeOpacity: viewModel.currentLayout.globalSettings.controlsFadeOpacity
+            )
+            .frame(height: 200)
+            .listRowInsets(EdgeInsets())
+
+            Picker(
+                AppLocalization.string("settings.playerControls.miniPlayer.style"),
+                selection: Binding(
+                    get: { viewModel.miniPlayerStyle },
+                    set: { viewModel.syncMiniPlayerStyle($0) }
+                )
+            ) {
+                ForEach(MiniPlayerStyle.allCases, id: \.self) { style in
+                    Text(styleName(style)).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            .disabled(!viewModel.canEditActivePreset)
         }
     }
 
@@ -203,6 +229,17 @@ struct MiniPlayerEditorView: View {
         }
     }
 
+    private func styleName(_ style: MiniPlayerStyle) -> String {
+        switch style {
+        case .bar:
+            AppLocalization.string("settings.playerControls.miniPlayer.style.bar")
+        case .video:
+            AppLocalization.string("settings.playerControls.miniPlayer.style.video")
+        case .bubble:
+            AppLocalization.string("settings.playerControls.miniPlayer.style.bubble")
+        }
+    }
+
     private func syncLocalState() {
         showVideo = viewModel.miniPlayerShowVideo
         videoTapAction = viewModel.miniPlayerVideoTapAction
@@ -212,13 +249,56 @@ struct MiniPlayerEditorView: View {
 // MARK: - Mini Player Preview
 
 private struct MiniPlayerPreviewView: View {
+    let style: MiniPlayerStyle
     let buttons: [ControlButtonConfiguration]
-    let showVideo: Bool
+    let controlsFadeOpacity: Double
 
     private let buttonSize: CGFloat = 28
     private let buttonSpacing: CGFloat = 4
+    private let previewCornerRadius: CGFloat = 8
+    private let contentPadding: CGFloat = 12
 
     var body: some View {
+        GeometryReader { geometry in
+            let containerWidth = geometry.size.width
+            let containerHeight = geometry.size.height
+            let previewHeight = min(
+                containerHeight,
+                containerWidth / MiniPlayerStyleMetrics.videoAspectRatio
+            )
+
+            previewCanvas(width: containerWidth, height: previewHeight)
+                .frame(width: containerWidth, height: previewHeight)
+                .clipShape(RoundedRectangle(cornerRadius: previewCornerRadius))
+                .position(x: containerWidth / 2, y: containerHeight / 2)
+        }
+    }
+
+    private func previewCanvas(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            PlayerControlsPreviewBackdrop(opacity: controlsFadeOpacity)
+                .frame(width: width, height: height)
+
+            previewContent(availableWidth: width - (contentPadding * 2))
+                .padding(.horizontal, contentPadding)
+                .padding(.bottom, contentPadding)
+        }
+        .frame(width: width, height: height, alignment: .bottom)
+    }
+
+    @ViewBuilder
+    private func previewContent(availableWidth: CGFloat) -> some View {
+        switch style {
+        case .bar:
+            barPreview
+        case .video:
+            videoPreview(availableWidth: availableWidth)
+        case .bubble:
+            bubblePreview
+        }
+    }
+
+    private var barPreview: some View {
         HStack(spacing: 12) {
             // Video thumbnail placeholder (always shown - matches actual mini player behavior)
             RoundedRectangle(cornerRadius: 4)
@@ -252,16 +332,48 @@ private struct MiniPlayerPreviewView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
-        .background(
-            Image("PlayerControlsPreviewBackground")
-                .resizable()
-                .scaledToFill()
-                .overlay(Color.black.opacity(0.5))
-        )
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .padding(.horizontal)
-        .padding(.vertical, 12)
     }
+
+    private func videoPreview(availableWidth: CGFloat) -> some View {
+        let cardWidth = availableWidth * 0.68
+
+        return Image("PlayerControlsPreviewBackground")
+            .resizable()
+            .scaledToFill()
+            .frame(
+                width: cardWidth,
+                height: cardWidth / MiniPlayerStyleMetrics.videoAspectRatio
+            )
+            .clipped()
+            .overlay(alignment: .topTrailing) {
+                videoControls
+                    .padding(6)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var bubblePreview: some View {
+        Image("PlayerControlsPreviewBackground")
+            .resizable()
+            .scaledToFill()
+            .frame(
+                width: MiniPlayerStyleMetrics.recommendedBubbleDiameter,
+                height: MiniPlayerStyleMetrics.recommendedBubbleDiameter
+            )
+            .clipShape(Circle())
+    }
+
+    private var videoControls: some View {
+        HStack(spacing: 2) {
+            ForEach(MiniPlayerSettings.videoButtons(from: buttons)) { configuration in
+                CompactPreviewButtonView(configuration: configuration, size: 24)
+                    .glassBackground(.regular, in: .circle, fallback: .ultraThinMaterial)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
 }
 
 // MARK: - Mini Player Button Configuration View

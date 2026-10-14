@@ -8,42 +8,108 @@
 //
 
 import SwiftUI
+import Nuke
 import NukeUI
 
 // MARK: - Channel Avatar View
 
 /// A channel avatar view that supports loading from Yattee Server.
 struct ChannelAvatarView: View {
-    let author: Author
+    @Environment(\.appEnvironment) private var appEnvironment
+
+    let channelID: String
+    let name: String
+    let directURL: URL?
     let size: CGFloat
     let yatteeServerURL: URL?
     let source: ContentSource?
+    let authHeader: String?
+    let placeholderFont: Font?
+    let placeholderFill: AnyShapeStyle
+    let showsPlaceholderInitial: Bool
 
-    init(author: Author, size: CGFloat = 40, yatteeServerURL: URL? = nil, source: ContentSource? = nil) {
-        self.author = author
+    @State private var persistedImage: Image?
+    @State private var revalidatedImage: Image?
+
+    init(
+        author: Author,
+        size: CGFloat = 40,
+        yatteeServerURL: URL? = nil,
+        source: ContentSource? = nil,
+        authHeader: String? = nil,
+        placeholderFont: Font? = nil,
+        placeholderFill: AnyShapeStyle = AnyShapeStyle(.quaternary),
+        showsPlaceholderInitial: Bool = true
+    ) {
+        channelID = author.id
+        name = author.name
+        directURL = author.thumbnailURL
         self.size = size
         self.yatteeServerURL = yatteeServerURL
         self.source = source
+        self.authHeader = authHeader
+        self.placeholderFont = placeholderFont
+        self.placeholderFill = placeholderFill
+        self.showsPlaceholderInitial = showsPlaceholderInitial
+    }
+
+    init(
+        channelID: String,
+        name: String,
+        directURL: URL?,
+        yatteeServerURL: URL?,
+        size: CGFloat,
+        authHeader: String?,
+        source: ContentSource?,
+        placeholderFont: Font? = nil,
+        placeholderFill: AnyShapeStyle = AnyShapeStyle(.quaternary),
+        showsPlaceholderInitial: Bool = true
+    ) {
+        self.channelID = channelID
+        self.name = name
+        self.directURL = directURL
+        self.yatteeServerURL = yatteeServerURL
+        self.size = size
+        self.authHeader = authHeader
+        self.source = source
+        self.placeholderFont = placeholderFont
+        self.placeholderFill = placeholderFill
+        self.showsPlaceholderInitial = showsPlaceholderInitial
     }
 
     var body: some View {
-        LazyImage(url: avatarURL) { state in
+        FallbackLazyImageRequest(
+            requests: avatarRequests,
+            onSuccess: persistSuccessfulResponse
+        ) { state in
             ZStack {
                 // Background circle with letter placeholder
                 Circle()
-                    .fill(.quaternary)
+                    .fill(placeholderFill)
                     .overlay {
-                        if state.image == nil {
-                            Text(String(author.name.prefix(1)))
-                                .font(size > 50 ? .title : .subheadline)
+                        if state.image == nil, persistedImage == nil, showsPlaceholderInitial {
+                            Text(String(name.prefix(1)))
+                                .font(placeholderFont ?? (size > 50 ? .title : .subheadline))
                                 .fontWeight(.medium)
                                 .foregroundStyle(.secondary)
                         }
                     }
 
                 // Avatar image
+                if let persistedImage {
+                    persistedImage
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                }
+
                 if let image = state.image {
                     image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                }
+
+                if let revalidatedImage {
+                    revalidatedImage
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 }
@@ -53,40 +119,123 @@ struct ChannelAvatarView: View {
         .clipShape(Circle())
         // Isolate geometry to prevent position jumping during parent animations
         .geometryGroup()
+        .task(id: loadIdentity) {
+            revalidatedImage = nil
+            await loadPersistedImage()
+            await revalidatePersistedImageIfNeeded()
+        }
     }
 
-    /// Constructs the avatar URL from author's thumbnail or Yattee Server.
-    private var avatarURL: URL? {
-        // Primary: Use author's thumbnail URL if available
-        if let authorURL = author.thumbnailURL {
-            return authorURL
-        }
-
-        guard let serverURL = yatteeServerURL, !author.id.isEmpty else {
+    private var avatarRequests: [ImageRequest] {
+        let serverURL: URL? = source.map { source in
+            if case .global(let provider) = source,
+               provider == ContentSource.youtubeProvider {
+                return yatteeServerURL
+            }
             return nil
+        } ?? yatteeServerURL
+
+        return AvatarURLBuilder.imageRequests(
+            channelID: channelID,
+            directURL: directURL,
+            serverURL: serverURL,
+            size: Int(size),
+            authHeader: authHeader
+        )
+    }
+
+    private var persistenceKey: ChannelAvatarStorageKey? {
+        ChannelAvatarStorageKey(channelID: channelID, source: source)
+    }
+
+    private var loadIdentity: AvatarLoadIdentity {
+        AvatarLoadIdentity(
+            persistenceKey: persistenceKey,
+            requestURLs: avatarRequests.map(\.url)
+        )
+    }
+
+    private func loadPersistedImage() async {
+        persistedImage = nil
+        guard let persistenceKey,
+              let data = await ChannelAvatarStore.shared.data(for: persistenceKey),
+              let platformImage = PlatformImage(data: data) else {
+            return
         }
 
-        // Only use Yattee Server fallback for YouTube sources
-        // Non-YouTube sources (extracted, federated) cannot use the avatar endpoint
-        if let source = source {
-            switch source {
-            case .global(let provider):
-                guard provider == ContentSource.youtubeProvider else {
-                    return nil
+        #if os(macOS)
+        persistedImage = Image(nsImage: platformImage)
+        #else
+        persistedImage = Image(uiImage: platformImage)
+        #endif
+    }
+
+    private func persistSuccessfulResponse(_ response: ImageResponse) {
+        guard let persistenceKey else { return }
+
+        Task.detached(priority: .utility) {
+            guard let data = ImageEncoders.Default(compressionQuality: 0.9)
+                .encode(response.image),
+                !data.isEmpty else {
+                return
+            }
+
+            await ChannelAvatarStore.shared.save(data, for: persistenceKey)
+        }
+    }
+
+    private func revalidatePersistedImageIfNeeded() async {
+        guard let persistenceKey,
+              appEnvironment?.connectivityMonitor.isOnline != false,
+              !avatarRequests.isEmpty,
+              await ChannelAvatarStore.shared.beginRevalidationIfNeeded(for: persistenceKey) else {
+            return
+        }
+
+        for request in avatarRequests {
+            do {
+                let refreshedRequest = AvatarURLBuilder.revalidationRequest(from: request)
+                let (data, _) = try await ImagePipeline.shared.data(for: refreshedRequest)
+                guard !data.isEmpty, let platformImage = PlatformImage(data: data) else {
+                    continue
                 }
-            case .federated, .extracted:
-                return nil
+
+                guard await ChannelAvatarStore.shared.save(data, for: persistenceKey) else {
+                    continue
+                }
+                await ChannelAvatarStore.shared.finishRevalidation(
+                    for: persistenceKey,
+                    succeeded: true,
+                    sourceURL: request.url
+                )
+
+                #if os(macOS)
+                revalidatedImage = Image(nsImage: platformImage)
+                #else
+                revalidatedImage = Image(uiImage: platformImage)
+                #endif
+                return
+            } catch is CancellationError {
+                await ChannelAvatarStore.shared.finishRevalidation(
+                    for: persistenceKey,
+                    succeeded: false,
+                    sourceURL: nil
+                )
+                return
+            } catch {
+                continue
             }
         }
 
-        // Construct URL from Yattee Server - server handles fetching/caching
-        let avatarSize = Int(size * 2) // 2x for retina
-        let roundedSize = [32, 48, 76, 100, 176, 512].min { abs($0 - avatarSize) < abs($1 - avatarSize) } ?? 176
+        await ChannelAvatarStore.shared.finishRevalidation(
+            for: persistenceKey,
+            succeeded: false,
+            sourceURL: nil
+        )
+    }
 
-        return serverURL
-            .appendingPathComponent("api/v1/channels")
-            .appendingPathComponent(author.id)
-            .appendingPathComponent("avatar")
-            .appendingPathComponent("\(roundedSize).jpg")
+    private struct AvatarLoadIdentity: Hashable {
+        let persistenceKey: ChannelAvatarStorageKey?
+        let requestURLs: [URL?]
     }
 }

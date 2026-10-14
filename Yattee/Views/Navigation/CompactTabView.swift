@@ -11,9 +11,17 @@ import SwiftUI
 #if os(iOS)
 struct CompactTabView: View {
     @Environment(\.appEnvironment) private var appEnvironment
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// Whether this hierarchy owns the mini player through the native tab accessory.
+    var usesMiniPlayerAccessory = true
+
+    /// iOS 27 PoC: display the active video as a native prominent tab for Bubble style.
+    var usesProminentBubbleTab = false
 
     // Navigation paths for fixed tabs
     @State private var homePath = NavigationPath()
+    @State private var morePath = NavigationPath()
 
     // Navigation paths for dynamic tabs
     @State private var subscriptionsPath = NavigationPath()
@@ -29,7 +37,13 @@ struct CompactTabView: View {
     // Tab selection - using String to support both fixed and dynamic tabs
     // Initial value is a placeholder; actual startup tab is applied in onAppear
     @State private var selectedTab: String = "home"
+    @State private var lastContentTab: String = "home"
     @State private var hasAppliedStartupTab = false
+    @State private var noveltyBadgeState = FeedNoveltyBadgeState.shared
+    @State private var channelBadgePreferences = ChannelBadgePreferences.shared
+    #if DEBUG
+    @State private var noveltyBadgeDiagnostic = FeedNoveltyBadgeDiagnosticState.shared
+    #endif
 
     // Zoom transition namespace (local to this tab view)
     @Namespace private var zoomTransition
@@ -61,8 +75,79 @@ struct CompactTabView: View {
         appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
     }
 
+    private var activeNoveltyScope: FeedNoveltyScope? {
+        FeedNoveltyScope.active(in: appEnvironment)
+    }
+
+    private var subscriptionBadgeCount: Int {
+        #if DEBUG
+        if noveltyBadgeDiagnostic.scope == activeNoveltyScope {
+            return FeedNoveltyBadgePresentation.count(
+                registryCount: noveltyBadgeDiagnostic.remainingCount,
+                isEnabled: settingsManager?.videoTabBadgeEnabled == true
+            )
+        }
+        #endif
+        return FeedNoveltyBadgePresentation.count(
+            registryCount: realNoveltyCount,
+            isEnabled: settingsManager?.videoTabBadgeEnabled == true
+        )
+    }
+
+    private var realNoveltyCount: Int {
+        noveltyBadgeState.count(
+            for: activeNoveltyScope,
+            excluding: channelBadgePreferences.excludedChannelIDs(in: activeNoveltyScope)
+        )
+    }
+
+    private var appIconBadgeSynchronizationID: AppIconBadgeSynchronizationKey {
+        AppIconBadgeSynchronizationKey(
+            scopeRawValue: activeNoveltyScope?.rawValue,
+            realNoveltyCount: realNoveltyCount,
+            isEnabled: settingsManager?.appIconBadgeEnabled == true,
+            isSceneActive: scenePhase == .active
+        )
+    }
+
+    private static let prominentMiniPlayerTabValue = "prominentMiniPlayer"
+    private static let moreTabValue = "more"
+
+    private var prominentMiniPlayerIcon: String {
+        appEnvironment?.playerService.state.playbackState == .playing
+            ? "pause.fill"
+            : "play.fill"
+    }
+
+    private var shouldIncludeProminentBubbleTab: Bool {
+        if #available(iOS 27.0, *) {
+            return usesProminentBubbleTab
+                && appEnvironment?.playerService.state.currentVideo != nil
+                && appEnvironment?.playerService.state.isClosingVideo == false
+        }
+        return false
+    }
+
+    /// A prominent tab is still a real tab destination. Keep its selection transient,
+    /// then restore the previous content tab before the expanded player disappears.
+    private var tabSelection: Binding<String> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                if newValue == Self.prominentMiniPlayerTabValue {
+                    guard selectedTab != Self.prominentMiniPlayerTabValue else { return }
+                    lastContentTab = selectedTab
+                    navigationCoordinator?.expandPlayer()
+                    selectedTab = newValue
+                } else {
+                    selectedTab = newValue
+                }
+            }
+        )
+    }
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             // Fixed: Home (first)
             Tab(value: "home") {
                 NavigationStack(path: $homePath) {
@@ -81,29 +166,91 @@ struct CompactTabView: View {
                 } label: {
                     Label(item.localizedTitle, systemImage: item.icon)
                 }
+                .badge(item == .subscriptions ? subscriptionBadgeCount : 0)
+            }
+
+            if #available(iOS 27.0, *), shouldIncludeProminentBubbleTab {
+                Tab(value: Self.prominentMiniPlayerTabValue, role: .prominent) {
+                    EmptyView()
+                } label: {
+                    Label("player.prominentTab", systemImage: prominentMiniPlayerIcon)
+                        .tint(settingsManager?.resolvedAccentColor ?? .accentColor)
+                }
             }
 
         }
         .environment(\.locale, localizationLocale)
         .zoomTransitionNamespace(zoomTransition)
         .zoomTransitionsEnabled(zoomTransitionsEnabled)
-        .iOS26TabFeatures(shouldShowAccessory: shouldShowAccessory, settingsManager: settingsManager)
+        .iOS26TabFeatures(
+            shouldShowAccessory: shouldShowAccessory,
+            allowsMiniPlayerAccessory: usesMiniPlayerAccessory,
+            settingsManager: settingsManager
+        )
         .onChange(of: navigationCoordinator?.pendingNavigation) { _, newValue in
             handlePendingNavigation(newValue)
         }
         .onChange(of: selectedTab) { _, newTab in
+            if newTab != Self.prominentMiniPlayerTabValue {
+                lastContentTab = newTab
+            }
             updateHandoffForTab(newTab)
             syncTabToCoordinator(newTab)
+        }
+        .onChange(of: visibleTabItems) { _, visibleItems in
+            guard selectedTab == Self.moreTabValue, !visibleItems.contains(.more) else { return }
+            selectedTab = "home"
+        }
+        .onChange(of: navigationCoordinator?.isPlayerExpanded) { _, isExpanded in
+            if isExpanded == false {
+                restoreContentTabIfNeeded()
+            }
+        }
+        .onChange(of: navigationCoordinator?.isPlayerWindowVisible) { _, isVisible in
+            if isVisible == true {
+                restoreContentTabIfNeeded()
+            }
+        }
+        .onChange(of: shouldIncludeProminentBubbleTab) { _, isIncluded in
+            if !isIncluded {
+                restoreContentTabIfNeeded()
+            }
         }
         .onChange(of: navigationCoordinator?.selectedTab) { _, newTab in
             syncTabFromCoordinator(newTab)
         }
         .onAppear {
             applyStartupTabIfNeeded()
+            #if DEBUG
+            logProminentTabState(reason: "appear")
+            #endif
+        }
+        #if DEBUG
+        .onChange(of: usesProminentBubbleTab) { _, _ in
+            logProminentTabState(reason: "presentationChanged")
+        }
+        .onChange(of: appEnvironment?.playerService.state.currentVideo?.id) { _, _ in
+            logProminentTabState(reason: "videoChanged")
+        }
+        #endif
+        .task(id: activeNoveltyScope?.rawValue) {
+            guard let activeNoveltyScope else { return }
+            await FeedNoveltyRegistry.shared.synchronizeBadgeState(for: activeNoveltyScope)
+        }
+        .task(id: appIconBadgeSynchronizationID) {
+            await AppIconBadgeManager.shared.synchronize(
+                realNoveltyCount: realNoveltyCount,
+                isEnabled: settingsManager?.appIconBadgeEnabled == true
+            )
         }
     }
 
     // MARK: - Startup Tab
+
+    private func restoreContentTabIfNeeded() {
+        guard selectedTab == Self.prominentMiniPlayerTabValue else { return }
+        selectedTab = lastContentTab
+    }
 
     /// Applies the configured startup tab on first appearance.
     private func applyStartupTabIfNeeded() {
@@ -128,6 +275,8 @@ struct CompactTabView: View {
         switch tab {
         case "home":
             // Home tab - use playlists as default (matches HomeView's primary content)
+            destination = .playlists
+        case Self.moreTabValue:
             destination = .playlists
         case TabBarItem.subscriptions.rawValue:
             destination = .subscriptionsFeed
@@ -215,6 +364,8 @@ struct CompactTabView: View {
         switch selectedTab {
         case "home":
             homePath.append(destination)
+        case Self.moreTabValue:
+            morePath.append(destination)
         case TabBarItem.channels.rawValue:
             channelsPath.append(destination)
         case TabBarItem.bookmarks.rawValue:
@@ -242,6 +393,8 @@ struct CompactTabView: View {
         switch selectedTab {
         case "home":
             homePath.append(destination)
+        case Self.moreTabValue:
+            morePath.append(destination)
         case TabBarItem.subscriptions.rawValue:
             subscriptionsPath.append(destination)
         case TabBarItem.channels.rawValue:
@@ -272,12 +425,19 @@ struct CompactTabView: View {
         switch item {
         case .subscriptions:
             NavigationStack(path: $subscriptionsPath) {
-                SubscriptionsView()
+                SubscriptionsView(
+                    isTabActive: selectedTab == TabBarItem.subscriptions.rawValue
+                )
                     .withNavigationDestinations()
             }
         case .channels:
             NavigationStack(path: $channelsPath) {
                 ManageChannelsView()
+                    .withNavigationDestinations()
+            }
+        case .more:
+            NavigationStack(path: $morePath) {
+                HomeView(customizationContext: .more)
                     .withNavigationDestinations()
             }
         case .bookmarks:
@@ -327,6 +487,8 @@ struct CompactTabView: View {
         switch selectedTab {
         case "home":
             homePath.append(destination)
+        case Self.moreTabValue:
+            morePath.append(destination)
         case TabBarItem.subscriptions.rawValue:
             subscriptionsPath.append(destination)
         case TabBarItem.channels.rawValue:
@@ -352,6 +514,18 @@ struct CompactTabView: View {
 
         navigationCoordinator?.clearPendingNavigation()
     }
+
+    #if DEBUG
+    private func logProminentTabState(reason: String) {
+        let state = appEnvironment?.playerService.state
+        LoggingService.shared.debug(
+            "[ProminentTabPoC] CompactTabView reason=\(reason) " +
+                "prominent=\(usesProminentBubbleTab) accessory=\(usesMiniPlayerAccessory) " +
+                "hasVideo=\(state?.currentVideo != nil) closing=\(state?.isClosingVideo ?? false)",
+            category: .general
+        )
+    }
+    #endif
 }
 
 // MARK: - Preview

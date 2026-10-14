@@ -1,0 +1,2 @@
+/* Local Network permission description */
+"NSLocalNetworkUsageDescription" = "YaTubee uses the local network to discover and control playback on other YaTubee devices.";

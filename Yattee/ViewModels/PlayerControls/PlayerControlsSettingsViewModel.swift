@@ -729,6 +729,11 @@ final class PlayerControlsSettingsViewModel {
         activePreset?.layout.effectiveMiniPlayerSettings ?? .default
     }
 
+    /// Current mini player presentation style.
+    var miniPlayerStyle: MiniPlayerStyle {
+        miniPlayerSettings.style
+    }
+
     /// Whether to show video in mini player.
     var miniPlayerShowVideo: Bool {
         miniPlayerSettings.showVideo
@@ -742,6 +747,14 @@ final class PlayerControlsSettingsViewModel {
     /// Current mini player buttons configuration.
     var miniPlayerButtons: [ControlButtonConfiguration] {
         miniPlayerSettings.buttons
+    }
+
+    /// Synchronously updates the mini player presentation style.
+    /// - Parameter style: The new presentation style.
+    func syncMiniPlayerStyle(_ style: MiniPlayerStyle) {
+        updateMiniPlayerSettingsSync { settings in
+            settings.style = style
+        }
     }
 
     /// Synchronously updates the mini player show video setting.

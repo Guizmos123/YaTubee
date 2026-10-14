@@ -15,8 +15,12 @@ import SwiftUI
 struct UnifiedTabView: View {
     @Environment(\.appEnvironment) private var appEnvironment
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
 
     @Binding var selectedTab: AppTab
+
+    /// Whether this hierarchy owns the mini player through the native tab accessory.
+    var usesMiniPlayerAccessory = true
 
     // Sidebar manager for dynamic content
     @State private var sidebarManager = SidebarManager()
@@ -43,6 +47,11 @@ struct UnifiedTabView: View {
     // Current selection - initial value is a placeholder; actual startup tab is applied in onAppear
     @State private var selection: SidebarItem = .home
     @State private var hasAppliedStartupTab = false
+    @State private var noveltyBadgeState = FeedNoveltyBadgeState.shared
+    @State private var channelBadgePreferences = ChannelBadgePreferences.shared
+    #if DEBUG
+    @State private var noveltyBadgeDiagnostic = FeedNoveltyBadgeDiagnosticState.shared
+    #endif
 
     // Zoom transition namespace (local to this tab view)
     @Namespace private var zoomTransition
@@ -60,6 +69,41 @@ struct UnifiedTabView: View {
         appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
     }
 
+    private var activeNoveltyScope: FeedNoveltyScope? {
+        FeedNoveltyScope.active(in: appEnvironment)
+    }
+
+    private var subscriptionBadgeCount: Int {
+        #if DEBUG
+        if noveltyBadgeDiagnostic.scope == activeNoveltyScope {
+            return FeedNoveltyBadgePresentation.count(
+                registryCount: noveltyBadgeDiagnostic.remainingCount,
+                isEnabled: settingsManager?.videoTabBadgeEnabled == true
+            )
+        }
+        #endif
+        return FeedNoveltyBadgePresentation.count(
+            registryCount: realNoveltyCount,
+            isEnabled: settingsManager?.videoTabBadgeEnabled == true
+        )
+    }
+
+    private var realNoveltyCount: Int {
+        noveltyBadgeState.count(
+            for: activeNoveltyScope,
+            excluding: channelBadgePreferences.excludedChannelIDs(in: activeNoveltyScope)
+        )
+    }
+
+    private var appIconBadgeSynchronizationID: AppIconBadgeSynchronizationKey {
+        AppIconBadgeSynchronizationKey(
+            scopeRawValue: activeNoveltyScope?.rawValue,
+            realNoveltyCount: realNoveltyCount,
+            isEnabled: settingsManager?.appIconBadgeEnabled == true,
+            isSceneActive: scenePhase == .active
+        )
+    }
+
     private var yatteeServerAuthHeader: String? {
         guard let server = appEnvironment?.instancesManager.enabledYatteeServerInstances.first else { return nil }
         return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: server)
@@ -72,7 +116,11 @@ struct UnifiedTabView: View {
         }
         .environment(\.locale, localizationLocale)
         .tabViewStyle(.sidebarAdaptable)
-        .iOS26TabFeatures(shouldShowAccessory: shouldShowAccessory, settingsManager: appEnvironment?.settingsManager)
+        .iOS26TabFeatures(
+            shouldShowAccessory: shouldShowAccessory,
+            allowsMiniPlayerAccessory: usesMiniPlayerAccessory,
+            settingsManager: appEnvironment?.settingsManager
+        )
         .zoomTransitionNamespace(zoomTransition)
         .zoomTransitionsEnabled(zoomTransitionsEnabled)
         .onAppear {
@@ -89,6 +137,16 @@ struct UnifiedTabView: View {
             guard let item = newItem else { return }
             selection = item
             navigationCoordinator?.selectedSidebarItem = nil
+        }
+        .task(id: activeNoveltyScope?.rawValue) {
+            guard let activeNoveltyScope else { return }
+            await FeedNoveltyRegistry.shared.synchronizeBadgeState(for: activeNoveltyScope)
+        }
+        .task(id: appIconBadgeSynchronizationID) {
+            await AppIconBadgeManager.shared.synchronize(
+                realNoveltyCount: realNoveltyCount,
+                isEnabled: settingsManager?.appIconBadgeEnabled == true
+            )
         }
     }
 
@@ -142,12 +200,13 @@ struct UnifiedTabView: View {
         case .subscriptions:
             Tab(value: SidebarItem.subscriptionsFeed) {
                 NavigationStack(path: $subscriptionsFeedPath) {
-                    SubscriptionsView()
+                    SubscriptionsView(isTabActive: selection == .subscriptionsFeed)
                         .withNavigationDestinations()
                 }
             } label: {
                 Label(SidebarItem.subscriptionsFeed.title, systemImage: SidebarItem.subscriptionsFeed.systemImage)
             }
+            .badge(subscriptionBadgeCount)
 
         case .bookmarks:
             Tab(value: SidebarItem.bookmarks) {
@@ -312,12 +371,28 @@ struct UnifiedTabView: View {
 // iOS 26.1+ Tab Features
 extension View {
     @ViewBuilder
-    func iOS26TabFeatures(shouldShowAccessory: Bool, settingsManager: SettingsManager?) -> some View {
+    func iOS26TabFeatures(
+        shouldShowAccessory: Bool,
+        allowsMiniPlayerAccessory: Bool,
+        settingsManager: SettingsManager?
+    ) -> some View {
         if #available(iOS 26.1, *) {
             let behavior = settingsManager?.miniPlayerMinimizeBehavior.tabBarMinimizeBehavior ?? .onScrollDown
             self
-                .tabViewBottomAccessory(isEnabled: shouldShowAccessory) {
-                    MiniPlayerView(isTabAccessory: true)
+                .tabViewBottomAccessory(
+                    isEnabled: shouldShowAccessory && allowsMiniPlayerAccessory
+                ) {
+                    if allowsMiniPlayerAccessory {
+                        MiniPlayerView(isTabAccessory: true)
+                            #if DEBUG
+                            .onAppear {
+                                LoggingService.shared.debug(
+                                    "[ProminentTabPoC] tabViewBottomAccessory content mounted",
+                                    category: .general
+                                )
+                            }
+                            #endif
+                    }
                 }
                 .tabBarMinimizeBehavior(behavior)
         } else if #available(iOS 26.0, *) {
@@ -1035,9 +1110,11 @@ extension UnifiedTabView {
                 Text(name)
             } icon: {
                 SidebarChannelIcon(
-                    url: sidebarManager.avatarURL(for: item),
-                    name: name,
-                    authHeader: yatteeServerAuthHeader
+                    requests: sidebarManager.avatarRequests(
+                        for: item,
+                        authHeader: yatteeServerAuthHeader
+                    ),
+                    name: name
                 )
             }
         }

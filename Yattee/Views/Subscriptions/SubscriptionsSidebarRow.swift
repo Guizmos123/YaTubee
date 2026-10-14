@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import NukeUI
 
 struct SubscriptionsSidebarRow: View {
     let name: String
@@ -15,20 +14,11 @@ struct SubscriptionsSidebarRow: View {
     let serverURL: URL?
     let authHeader: String?
     let channelID: String?
+    var source: ContentSource? = nil
     let isAllChannels: Bool
     var isSelected: Bool = false
 
     private let avatarSize: CGFloat = 28
-
-    private var effectiveAvatarURL: URL? {
-        guard let channelID else { return nil }
-        return AvatarURLBuilder.avatarURL(
-            channelID: channelID,
-            directURL: avatarURL,
-            serverURL: serverURL,
-            size: Int(avatarSize * 2)
-        )
-    }
 
     var body: some View {
         HStack(spacing: 8) {
@@ -57,21 +47,16 @@ struct SubscriptionsSidebarRow: View {
                     .padding(avatarSize * 0.25)
             }
         } else {
-            LazyImage(request: AvatarURLBuilder.imageRequest(url: effectiveAvatarURL, authHeader: authHeader)) { state in
-                if let image = state.image {
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Circle()
-                        .fill(.quaternary)
-                        .overlay {
-                            Text(String(name.prefix(1)))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                }
-            }
+            ChannelAvatarView(
+                channelID: channelID ?? "",
+                name: name,
+                directURL: avatarURL,
+                yatteeServerURL: serverURL,
+                size: avatarSize,
+                authHeader: authHeader,
+                source: source,
+                placeholderFont: .caption
+            )
         }
     }
 }

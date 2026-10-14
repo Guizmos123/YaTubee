@@ -8,6 +8,13 @@
 import Foundation
 import SwiftData
 
+struct RemoteSubscriptionImportResult: Equatable, Sendable {
+    let found: Int
+    let imported: Int
+    let alreadyPresent: Int
+    let errors: Int
+}
+
 extension DataManager {
     // MARK: - Subscriptions
 
@@ -426,6 +433,87 @@ extension DataManager {
         }
 
         return (imported, skipped)
+    }
+
+    /// Imports remote account subscriptions into the local SwiftData store.
+    /// Existing local subscriptions are never replaced or modified.
+    func importRemoteSubscriptions(_ channels: [Channel]) -> RemoteSubscriptionImportResult {
+        let existingChannelIDs = Set(subscriptions().map(\.channelID))
+        var knownChannelIDs = existingChannelIDs
+        var subscriptionsToInsert: [Subscription] = []
+        var alreadyPresent = 0
+        var invalid = 0
+
+        for channel in channels {
+            let channelID = channel.id.channelID
+            let trimmedChannelID = channelID.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedName = channel.name.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard !trimmedChannelID.isEmpty,
+                  trimmedChannelID == channelID,
+                  !trimmedName.isEmpty else {
+                invalid += 1
+                continue
+            }
+
+            guard knownChannelIDs.insert(channelID).inserted else {
+                alreadyPresent += 1
+                continue
+            }
+
+            let subscription = Subscription.from(channel: channel)
+            modelContext.insert(subscription)
+            subscriptionsToInsert.append(subscription)
+        }
+
+        guard !subscriptionsToInsert.isEmpty else {
+            return RemoteSubscriptionImportResult(
+                found: channels.count,
+                imported: 0,
+                alreadyPresent: alreadyPresent,
+                errors: invalid
+            )
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            LoggingService.shared.logCloudKitError("Failed to import remote subscriptions", error: error)
+            return RemoteSubscriptionImportResult(
+                found: channels.count,
+                imported: 0,
+                alreadyPresent: alreadyPresent,
+                errors: invalid + subscriptionsToInsert.count
+            )
+        }
+
+        SubscriptionFeedCache.shared.invalidate()
+        for subscription in subscriptionsToInsert {
+            cloudKitSync?.queueSubscriptionSave(subscription)
+        }
+
+        let change = SubscriptionChange(
+            addedSubscriptions: subscriptionsToInsert,
+            removedChannelIDs: []
+        )
+        NotificationCenter.default.post(
+            name: .subscriptionsDidChange,
+            object: nil,
+            userInfo: [SubscriptionChange.userInfoKey: change]
+        )
+
+        LoggingService.shared.info(
+            "Imported \(subscriptionsToInsert.count) remote subscriptions into local storage",
+            category: .general
+        )
+
+        return RemoteSubscriptionImportResult(
+            found: channels.count,
+            imported: subscriptionsToInsert.count,
+            alreadyPresent: alreadyPresent,
+            errors: invalid
+        )
     }
 
     /// Updates subscription metadata from fresh channel data.

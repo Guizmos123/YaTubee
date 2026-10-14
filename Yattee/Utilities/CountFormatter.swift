@@ -17,14 +17,21 @@ enum CountFormatter {
         case 0..<1_000:
             return "\(count)"
         case 1_000..<1_000_000:
-            let value = Double(count) / 1_000
-            return String(format: "%.1fK", value).replacingOccurrences(of: ".0K", with: "K")
+            return compactValue(Double(count) / 1_000, suffix: "K")
         case 1_000_000..<1_000_000_000:
-            let value = Double(count) / 1_000_000
-            return String(format: "%.1fM", value).replacingOccurrences(of: ".0M", with: "M")
+            return compactValue(Double(count) / 1_000_000, suffix: "M")
         default:
-            let value = Double(count) / 1_000_000_000
-            return String(format: "%.1fB", value).replacingOccurrences(of: ".0B", with: "B")
+            return compactValue(Double(count) / 1_000_000_000, suffix: "B")
         }
+    }
+
+    private static func compactValue(_ value: Double, suffix: String) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = AppLocalization.selectedLocale
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 1
+        return (formatter.string(from: NSNumber(value: value)) ?? "\(value)") + suffix
     }
 }

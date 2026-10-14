@@ -8,6 +8,7 @@
 
 import Foundation
 import Combine
+import Nuke
 
 /// Manages sidebar state and content generation.
 @Observable @MainActor
@@ -263,19 +264,20 @@ final class SidebarManager {
         instancesManager?.enabledYatteeServerInstances.first?.url
     }
 
-    /// Returns avatar URL for a channel sidebar item.
-    /// Uses AvatarURLBuilder for Yattee Server fallback when direct URL is unavailable.
+    /// Returns ordered avatar requests for a channel sidebar item.
+    /// Uses the cached subscription URL after Yattee Server if the server request fails.
     /// Uses cached subscriptions to avoid repeated DB queries during layout.
-    func avatarURL(for item: SidebarItem) -> URL? {
-        guard case .channel(let channelID, _, _) = item else { return nil }
+    func avatarRequests(for item: SidebarItem, authHeader: String?) -> [ImageRequest] {
+        guard case .channel(let channelID, _, _) = item else { return [] }
 
         let directURL = cachedSubscriptions.first { $0.channelID == channelID }?.avatarURL
 
-        return AvatarURLBuilder.avatarURL(
+        return AvatarURLBuilder.imageRequests(
             channelID: channelID,
             directURL: directURL,
             serverURL: yatteeServerURL,
-            size: 22  // Matches SidebarChannelIcon size
+            size: 22,
+            authHeader: authHeader
         )
     }
 

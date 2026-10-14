@@ -12,7 +12,7 @@ import Nuke
 enum AvatarURLBuilder {
     
     /// Available avatar sizes on Yattee Server
-    private static let availableSizes = [32, 48, 76, 100, 176, 512]
+    private static let availableSizes = [32, 48, 76, 176, 512]
     
     /// Constructs the effective avatar URL for a channel
     /// - Parameters:
@@ -75,5 +75,45 @@ enum AvatarURLBuilder {
             request.setValue(authHeader, forHTTPHeaderField: "Authorization")
         }
         return ImageRequest(urlRequest: request)
+    }
+
+    /// Creates ordered avatar requests for views that can retry after a load failure.
+    /// Yattee Server remains the preferred source for YouTube channels, while a
+    /// known direct URL is preserved as a fallback instead of being discarded.
+    static func imageRequests(
+        channelID: String,
+        directURL: URL?,
+        serverURL: URL?,
+        size: Int,
+        authHeader: String?
+    ) -> [ImageRequest] {
+        let isYouTubeChannel = channelID.hasPrefix("UC") || channelID.hasPrefix("@")
+        let serverAvatarURL = serverURL.map {
+            buildServerAvatarURL(serverURL: $0, channelID: channelID, size: size)
+        }
+        let orderedURLs: [URL?] = isYouTubeChannel
+            ? [serverAvatarURL, directURL]
+            : [directURL, serverAvatarURL]
+
+        var seen = Set<URL>()
+        return orderedURLs
+            .compactMap { $0 }
+            .filter { seen.insert($0).inserted }
+            .compactMap { imageRequest(url: $0, authHeader: authHeader) }
+    }
+
+    /// Bypasses Nuke's decoded/data caches while retaining HTTP validators and
+    /// request headers. URLSession can therefore use ETag/Last-Modified and the
+    /// shared pipeline still deduplicates identical in-flight revalidations.
+    static func revalidationRequest(from request: ImageRequest) -> ImageRequest {
+        guard var urlRequest = request.urlRequest else { return request }
+        urlRequest.cachePolicy = .reloadRevalidatingCacheData
+        return ImageRequest(
+            urlRequest: urlRequest,
+            processors: request.processors,
+            priority: .low,
+            options: request.options.union(.reloadIgnoringCachedData),
+            userInfo: request.userInfo
+        )
     }
 }

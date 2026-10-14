@@ -612,6 +612,7 @@ struct VideoContextMenuView: View {
     var buttonSize: CGFloat = 32
     var buttonBackgroundStyle: ButtonBackgroundStyle = .none
     var theme: ControlsTheme = .dark
+    var glassVisualSize: CGFloat? = nil
 
     @State private var showingPlaylistSheet = false
     @State private var showingDownloadSheet = false
@@ -677,9 +678,10 @@ struct VideoContextMenuView: View {
             Image(systemName: "ellipsis")
                 .font(.title2)
                 .foregroundStyle(accentColor)
-                .frame(width: frameSize, height: frameSize)
+                .frame(width: glassVisualSize ?? frameSize, height: glassVisualSize ?? frameSize)
                 .glassBackground(glassStyle, in: .circle, fallback: .ultraThinMaterial, colorScheme: theme.colorScheme)
-                .contentShape(Circle())
+                .frame(width: frameSize, height: frameSize)
+                .contentShape(Rectangle())
         } else {
             Image(systemName: "ellipsis")
                 .font(.title3)

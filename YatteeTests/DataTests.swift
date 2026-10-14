@@ -918,6 +918,62 @@ struct DataTests {
             #expect(!manager.isSubscribed(to: "testChannel"))
         }
 
+        @Test("Remote subscription import is additive and idempotent")
+        @MainActor
+        func remoteSubscriptionImportIsAdditiveAndIdempotent() throws {
+            let manager = try DataManager(inMemory: true)
+            manager.subscribe(to: Channel(id: .global("existing"), name: "Existing"))
+
+            let channels = [
+                Channel(id: .global("existing"), name: "Remote Existing"),
+                Channel(
+                    id: .global("new"),
+                    name: "New Channel",
+                    description: "Description",
+                    subscriberCount: 42,
+                    thumbnailURL: URL(string: "https://example.com/avatar.jpg")
+                )
+            ]
+
+            let first = manager.importRemoteSubscriptions(channels)
+            #expect(first == RemoteSubscriptionImportResult(found: 2, imported: 1, alreadyPresent: 1, errors: 0))
+            #expect(manager.subscriptions().count == 2)
+
+            let imported = try #require(manager.subscriptions().first { $0.channelID == "new" })
+            #expect(imported.name == "New Channel")
+            #expect(imported.channelDescription == "Description")
+            #expect(imported.subscriberCount == 42)
+            #expect(imported.avatarURLString == "https://example.com/avatar.jpg")
+
+            let second = manager.importRemoteSubscriptions(channels)
+            #expect(second == RemoteSubscriptionImportResult(found: 2, imported: 0, alreadyPresent: 2, errors: 0))
+            #expect(manager.subscriptions().count == 2)
+        }
+
+        @Test("Remote subscription import deduplicates accounts and reports invalid channels")
+        @MainActor
+        func remoteSubscriptionImportDeduplicatesAndReportsInvalidChannels() throws {
+            let manager = try DataManager(inMemory: true)
+
+            let firstAccount = [
+                Channel(id: .global("shared"), name: "Shared"),
+                Channel(id: .global("first-only"), name: "First")
+            ]
+            let secondAccount = [
+                Channel(id: .global("shared"), name: "Shared from another account"),
+                Channel(id: .global("second-only"), name: "Second"),
+                Channel(id: .global(""), name: "Invalid ID"),
+                Channel(id: .global("missing-name"), name: "   ")
+            ]
+
+            let first = manager.importRemoteSubscriptions(firstAccount)
+            let second = manager.importRemoteSubscriptions(secondAccount)
+
+            #expect(first == RemoteSubscriptionImportResult(found: 2, imported: 2, alreadyPresent: 0, errors: 0))
+            #expect(second == RemoteSubscriptionImportResult(found: 4, imported: 1, alreadyPresent: 1, errors: 2))
+            #expect(Set(manager.subscriptions().map(\.channelID)) == ["shared", "first-only", "second-only"])
+        }
+
         @Test("Watch history ordering")
         @MainActor
         func watchHistoryOrdering() async throws {

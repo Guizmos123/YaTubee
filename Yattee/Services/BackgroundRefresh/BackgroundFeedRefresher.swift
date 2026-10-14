@@ -6,15 +6,22 @@
 //
 
 import Foundation
+import UserNotifications
 
 /// Performs background feed refresh and detects new videos for notifications.
 /// Only fetches videos from channels with notifications enabled.
 @MainActor
 final class BackgroundFeedRefresher {
+    private static let serverPollingAttempts = 4
+    private static let serverPollingInterval: Duration = .seconds(3)
+
     // MARK: - Dependencies
 
     private weak var appEnvironment: AppEnvironment?
     private let notificationManager: NotificationManager
+    /// Shared across the scheduler-owned refresher and the debug/manual refresher
+    /// created by NotificationManager.
+    private static var refreshRunState = NotificationRefreshRunState()
 
     // MARK: - Initialization
 
@@ -30,43 +37,110 @@ final class BackgroundFeedRefresher {
 
     /// Performs background refresh and sends notifications for new videos.
     /// Routes to appropriate refresh method based on subscription account type.
-    func performBackgroundRefresh() async {
+    @discardableResult
+    func performBackgroundRefresh(origin: String = "manual", runID suppliedRunID: UUID? = nil) async -> Bool {
+        let runID = suppliedRunID ?? UUID()
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.startRun(id: runID, origin: origin)
+        #endif
+
+        guard Self.refreshRunState.begin() else {
+            LoggingService.shared.debug(
+                "Background refresh coalesced: another refresh is already running",
+                category: .notifications
+            )
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "coalesced", runID: runID)
+            NotificationPipelineDiagnostic.shared.finish(runID: runID, succeeded: true)
+            #endif
+            return true
+        }
+        defer { Self.refreshRunState.end() }
+
         guard let appEnvironment else {
             LoggingService.shared.warning("Background refresh skipped: no app environment", category: .notifications)
-            return
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "skipped:noAppEnvironment", runID: runID)
+            NotificationPipelineDiagnostic.shared.finish(runID: runID, succeeded: false)
+            #endif
+            return false
         }
 
-        guard appEnvironment.settingsManager.backgroundNotificationsEnabled else {
+        let globalSettingEnabled = appEnvironment.settingsManager.backgroundNotificationsEnabled
+        guard globalSettingEnabled else {
             LoggingService.shared.debug("Background refresh disabled in settings", category: .notifications)
-            return
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordContext(
+                runID: runID,
+                account: NotificationRefreshScope.key(for: appEnvironment.settingsManager.subscriptionAccount),
+                source: appEnvironment.settingsManager.subscriptionAccount.type.rawValue,
+                instanceID: appEnvironment.settingsManager.subscriptionAccount.instanceID,
+                authorizationStatus: notificationManager.authorizationStatus.rawValue,
+                globalSettingEnabled: false
+            )
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "skipped:globalDisabled", runID: runID)
+            NotificationPipelineDiagnostic.shared.finish(runID: runID, succeeded: true)
+            #endif
+            return true
+        }
+
+        await notificationManager.refreshAuthorizationStatus()
+        let account = appEnvironment.settingsManager.subscriptionAccount
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.recordContext(
+            runID: runID,
+            account: NotificationRefreshScope.key(for: account),
+            source: account.type.rawValue,
+            instanceID: account.instanceID,
+            authorizationStatus: notificationManager.authorizationStatus.rawValue,
+            globalSettingEnabled: globalSettingEnabled
+        )
+        #endif
+        guard notificationManager.isAuthorized else {
+            LoggingService.shared.info(
+                "Background refresh skipped: notification authorization status is \(notificationManager.authorizationStatus.rawValue)",
+                category: .notifications
+            )
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "skipped:notAuthorized", runID: runID)
+            NotificationPipelineDiagnostic.shared.finish(runID: runID, succeeded: true)
+            #endif
+            return true
         }
 
         // Route based on subscription account type
-        switch appEnvironment.settingsManager.subscriptionAccount.type {
+        let scope = NotificationRefreshScope.key(for: account)
+        let succeeded: Bool
+        switch account.type {
         case .local:
-            await performLocalAccountRefresh()
+            succeeded = await performLocalAccountRefresh(scope: scope, runID: runID)
         case .invidious:
-            await performInvidiousAccountRefresh()
+            succeeded = await performInvidiousAccountRefresh(account: account, scope: scope, runID: runID)
         case .piped:
-            await performPipedAccountRefresh()
+            succeeded = await performPipedAccountRefresh(account: account, scope: scope, runID: runID)
         }
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.finish(runID: runID, succeeded: succeeded)
+        #endif
+        return succeeded
     }
 
     // MARK: - Local Account Refresh
 
     /// Performs background refresh for local (Yattee/iCloud) subscription account.
     /// Requires Yattee Server - uses stateless feed endpoint for efficient single-request fetching.
-    private func performLocalAccountRefresh() async {
-        guard let appEnvironment else { return }
+    private func performLocalAccountRefresh(scope: String, runID: UUID) async -> Bool {
+        guard let appEnvironment else { return false }
 
         // Require Yattee Server for local account background refresh
         guard let yatteeServer = appEnvironment.instancesManager.instances
             .first(where: { $0.type == .yatteeServer && $0.isEnabled }) else {
             LoggingService.shared.debug("Background refresh requires Yattee Server for local subscriptions", category: .notifications)
-            return
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "configurationError:noYatteeServer", runID: runID)
+            #endif
+            return false
         }
-
-        let lastCheckDate = appEnvironment.settingsManager.lastBackgroundCheck ?? Date.distantPast
 
         // Get channel IDs with notifications enabled from ChannelNotificationSettings
         let notifiableChannelIDs = Set(appEnvironment.dataManager.channelIDsWithNotificationsEnabled())
@@ -75,16 +149,26 @@ final class BackgroundFeedRefresher {
         let notifiableSubscriptions = appEnvironment.dataManager.subscriptions().filter {
             notifiableChannelIDs.contains($0.channelID)
         }
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.recordEnabledChannels(notifiableSubscriptions.count, runID: runID)
+        NotificationPipelineDiagnostic.shared.recordBaseline(
+            appEnvironment.settingsManager.notificationRefreshState(for: scope).lastCheck != nil,
+            runID: runID
+        )
+        #endif
 
         LoggingService.shared.info(
-            "Background refresh starting (local account) | lastBackgroundCheck: \(lastCheckDate) | channels with notifications: \(notifiableSubscriptions.count)",
+            "Background refresh starting (local account) | scope: \(scope) | channels with notifications: \(notifiableSubscriptions.count)",
             category: .notifications
         )
 
         guard !notifiableSubscriptions.isEmpty else {
             LoggingService.shared.debug("No subscriptions with notifications enabled", category: .notifications)
-            appEnvironment.settingsManager.lastBackgroundCheck = Date()
-            return
+            advanceBaseline(for: scope, using: appEnvironment.settingsManager)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "skipped:noEnabledChannels", videoCount: 0, runID: runID)
+            #endif
+            return true
         }
 
         LoggingService.shared.debug("Fetching feed from Yattee Server: \(yatteeServer.url)", category: .notifications)
@@ -100,101 +184,149 @@ final class BackgroundFeedRefresher {
             )
         }
 
+        let requestStartedAt = Date()
         do {
             let httpClient = HTTPClient()
             if let authHeader = appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: yatteeServer) {
                 await httpClient.setDefaultHeaders(["Authorization": authHeader])
             }
             let yatteeServerAPI = YatteeServerAPI(httpClient: httpClient)
-            let response = try await yatteeServerAPI.postFeed(
+            let response = try await fetchCompleteYatteeServerFeed(
+                api: yatteeServerAPI,
                 channels: channelRequests,
                 limit: 5 * notifiableSubscriptions.count,
-                offset: 0,
-                instance: yatteeServer
+                instance: yatteeServer,
+                runID: runID
             )
 
             LoggingService.shared.debug("API returned \(response.videos.count) total videos", category: .notifications)
 
-            // Load last notified video IDs per channel for deduplication
-            let lastNotified = appEnvironment.settingsManager.lastNotifiedVideoPerChannel
-
-            // Filter to new videos - don't wait for ready, use whatever is available
-            var dateFilteredCount = 0
-            var dedupedCount = 0
-            let newVideos: [(video: Video, channelName: String)] = response.videos.compactMap { serverVideo in
-                guard let video = serverVideo.toVideo(),
-                      let publishedAt = video.publishedAt,
-                      publishedAt > lastCheckDate,
-                      publishedAt <= Date() else {
-                    return nil
-                }
-                dateFilteredCount += 1
-                // Skip if this is the last video we notified about for this channel
-                if lastNotified[video.author.id] == video.id.videoID {
-                    dedupedCount += 1
-                    return nil
-                }
-                return (video: video, channelName: serverVideo.author)
+            let videos = response.videos.compactMap { serverVideo -> (video: Video, channelName: String)? in
+                guard let video = serverVideo.toVideo() else { return nil }
+                return (video, serverVideo.author)
             }
-
-            LoggingService.shared.debug(
-                "After date filter: \(dateFilteredCount) videos newer than \(lastCheckDate)",
-                category: .notifications
-            )
-            LoggingService.shared.debug(
-                "After deduplication: \(newVideos.count) videos (removed \(dedupedCount) already-notified)",
-                category: .notifications
-            )
-
-            // Update last notified video per channel (store newest video ID for each channel)
-            var updatedLastNotified = lastNotified
-            for (video, _) in newVideos {
-                updatedLastNotified[video.author.id] = video.id.videoID
-            }
-            appEnvironment.settingsManager.lastNotifiedVideoPerChannel = updatedLastNotified
-
-            // Update timestamp before sending notification
-            appEnvironment.settingsManager.lastBackgroundCheck = Date()
-
-            await sendNotificationsIfNeeded(newVideos: newVideos)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "success", videoCount: videos.count, runID: runID)
+            #endif
+            await processFetchedVideos(videos, requestStartedAt: requestStartedAt, scope: scope, runID: runID)
+            return true
+        } catch is CancellationError {
+            LoggingService.shared.debug("Background refresh cancelled (local account)", category: .notifications)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "cancelled", runID: runID)
+            #endif
+            return false
         } catch {
             LoggingService.shared.logNotificationError("Background refresh failed (local account)", error: error)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "error:\(String(describing: type(of: error)))", runID: runID)
+            #endif
+            return false
         }
+    }
+
+    private func fetchCompleteYatteeServerFeed(
+        api: YatteeServerAPI,
+        channels: [StatelessChannelRequest],
+        limit: Int,
+        instance: Instance,
+        runID: UUID
+    ) async throws -> StatelessFeedResponse {
+        var response = try await api.postFeed(
+            channels: channels,
+            limit: limit,
+            offset: 0,
+            instance: instance
+        )
+        guard !NotificationRefreshTransaction.isCompleteYatteeServerResponse(response) else {
+            return response
+        }
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.recordFeed(result: "partial", videoCount: response.videos.count, runID: runID)
+        #endif
+
+        let statusChannels = channels.map {
+            StatelessChannelStatusRequest(channelId: $0.channelId, site: $0.site)
+        }
+        for attempt in 1...Self.serverPollingAttempts {
+            try Task.checkCancellation()
+            try await Task.sleep(for: Self.serverPollingInterval)
+            try Task.checkCancellation()
+
+            let status = try await api.postFeedStatus(channels: statusChannels, instance: instance)
+            guard status.isReady, status.pendingCount == 0, status.errorCount == 0 else {
+                LoggingService.shared.debug(
+                    "Background feed remains incomplete (attempt \(attempt)/\(Self.serverPollingAttempts), pending: \(status.pendingCount), errors: \(status.errorCount))",
+                    category: .notifications
+                )
+                continue
+            }
+
+            response = try await api.postFeed(
+                channels: channels,
+                limit: limit,
+                offset: 0,
+                instance: instance
+            )
+            if NotificationRefreshTransaction.isCompleteYatteeServerResponse(response) {
+                return response
+            }
+        }
+
+        throw BackgroundFeedRefreshError.incompleteYatteeServerResponse
     }
 
     // MARK: - Invidious Account Refresh
 
     /// Performs background refresh for Invidious subscription account.
     /// Fetches the full Invidious feed and filters to channels with notifications enabled.
-    private func performInvidiousAccountRefresh() async {
-        guard let appEnvironment else { return }
+    private func performInvidiousAccountRefresh(
+        account: SubscriptionAccount,
+        scope: String,
+        runID: UUID
+    ) async -> Bool {
+        guard let appEnvironment else { return false }
 
-        // Require authenticated Invidious instance
-        guard let invidiousInstance = appEnvironment.instancesManager.instances
-            .first(where: { $0.type == .invidious && $0.isEnabled }),
+        // Use the exact instance selected by the active subscription account,
+        // matching SubscriptionFeedCache and the subscription provider.
+        guard let instanceID = account.instanceID,
+              let invidiousInstance = appEnvironment.instancesManager.instances
+              .first(where: { $0.id == instanceID && $0.type == .invidious && $0.isEnabled }),
               let sid = appEnvironment.invidiousCredentialsManager.sid(for: invidiousInstance) else {
             LoggingService.shared.debug("Background refresh requires authenticated Invidious instance", category: .notifications)
-            return
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "configurationError:invidiousAuthentication", runID: runID)
+            #endif
+            return false
         }
-
-        let lastCheckDate = appEnvironment.settingsManager.lastBackgroundCheck ?? Date.distantPast
 
         // Get channel IDs with notifications enabled from ChannelNotificationSettings
         let notifiableChannelIDs = Set(appEnvironment.dataManager.channelIDsWithNotificationsEnabled())
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.recordEnabledChannels(notifiableChannelIDs.count, runID: runID)
+        NotificationPipelineDiagnostic.shared.recordBaseline(
+            appEnvironment.settingsManager.notificationRefreshState(for: scope).lastCheck != nil,
+            runID: runID
+        )
+        #endif
 
         LoggingService.shared.info(
-            "Background refresh starting (Invidious account) | lastBackgroundCheck: \(lastCheckDate) | channels with notifications: \(notifiableChannelIDs.count)",
+            "Background refresh starting (Invidious account) | scope: \(scope) | channels with notifications: \(notifiableChannelIDs.count)",
             category: .notifications
         )
 
         guard !notifiableChannelIDs.isEmpty else {
             LoggingService.shared.debug("No channels with notifications enabled", category: .notifications)
-            appEnvironment.settingsManager.lastBackgroundCheck = Date()
-            return
+            advanceBaseline(for: scope, using: appEnvironment.settingsManager)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "skipped:noEnabledChannels", videoCount: 0, runID: runID)
+            #endif
+            return true
         }
 
         LoggingService.shared.debug("Fetching feed from Invidious: \(invidiousInstance.url)", category: .notifications)
 
+        let requestStartedAt = Date()
         do {
             // Fetch the Invidious feed - fetch enough to cover recent videos from notifiable channels
             // Use a reasonable limit since we're filtering client-side
@@ -207,63 +339,26 @@ final class BackgroundFeedRefresher {
 
             LoggingService.shared.debug("API returned \(feedResponse.videos.count) total videos", category: .notifications)
 
-            // Load last notified video IDs per channel for deduplication
-            let lastNotified = appEnvironment.settingsManager.lastNotifiedVideoPerChannel
-
-            // Filter to new videos from notifiable channels
-            var channelFilteredCount = 0
-            var dateFilteredCount = 0
-            var dedupedCount = 0
-            let newVideos: [(video: Video, channelName: String)] = feedResponse.videos.compactMap { video in
-                // Only include videos from channels with notifications enabled
-                guard notifiableChannelIDs.contains(video.author.id) else {
-                    return nil
-                }
-                channelFilteredCount += 1
-
-                // Only include videos published after last check and not in the future
-                guard let publishedAt = video.publishedAt,
-                      publishedAt > lastCheckDate,
-                      publishedAt <= Date() else {
-                    return nil
-                }
-                dateFilteredCount += 1
-
-                // Skip if this is the last video we notified about for this channel
-                if lastNotified[video.author.id] == video.id.videoID {
-                    dedupedCount += 1
-                    return nil
-                }
-
-                return (video: video, channelName: video.author.name)
-            }
-
-            LoggingService.shared.debug(
-                "After channel filter: \(channelFilteredCount) videos from notifiable channels",
-                category: .notifications
-            )
-            LoggingService.shared.debug(
-                "After date filter: \(dateFilteredCount) videos newer than \(lastCheckDate)",
-                category: .notifications
-            )
-            LoggingService.shared.debug(
-                "After deduplication: \(newVideos.count) videos (removed \(dedupedCount) already-notified)",
-                category: .notifications
-            )
-
-            // Update last notified video per channel (store newest video ID for each channel)
-            var updatedLastNotified = lastNotified
-            for (video, _) in newVideos {
-                updatedLastNotified[video.author.id] = video.id.videoID
-            }
-            appEnvironment.settingsManager.lastNotifiedVideoPerChannel = updatedLastNotified
-
-            // Update timestamp before sending notification
-            appEnvironment.settingsManager.lastBackgroundCheck = Date()
-
-            await sendNotificationsIfNeeded(newVideos: newVideos)
+            let videos = feedResponse.videos
+                .filter { notifiableChannelIDs.contains($0.author.id) }
+                .map { (video: $0, channelName: $0.author.name) }
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "success", videoCount: videos.count, runID: runID)
+            #endif
+            await processFetchedVideos(videos, requestStartedAt: requestStartedAt, scope: scope, runID: runID)
+            return true
+        } catch is CancellationError {
+            LoggingService.shared.debug("Background refresh cancelled (Invidious account)", category: .notifications)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "cancelled", runID: runID)
+            #endif
+            return false
         } catch {
             LoggingService.shared.logNotificationError("Background refresh failed (Invidious account)", error: error)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "error:\(String(describing: type(of: error)))", runID: runID)
+            #endif
+            return false
         }
     }
 
@@ -271,36 +366,52 @@ final class BackgroundFeedRefresher {
 
     /// Performs background refresh for Piped subscription account.
     /// Fetches the Piped feed and filters to channels with notifications enabled.
-    private func performPipedAccountRefresh() async {
-        guard let appEnvironment else { return }
+    private func performPipedAccountRefresh(
+        account: SubscriptionAccount,
+        scope: String,
+        runID: UUID
+    ) async -> Bool {
+        guard let appEnvironment else { return false }
 
-        // Get the instance ID from subscription account settings
-        let account = appEnvironment.settingsManager.subscriptionAccount
         guard let instanceID = account.instanceID,
-              let pipedInstance = appEnvironment.instancesManager.instances.first(where: { $0.id == instanceID }),
+              let pipedInstance = appEnvironment.instancesManager.instances.first(where: {
+                  $0.id == instanceID && $0.type == .piped && $0.isEnabled
+              }),
               let authToken = appEnvironment.pipedCredentialsManager.credential(for: pipedInstance) else {
             LoggingService.shared.debug("Background refresh requires authenticated Piped instance", category: .notifications)
-            return
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "configurationError:pipedAuthentication", runID: runID)
+            #endif
+            return false
         }
-
-        let lastCheckDate = appEnvironment.settingsManager.lastBackgroundCheck ?? Date.distantPast
 
         // Get channel IDs with notifications enabled from ChannelNotificationSettings
         let notifiableChannelIDs = Set(appEnvironment.dataManager.channelIDsWithNotificationsEnabled())
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.recordEnabledChannels(notifiableChannelIDs.count, runID: runID)
+        NotificationPipelineDiagnostic.shared.recordBaseline(
+            appEnvironment.settingsManager.notificationRefreshState(for: scope).lastCheck != nil,
+            runID: runID
+        )
+        #endif
 
         LoggingService.shared.info(
-            "Background refresh starting (Piped account) | lastBackgroundCheck: \(lastCheckDate) | channels with notifications: \(notifiableChannelIDs.count)",
+            "Background refresh starting (Piped account) | scope: \(scope) | channels with notifications: \(notifiableChannelIDs.count)",
             category: .notifications
         )
 
         guard !notifiableChannelIDs.isEmpty else {
             LoggingService.shared.debug("No channels with notifications enabled", category: .notifications)
-            appEnvironment.settingsManager.lastBackgroundCheck = Date()
-            return
+            advanceBaseline(for: scope, using: appEnvironment.settingsManager)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "skipped:noEnabledChannels", videoCount: 0, runID: runID)
+            #endif
+            return true
         }
 
         LoggingService.shared.debug("Fetching feed from Piped: \(pipedInstance.url)", category: .notifications)
 
+        let requestStartedAt = Date()
         do {
             // Fetch the Piped feed
             let pipedAPI = PipedAPI(httpClient: appEnvironment.httpClient)
@@ -308,125 +419,184 @@ final class BackgroundFeedRefresher {
 
             LoggingService.shared.debug("API returned \(feedVideos.count) total videos", category: .notifications)
 
-            // Load last notified video IDs per channel for deduplication
-            let lastNotified = appEnvironment.settingsManager.lastNotifiedVideoPerChannel
-
-            // Filter to new videos from notifiable channels
-            var channelFilteredCount = 0
-            var dateFilteredCount = 0
-            var dedupedCount = 0
-            let newVideos: [(video: Video, channelName: String)] = feedVideos.compactMap { video in
-                // Only include videos from channels with notifications enabled
-                guard notifiableChannelIDs.contains(video.author.id) else {
-                    return nil
-                }
-                channelFilteredCount += 1
-
-                // Only include videos published after last check and not in the future
-                guard let publishedAt = video.publishedAt,
-                      publishedAt > lastCheckDate,
-                      publishedAt <= Date() else {
-                    return nil
-                }
-                dateFilteredCount += 1
-
-                // Skip if this is the last video we notified about for this channel
-                if lastNotified[video.author.id] == video.id.videoID {
-                    dedupedCount += 1
-                    return nil
-                }
-
-                return (video: video, channelName: video.author.name)
-            }
-
-            LoggingService.shared.debug(
-                "After channel filter: \(channelFilteredCount) videos from notifiable channels",
-                category: .notifications
-            )
-            LoggingService.shared.debug(
-                "After date filter: \(dateFilteredCount) videos newer than \(lastCheckDate)",
-                category: .notifications
-            )
-            LoggingService.shared.debug(
-                "After deduplication: \(newVideos.count) videos (removed \(dedupedCount) already-notified)",
-                category: .notifications
-            )
-
-            // Update last notified video per channel (store newest video ID for each channel)
-            var updatedLastNotified = lastNotified
-            for (video, _) in newVideos {
-                updatedLastNotified[video.author.id] = video.id.videoID
-            }
-            appEnvironment.settingsManager.lastNotifiedVideoPerChannel = updatedLastNotified
-
-            // Update timestamp before sending notification
-            appEnvironment.settingsManager.lastBackgroundCheck = Date()
-
-            await sendNotificationsIfNeeded(newVideos: newVideos)
+            let videos = feedVideos
+                .filter { notifiableChannelIDs.contains($0.author.id) }
+                .map { (video: $0, channelName: $0.author.name) }
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "success", videoCount: videos.count, runID: runID)
+            #endif
+            await processFetchedVideos(videos, requestStartedAt: requestStartedAt, scope: scope, runID: runID)
+            return true
+        } catch is CancellationError {
+            LoggingService.shared.debug("Background refresh cancelled (Piped account)", category: .notifications)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "cancelled", runID: runID)
+            #endif
+            return false
         } catch {
             LoggingService.shared.logNotificationError("Background refresh failed (Piped account)", error: error)
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordFeed(result: "error:\(String(describing: type(of: error)))", runID: runID)
+            #endif
+            return false
         }
     }
 
-    // MARK: - Notification Sending
+    // MARK: - Transaction Processing
 
-    /// Sends notifications for new videos if any were found.
-    /// Filters out videos the user has already started or finished watching.
-    /// - Parameter newVideos: Array of new videos with their channel names
-    private func sendNotificationsIfNeeded(newVideos: [(video: Video, channelName: String)]) async {
-        #if !os(tvOS)
-        guard !newVideos.isEmpty else {
-            LoggingService.shared.debug("No new videos found", category: .notifications)
+    private func advanceBaseline(for scope: String, using settingsManager: SettingsManager) {
+        var state = settingsManager.notificationRefreshState(for: scope)
+        state.lastCheck = Date()
+        settingsManager.setNotificationRefreshState(state, for: scope)
+    }
+
+    /// Plans, submits, then commits a refresh. Only videos accepted by the
+    /// notification center (plus permanently ignored videos) enter the ledger.
+    private func processFetchedVideos(
+        _ fetchedVideos: [(video: Video, channelName: String)],
+        requestStartedAt: Date,
+        scope: String,
+        runID: UUID
+    ) async {
+        guard let appEnvironment else { return }
+
+        let settingsManager = appEnvironment.settingsManager
+        let watchEntries = appEnvironment.dataManager.watchEntriesMap()
+        let persistentState = settingsManager.notificationRefreshState(for: scope)
+        let processedVideos = persistentState.processedVideos
+        let pendingVideos = persistentState.pendingVideos
+        var pendingRecords = persistentState.pendingRecords
+        let legacyVideoIDs = Set(settingsManager.lastNotifiedVideoPerChannel.values)
+
+        let fetchedKeys = Set(fetchedVideos.map { $0.video.id.id })
+        let persistedRetries = pendingRecords
+            .filter { !fetchedKeys.contains($0.key) }
+            .map { (video: $0.value.video, channelName: $0.value.channelName) }
+        let videosForProcessing = fetchedVideos + persistedRetries
+
+        let candidates = videosForProcessing.map { item in
+            let watchEntry = watchEntries[item.video.id.videoID]
+            return NotificationRefreshCandidate(
+                deduplicationKey: item.video.id.id,
+                legacyVideoID: item.video.id.videoID,
+                publishedAt: item.video.publishedAt,
+                isUpcoming: item.video.isUpcoming,
+                isWatched: (watchEntry?.watchedSeconds ?? 0) > 0 || watchEntry?.isFinished == true,
+                contentKind: item.video.contentKind
+            )
+        }
+
+        let plan = NotificationRefreshTransaction.plan(
+            candidates: candidates,
+            requestStartedAt: requestStartedAt,
+            previousCheck: persistentState.lastCheck,
+            processedKeys: Set(processedVideos.keys),
+            legacyProcessedVideoIDs: legacyVideoIDs,
+            pendingKeys: Set(pendingVideos.keys),
+            includeShorts: settingsManager.notificationsIncludeShorts
+        )
+        #if DEBUG
+        NotificationPipelineDiagnostic.shared.recordPlan(
+            eligible: plan.eligibleKeys.count,
+            ignored: plan.ignoredKeys.count,
+            deferred: plan.deferredKeys.count,
+            runID: runID
+        )
+        #endif
+
+        if plan.isInitialBaseline {
+            settingsManager.setNotificationRefreshState(
+                NotificationRefreshPersistentState(
+                    lastCheck: requestStartedAt,
+                    processedVideos: processedVideos,
+                    pendingVideos: pendingVideos,
+                    pendingRecords: pendingRecords
+                ),
+                for: scope
+            )
+            LoggingService.shared.info(
+                "Background refresh established initial baseline without historical notifications",
+                category: .notifications
+            )
+            #if DEBUG
+            NotificationPipelineDiagnostic.shared.recordSubmission("notAttempted:initialBaseline", runID: runID)
+            #endif
             return
         }
 
-        var videosToNotify = newVideos
-
-        // Filter out upcoming/premiere videos that haven't aired yet
-        let upcomingCount = videosToNotify.count
-        videosToNotify = videosToNotify.filter { !$0.video.isUpcoming }
-        if upcomingCount - videosToNotify.count > 0 {
-            LoggingService.shared.debug(
-                "Filtered \(upcomingCount - videosToNotify.count) upcoming/premiere videos from notifications",
-                category: .notifications
-            )
-        }
-
-        // Filter out videos the user has already started or finished watching
-        if let appEnvironment {
-            let watchEntries = appEnvironment.dataManager.watchEntriesMap()
-            let originalCount = videosToNotify.count
-
-            videosToNotify = videosToNotify.filter { item in
-                guard let entry = watchEntries[item.video.id.videoID] else {
-                    // No watch entry - video hasn't been watched, include it
-                    return true
-                }
-                // Skip if user has started watching (any progress) or finished
-                return entry.watchedSeconds <= 0 && !entry.isFinished
+        let eligibleKeys = Set(plan.eligibleKeys)
+        let videosToNotify = videosForProcessing
+            .filter { eligibleKeys.contains($0.video.id.id) }
+            .sorted { lhs, rhs in
+                let lhsDate = lhs.video.publishedAt ?? .distantPast
+                let rhsDate = rhs.video.publishedAt ?? .distantPast
+                if lhsDate == rhsDate { return lhs.video.id.id < rhs.video.id.id }
+                return lhsDate < rhsDate
             }
 
-            let filteredCount = originalCount - videosToNotify.count
-            if filteredCount > 0 {
-                LoggingService.shared.debug(
-                    "Filtered \(filteredCount) watched/started videos from notifications",
-                    category: .notifications
+        let submissionAccepted: Bool
+        if videosToNotify.isEmpty {
+            submissionAccepted = true
+        } else {
+            #if !os(tvOS)
+            submissionAccepted = await notificationManager.sendNotification(for: videosToNotify, diagnosticRunID: runID)
+            #else
+            submissionAccepted = true
+            #endif
+        }
+        #if DEBUG
+        if videosToNotify.isEmpty {
+            NotificationPipelineDiagnostic.shared.recordSubmission("notAttempted:noEligibleVideos", runID: runID)
+        }
+        #endif
+
+        let committedState = NotificationRefreshTransaction.committedState(
+            for: plan,
+            submissionAccepted: submissionAccepted,
+            existingProcessedVideos: processedVideos,
+            existingPendingVideos: pendingVideos
+        )
+        for key in plan.ignoredKeys {
+            pendingRecords.removeValue(forKey: key)
+        }
+        if submissionAccepted {
+            for key in plan.eligibleKeys {
+                pendingRecords.removeValue(forKey: key)
+            }
+        } else {
+            let retryKeys = Set(plan.eligibleKeys)
+            for item in videosToNotify where retryKeys.contains(item.video.id.id) {
+                pendingRecords[item.video.id.id] = PendingNotificationRecord(
+                    video: item.video,
+                    channelName: item.channelName,
+                    queuedAt: requestStartedAt.timeIntervalSince1970
                 )
             }
         }
+        settingsManager.setNotificationRefreshState(
+            NotificationRefreshPersistentState(
+                lastCheck: committedState.lastCheck,
+                processedVideos: committedState.processedVideos,
+                pendingVideos: committedState.pendingVideos,
+                pendingRecords: NotificationRefreshTransaction.boundedPendingRecords(pendingRecords)
+            ),
+            for: scope
+        )
 
-        if !videosToNotify.isEmpty {
-            await notificationManager.sendNotification(for: videosToNotify)
-            LoggingService.shared.info(
-                "Background refresh complete | Found \(videosToNotify.count) new videos from \(Set(videosToNotify.map(\.channelName)).count) channels | Notification sent: true",
-                category: .notifications
-            )
-        } else {
-            LoggingService.shared.info(
-                "Background refresh complete | Found 0 new videos | Notification sent: false",
-                category: .notifications
-            )
+        LoggingService.shared.info(
+            "Background refresh complete | eligible: \(videosToNotify.count) | ignored: \(plan.ignoredKeys.count) | deferred: \(plan.deferredKeys.count) | submission accepted: \(submissionAccepted)",
+            category: .notifications
+        )
+    }
+}
+
+private enum BackgroundFeedRefreshError: LocalizedError {
+    case incompleteYatteeServerResponse
+
+    var errorDescription: String? {
+        switch self {
+        case .incompleteYatteeServerResponse:
+            return "Yattee Server feed remained incomplete within the background refresh budget"
         }
-        #endif
     }
 }

@@ -402,8 +402,9 @@ struct ManageChannelsView: View {
             )
         ) {
             ChannelRowView(
-                channel: channelWithOptimizedAvatar(channel),
+                channel: channel,
                 style: rowStyle,
+                yatteeServerURL: yatteeServerURL,
                 authHeader: yatteeServerAuthHeader
             )
             .contentShape(Rectangle())
@@ -464,8 +465,9 @@ struct ManageChannelsView: View {
                         )
                     ) {
                         ChannelCardGridView(
-                            channel: channelWithOptimizedAvatar(channel),
+                            channel: channel,
                             isCompact: gridConfig.isCompactCards,
+                            yatteeServerURL: yatteeServerURL,
                             authHeader: yatteeServerAuthHeader
                         )
                         .frame(maxHeight: .infinity, alignment: .top)
@@ -499,33 +501,18 @@ struct ManageChannelsView: View {
 
     // MARK: - Helpers
 
-    /// Returns channel with optimized avatar URL from Yattee Server when available.
-    private func channelWithOptimizedAvatar(_ channel: Channel) -> Channel {
-        let effectiveAvatarURL = AvatarURLBuilder.avatarURL(
-            channelID: channel.id.channelID,
-            directURL: channel.thumbnailURL,
-            serverURL: yatteeServerURL,
-            size: gridConfig.isCompactCards ? 80 : 100
-        )
-
-        return Channel(
-            id: channel.id,
-            name: channel.name,
-            description: channel.description,
-            subscriberCount: channel.subscriberCount,
-            thumbnailURL: effectiveAvatarURL,
-            bannerURL: channel.bannerURL,
-            isVerified: channel.isVerified
-        )
-    }
-
     /// Refreshes channels from the current subscription provider.
     private func refreshChannels() async {
         guard let subscriptionService else { return }
 
         isLoading = true
         do {
-            channels = try await subscriptionService.fetchSubscriptions()
+            let fetchedChannels = try await subscriptionService.fetchSubscriptions()
+            if let dataManager {
+                channels = fetchedChannels.map { $0.enrichedThumbnail(using: dataManager) }
+            } else {
+                channels = fetchedChannels
+            }
         } catch {
             // Show empty state on error
             channels = []

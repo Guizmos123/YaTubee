@@ -20,10 +20,6 @@ private struct ExportFile: Identifiable {
 struct SubscriptionsSettingsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
 
-    // Account selection state
-    @State private var pendingAccountChange: SubscriptionAccount?
-    @State private var showingAccountSwitchConfirmation = false
-
     // Import state
     @State private var showingImportPicker = false
     @State private var isImporting = false
@@ -37,9 +33,6 @@ struct SubscriptionsSettingsView: View {
     @State private var exportFile: ExportFile?
     @State private var isExporting = false
 
-    // Account subscription count (provider-scoped, fetched for server accounts)
-    @State private var accountSubscriptionCount: Int?
-
     // Local data deletion state
     @State private var showingDeleteLocalConfirmation = false
 
@@ -51,39 +44,21 @@ struct SubscriptionsSettingsView: View {
         appEnvironment?.settingsManager
     }
 
-    private var validator: SubscriptionAccountValidator? {
-        appEnvironment?.subscriptionAccountValidator
-    }
-
-    private var subscriptionService: SubscriptionService? {
-        appEnvironment?.subscriptionService
-    }
-
-    /// Subscription count of the active account (local store or server).
+    /// Subscription count in the local source of truth.
     private var subscriptionCount: Int {
-        accountSubscriptionCount ?? subscriptionService?.cachedSubscriptionCount ?? 0
-    }
-
-    /// Count of subscriptions in the local store, shown in the local-data section.
-    private var localSubscriptionCount: Int {
         dataManager?.subscriptionCount ?? 0
     }
 
-    private var currentAccount: SubscriptionAccount {
-        settingsManager?.subscriptionAccount ?? .local
+    private var localFeedSourcePreference: LocalFeedSourcePreference {
+        settingsManager?.localFeedSourcePreference ?? .automatic
     }
 
     var body: some View {
         List {
-            accountSection
-            if validator?.hasAvailableAccounts == true {
-                importSection
-                exportSection
-                localDataSection
-            }
-        }
-        .task(id: currentAccount) {
-            await refreshAccountSubscriptionCount()
+            feedSourceSection
+            importSection
+            exportSection
+            localDataSection
         }
         .reactiveNavigationTitle(AppLocalization.string("settings.subscriptions.title"))
         #if os(iOS)
@@ -118,21 +93,7 @@ struct SubscriptionsSettingsView: View {
             }
         }
         .confirmationDialog(
-            AppLocalization.string("settings.subscriptions.account.switch.title"),
-            isPresented: $showingAccountSwitchConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button(AppLocalization.string("settings.subscriptions.account.switch.action")) {
-                confirmAccountSwitch()
-            }
-            Button(AppLocalization.string("common.cancel"), role: .cancel) {
-                cancelAccountSwitch()
-            }
-        } message: {
-            Text(AppLocalization.string("settings.subscriptions.account.switch.message"))
-        }
-        .confirmationDialog(
-            AppLocalization.string("settings.subscriptions.localData.delete.confirmation.title \(localSubscriptionCount)"),
+            AppLocalization.string("settings.subscriptions.localData.delete.confirmation.title \(subscriptionCount)"),
             isPresented: $showingDeleteLocalConfirmation,
             titleVisibility: .visible
         ) {
@@ -145,77 +106,54 @@ struct SubscriptionsSettingsView: View {
         .presentationCompactAdaptation(.sheet)
     }
 
-    // MARK: - Account Section
+    // MARK: - Feed Source Section
 
     @ViewBuilder
-    private var accountSection: some View {
+    private var feedSourceSection: some View {
         Section {
-            if let validator, validator.hasAvailableAccounts {
-                Picker(
-                    AppLocalization.string("settings.subscriptions.account.label"),
-                    selection: Binding(
-                        get: { currentAccount },
-                        set: { newAccount in
-                            if newAccount != currentAccount {
-                                pendingAccountChange = newAccount
-                                showingAccountSwitchConfirmation = true
-                            }
-                        }
-                    )
-                ) {
-                    ForEach(validator.availableAccounts, id: \.self) { account in
-                        Text(validator.displayName(for: account))
-                            .tag(account)
-                    }
+            Picker(
+                AppLocalization.string("settings.subscriptions.feedSource.label"),
+                selection: Binding(
+                    get: { localFeedSourcePreference },
+                    set: { selectLocalFeedSource($0) }
+                )
+            ) {
+                Text(AppLocalization.string("settings.subscriptions.feedSource.automatic"))
+                    .tag(LocalFeedSourcePreference.automatic)
+                ForEach(localFeedSourceChoices, id: \.preference) { choice in
+                    Text(choice.title).tag(choice.preference)
                 }
-            } else {
-                // No accounts available - show setup prompt
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(
-                        AppLocalization.string("settings.subscriptions.account.noAccounts.title"),
-                        systemImage: "exclamationmark.triangle"
-                    )
-                    .foregroundStyle(.secondary)
-
-                    Text(AppLocalization.string("settings.subscriptions.account.noAccounts.message"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Button(AppLocalization.string("settings.subscriptions.account.noAccounts.action")) {
-                        appEnvironment?.navigationCoordinator.navigate(to: .settings)
-                    }
-                    .font(.caption)
-                    .padding(.top, 4)
-                }
-                .padding(.vertical, 4)
             }
         } footer: {
-            if validator?.hasAvailableAccounts == true {
-                Text(AppLocalization.string("settings.subscriptions.account.footer"))
+            Text(AppLocalization.string("settings.subscriptions.feedSource.footer"))
+        }
+    }
+
+    private var localFeedSourceChoices: [(preference: LocalFeedSourcePreference, title: String)] {
+        guard let appEnvironment else { return [] }
+        return appEnvironment.instancesManager.instances.compactMap { instance in
+            guard instance.isEnabled else { return nil }
+            let name = instance.name?.isEmpty == false
+                ? instance.name!
+                : (instance.url.host ?? instance.type.displayName)
+            switch instance.type {
+            case .yatteeServer:
+                return (.yatteeServer(instance.id), "Yattee Server — \(name)")
+            case .invidious:
+                return (.invidious(instance.id), "Invidious — \(name)")
+            case .piped, .peertube:
+                return nil
             }
         }
     }
 
-    // MARK: - Account Switch Actions
-
-    private func confirmAccountSwitch() {
-        guard let newAccount = pendingAccountChange else { return }
-
-        settingsManager?.subscriptionAccount = newAccount
+    private func selectLocalFeedSource(_ preference: LocalFeedSourcePreference) {
+        settingsManager?.localFeedSourcePreference = preference
         SubscriptionFeedCache.shared.handleAccountChange()
-
-        // Trigger feed refresh in background
         Task {
             guard let appEnvironment else { return }
             await SubscriptionFeedCache.shared.refresh(using: appEnvironment)
         }
-
-        pendingAccountChange = nil
-        LoggingService.shared.logSubscriptions("Switched subscription account to: \(String(describing: newAccount.type))")
-    }
-
-    private func cancelAccountSwitch() {
-        pendingAccountChange = nil
     }
 
     // MARK: - Import Section
@@ -274,11 +212,9 @@ struct SubscriptionsSettingsView: View {
 
     // MARK: - Local Data Section
 
-    /// Lets the user delete locally stored subscriptions while a server account
-    /// is active. Hidden in local mode, where the account IS the local store.
     @ViewBuilder
     private var localDataSection: some View {
-        if currentAccount.type != .local && localSubscriptionCount > 0 {
+        if subscriptionCount > 0 {
             Section {
                 Button(role: .destructive) {
                     showingDeleteLocalConfirmation = true
@@ -288,7 +224,7 @@ struct SubscriptionsSettingsView: View {
             } header: {
                 Text(AppLocalization.string("settings.subscriptions.localData.title"))
             } footer: {
-                Text(AppLocalization.string("settings.subscriptions.localData.footer \(localSubscriptionCount)"))
+                Text(AppLocalization.string("settings.subscriptions.localData.footer \(subscriptionCount)"))
             }
         }
     }
@@ -339,12 +275,10 @@ struct SubscriptionsSettingsView: View {
                 // Parse subscriptions
                 let parseResult = try SubscriptionImportExport.parseAuto(data)
 
-                // Import into the active account (local store or server)
-                guard let subscriptionService else {
+                guard let dataManager else {
                     throw SubscriptionImportError.invalidData
                 }
-
-                let importStats = await subscriptionService.importSubscriptions(parseResult.channels)
+                let importStats = dataManager.importSubscriptionsFromExternal(parseResult.channels)
 
                 await MainActor.run {
                     isImporting = false
@@ -352,7 +286,6 @@ struct SubscriptionsSettingsView: View {
                     showingImportResult = true
                     LoggingService.shared.logSubscriptions("Import completed: \(importStats.imported) imported, \(importStats.skipped) skipped")
                 }
-                await refreshAccountSubscriptionCount()
             } catch {
                 await MainActor.run {
                     isImporting = false
@@ -372,29 +305,10 @@ struct SubscriptionsSettingsView: View {
         }
     }
 
-    /// Exports subscriptions of the active account: the local store in local
-    /// mode, or the server's list for Invidious/Piped accounts.
+    /// Exports subscriptions from the local source of truth.
     private func performExport() async {
-        let subscriptions: [Subscription]
-        if currentAccount.type == .local {
-            guard let dataManager else { return }
-            subscriptions = dataManager.allSubscriptions
-        } else {
-            guard let subscriptionService else { return }
-            do {
-                let channels = try await subscriptionService.fetchSubscriptions()
-                accountSubscriptionCount = channels.count
-                // Detached model instances used purely as export carriers
-                subscriptions = channels.map { Subscription.from(channel: $0) }
-            } catch {
-                LoggingService.shared.logSubscriptionsError("Failed to fetch account subscriptions for export", error: error)
-                appEnvironment?.toastManager.showError(
-                    AppLocalization.string("settings.subscriptions.export.error.title"),
-                    subtitle: error.localizedDescription
-                )
-                return
-            }
-        }
+        guard let dataManager else { return }
+        let subscriptions = dataManager.allSubscriptions
 
         let data: Data?
         switch selectedExportFormat {
@@ -425,26 +339,9 @@ struct SubscriptionsSettingsView: View {
         #endif
     }
 
-    /// Refreshes the account-scoped subscription count shown in the export footer.
-    private func refreshAccountSubscriptionCount() async {
-        guard let subscriptionService else { return }
-
-        if let cached = subscriptionService.cachedSubscriptionCount {
-            accountSubscriptionCount = cached
-        }
-        if subscriptionService.currentAccountType != .local {
-            if let channels = try? await subscriptionService.fetchSubscriptions() {
-                accountSubscriptionCount = channels.count
-            }
-        }
-    }
-
     private func deleteLocalSubscriptions() {
         dataManager?.deleteAllSubscriptions()
         appEnvironment?.toastManager.showSuccess(AppLocalization.string("settings.subscriptions.localData.deleted.title"))
-        Task {
-            await refreshAccountSubscriptionCount()
-        }
     }
 
     #if os(macOS)

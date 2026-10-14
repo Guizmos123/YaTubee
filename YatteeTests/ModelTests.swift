@@ -5,9 +5,309 @@
 //  Tests for core model types.
 //
 
-import Testing
 import Foundation
+import Nuke
+import Testing
 @testable import Yattee
+
+// MARK: - Channel Avatar Request Tests
+
+@Suite("Channel Avatar Request Tests")
+struct ChannelAvatarRequestTests {
+    private let serverURL = URL(string: "https://server.example")!
+    private let directURL = URL(string: "https://cdn.example/avatar.jpg")!
+
+    @Test("A known direct URL works without a server")
+    func directURLWithoutServer() {
+        let requests = AvatarURLBuilder.imageRequests(
+            channelID: "UCchannel",
+            directURL: directURL,
+            serverURL: nil,
+            size: 80,
+            authHeader: nil
+        )
+
+        #expect(requests.map(\.url) == [directURL])
+    }
+
+    @Test("A direct URL remains available after the server fallback")
+    func serverThenDirectFallback() {
+        let requests = AvatarURLBuilder.imageRequests(
+            channelID: "UCchannel",
+            directURL: directURL,
+            serverURL: serverURL,
+            size: 80,
+            authHeader: "Basic credential"
+        )
+
+        #expect(requests.count == 2)
+        #expect(requests[0].url?.path == "/api/v1/channels/UCchannel/avatar/176.jpg")
+        #expect(requests[1].url == directURL)
+    }
+
+    @Test("Basic Auth is limited to the Yattee Server request")
+    func serverAuthentication() {
+        let requests = AvatarURLBuilder.imageRequests(
+            channelID: "UCchannel",
+            directURL: directURL,
+            serverURL: serverURL,
+            size: 80,
+            authHeader: "Basic credential"
+        )
+
+        #expect(requests[0].urlRequest?.value(forHTTPHeaderField: "Authorization") == "Basic credential")
+        #expect(requests[1].urlRequest?.value(forHTTPHeaderField: "Authorization") == nil)
+    }
+
+    @Test("A missing direct URL still uses the server fallback")
+    func missingDirectURL() {
+        let requests = AvatarURLBuilder.imageRequests(
+            channelID: "UCchannel",
+            directURL: nil,
+            serverURL: serverURL,
+            size: 80,
+            authHeader: nil
+        )
+
+        #expect(requests.count == 1)
+        #expect(requests[0].url?.host == "server.example")
+    }
+
+    @Test("Regular list avatar uses the working 176 pixel server variant")
+    func regularListServerSize() {
+        let requests = AvatarURLBuilder.imageRequests(
+            channelID: "UCchannel",
+            directURL: directURL,
+            serverURL: serverURL,
+            size: 68,
+            authHeader: nil
+        )
+
+        #expect(requests[0].url?.path == "/api/v1/channels/UCchannel/avatar/176.jpg")
+        #expect(requests[1].url == directURL)
+    }
+
+    @Test("Identical server and direct candidates are deduplicated")
+    func duplicateCandidates() {
+        let serverAvatarURL = serverURL
+            .appendingPathComponent("api/v1/channels/UCchannel/avatar/176.jpg")
+        let requests = AvatarURLBuilder.imageRequests(
+            channelID: "UCchannel",
+            directURL: serverAvatarURL,
+            serverURL: serverURL,
+            size: 80,
+            authHeader: "Basic credential"
+        )
+
+        #expect(requests.count == 1)
+        #expect(requests[0].url == serverAvatarURL)
+        #expect(requests[0].urlRequest?.value(forHTTPHeaderField: "Authorization") == "Basic credential")
+    }
+
+    @Test("Revalidation bypasses Nuke caches and preserves scoped authentication")
+    func revalidationRequest() {
+        let requests = AvatarURLBuilder.imageRequests(
+            channelID: "UCchannel",
+            directURL: directURL,
+            serverURL: serverURL,
+            size: 80,
+            authHeader: "Basic credential"
+        )
+
+        let serverRequest = AvatarURLBuilder.revalidationRequest(from: requests[0])
+        let directRequest = AvatarURLBuilder.revalidationRequest(from: requests[1])
+
+        #expect(serverRequest.options.contains(.reloadIgnoringCachedData))
+        #expect(serverRequest.urlRequest?.cachePolicy == .reloadRevalidatingCacheData)
+        #expect(serverRequest.urlRequest?.value(forHTTPHeaderField: "Authorization") == "Basic credential")
+        #expect(directRequest.urlRequest?.value(forHTTPHeaderField: "Authorization") == nil)
+    }
+}
+
+// MARK: - Mini Player Style Tests
+
+@Suite("Mini Player Style Tests")
+struct MiniPlayerStyleTests {
+    @Test("Bar is the default mini player style")
+    func defaultStyle() {
+        #expect(MiniPlayerSettings.default.style == .bar)
+        #expect(PlayerControlsLayout().effectiveMiniPlayerSettings.style == .bar)
+    }
+
+    @Test("Mini player style survives encoding and restoration")
+    func persistenceRoundTrip() throws {
+        let settings = MiniPlayerSettings(style: .video)
+        let data = try JSONEncoder().encode(settings)
+        let restored = try JSONDecoder().decode(MiniPlayerSettings.self, from: data)
+
+        #expect(restored.style == .video)
+        #expect(restored.showVideo == settings.showVideo)
+        #expect(restored.videoTapAction == settings.videoTapAction)
+        #expect(restored.buttons == settings.buttons)
+    }
+
+    @Test("Legacy mini player settings without a style restore as bar")
+    func legacySettingsDefaultToBar() throws {
+        let encoded = try JSONEncoder().encode(MiniPlayerSettings(style: .bubble))
+        var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "style")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let restored = try JSONDecoder().decode(MiniPlayerSettings.self, from: legacyData)
+        #expect(restored.style == .bar)
+    }
+
+    @Test("Changing presets restores each preset mini player style")
+    func presetStyleRestoration() {
+        var barLayout = PlayerControlsLayout()
+        barLayout.miniPlayerSettings = MiniPlayerSettings(style: .bar)
+        let barPreset = LayoutPreset(name: "Bar", layout: barLayout)
+
+        var bubbleLayout = PlayerControlsLayout()
+        bubbleLayout.miniPlayerSettings = MiniPlayerSettings(style: .bubble)
+        let bubblePreset = LayoutPreset(name: "Bubble", layout: bubbleLayout)
+
+        #expect(barPreset.layout.effectiveMiniPlayerSettings.style == .bar)
+        #expect(bubblePreset.layout.effectiveMiniPlayerSettings.style == .bubble)
+        #expect(bubblePreset.duplicate(name: "Bubble Copy").layout.effectiveMiniPlayerSettings.style == .bubble)
+    }
+
+    @Test("Changing style preserves the shared buttons and exposes the correct editor sections")
+    func styleChangesPreserveButtons() {
+        var settings = MiniPlayerSettings()
+        let originalButtons = settings.buttons
+
+        settings.style = .video
+        #expect(settings.buttons == originalButtons)
+        #expect(settings.style.supportsCustomizableButtons)
+
+        settings.style = .bubble
+        #expect(settings.buttons == originalButtons)
+        #expect(!settings.style.supportsCustomizableButtons)
+
+        settings.style = .bar
+        #expect(settings.buttons == originalButtons)
+        #expect(settings.style.supportsCustomizableButtons)
+    }
+
+    @Test("Video commands use the persisted order and only supported actions")
+    func videoCommandsPreserveSupportedOrder() {
+        let settings = MiniPlayerSettings(
+            style: .video,
+            buttons: [
+                ControlButtonConfiguration(buttonType: .airplay),
+                ControlButtonConfiguration(buttonType: .playNext),
+                ControlButtonConfiguration(buttonType: .close),
+                ControlButtonConfiguration(buttonType: .fullscreen),
+                ControlButtonConfiguration(buttonType: .playPause),
+                ControlButtonConfiguration(buttonType: .pictureInPicture)
+            ]
+        )
+
+        #expect(settings.videoButtons.map(\.buttonType) == [
+            .airplay,
+            .close,
+            .playPause,
+            .pictureInPicture
+        ])
+    }
+
+    @Test("Shared style metrics preserve the intended geometry")
+    func sharedMetrics() {
+        #expect(abs(Double(MiniPlayerStyleMetrics.videoAspectRatio) - 16.0 / 9.0) < 0.000_001)
+        #expect(MiniPlayerStyleMetrics.recommendedBubbleDiameter == 72)
+    }
+
+    @Test("Mini player presentation uses exactly one container per style and platform capability")
+    func presentationPolicy() {
+        #expect(MiniPlayerPresentation.resolve(style: .bar, supportsTabAccessory: true) == .tabAccessory)
+        #expect(MiniPlayerPresentation.resolve(style: .video, supportsTabAccessory: true) == .rootOverlay)
+        #expect(MiniPlayerPresentation.resolve(style: .bubble, supportsTabAccessory: true) == .tabAccessory)
+        #expect(
+            MiniPlayerPresentation.resolve(
+                style: .bubble,
+                supportsTabAccessory: true,
+                supportsProminentTab: true
+            ) == .prominentTab
+        )
+        #expect(
+            MiniPlayerPresentation.resolve(
+                style: .bar,
+                supportsTabAccessory: true,
+                supportsProminentTab: true
+            ) == .tabAccessory
+        )
+        #expect(
+            MiniPlayerPresentation.resolve(
+                style: .video,
+                supportsTabAccessory: true,
+                supportsProminentTab: true
+            ) == .rootOverlay
+        )
+
+        for style in MiniPlayerStyle.allCases {
+            #expect(MiniPlayerPresentation.resolve(style: style, supportsTabAccessory: false) == .rootOverlay)
+        }
+    }
+}
+
+// MARK: - Video Content Classification Tests
+
+@Suite("Video Content Classification Tests")
+struct VideoContentClassificationTests {
+    @Test("Piped Short metadata maps true, false and nil semantically")
+    func pipedClassification() {
+        #expect(VideoContentKind(pipedIsShort: true) == .short)
+        #expect(VideoContentKind(pipedIsShort: false) == .regular)
+        #expect(VideoContentKind(pipedIsShort: nil) == .unknown)
+    }
+
+    @Test("Sources without reliable metadata default to unknown")
+    func unknownByDefault() {
+        #expect(makeVideo().contentKind == .unknown)
+    }
+
+    @Test("Short filtering excludes only confirmed Shorts")
+    func filteringPolicy() {
+        #expect(VideoContentKind.regular.isIncluded(whenIncludingShorts: false))
+        #expect(!VideoContentKind.short.isIncluded(whenIncludingShorts: false))
+        #expect(VideoContentKind.unknown.isIncluded(whenIncludingShorts: false))
+
+        for kind in [VideoContentKind.regular, .short, .unknown] {
+            #expect(kind.isIncluded(whenIncludingShorts: true))
+        }
+    }
+
+    @Test("Previously serialized videos decode with unknown classification")
+    func legacyVideoDecoding() throws {
+        let encoded = try JSONEncoder().encode(makeVideo(contentKind: .regular))
+        var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "contentKind")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(Video.self, from: legacyData)
+        #expect(decoded.contentKind == .unknown)
+    }
+
+    private func makeVideo(contentKind: VideoContentKind = .unknown) -> Video {
+        Video(
+            id: .global("classification-test"),
+            title: "Test",
+            description: nil,
+            author: Author(id: "channel", name: "Channel"),
+            duration: 120,
+            publishedAt: nil,
+            publishedText: nil,
+            viewCount: nil,
+            likeCount: nil,
+            thumbnails: [],
+            isLive: false,
+            isUpcoming: false,
+            contentKind: contentKind,
+            scheduledStartTime: nil
+        )
+    }
+}
 
 // MARK: - ContentSource Tests
 

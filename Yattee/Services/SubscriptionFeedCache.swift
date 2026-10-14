@@ -3,7 +3,7 @@
 //  Yattee
 //
 //  Subscription feed cache with disk persistence.
-//  Routes feed fetching based on subscription account type.
+//  Builds the main feed from local subscriptions using the selected local feed source.
 //
 
 import Foundation
@@ -25,15 +25,96 @@ enum FeedLoadState: Equatable {
     /// Specific error types for feed loading.
     enum FeedLoadError: Equatable {
         case yatteeServerRequired
+        case compatibleSourceRequired
         case notAuthenticated
         case networkError(String)
     }
 }
 
+/// Resolves Yattee Server snapshots without allowing an incomplete response to
+/// replace the last complete feed.
+enum YatteeServerFeedSnapshot {
+    static let maximumVideoCount = 100
+
+    static func isComplete(
+        _ response: StatelessFeedResponse,
+        expectedChannelCount: Int
+    ) -> Bool {
+        guard response.isReady,
+              let readyCount = response.readyCount,
+              let pendingCount = response.pendingCount,
+              let errorCount = response.errorCount else {
+            return false
+        }
+
+        return readyCount == expectedChannelCount
+            && pendingCount == 0
+            && errorCount == 0
+    }
+
+    static func videos(
+        from response: StatelessFeedResponse,
+        preserving cachedVideos: [Video],
+        expectedChannelCount: Int
+    ) -> [Video] {
+        let receivedVideos = response.toVideos()
+        guard !isComplete(response, expectedChannelCount: expectedChannelCount) else {
+            return receivedVideos
+        }
+
+        return mergePartial(receivedVideos, with: cachedVideos)
+    }
+
+    private static func mergePartial(_ receivedVideos: [Video], with cachedVideos: [Video]) -> [Video] {
+        var seen = Set<VideoID>()
+        let deduplicated = (receivedVideos + cachedVideos).filter { seen.insert($0.id).inserted }
+
+        return Array(
+            deduplicated.enumerated().sorted { lhs, rhs in
+                let lhsDate = lhs.element.publishedAt ?? .distantPast
+                let rhsDate = rhs.element.publishedAt ?? .distantPast
+                return lhsDate == rhsDate ? lhs.offset < rhs.offset : lhsDate > rhsDate
+            }
+            .prefix(maximumVideoCount)
+            .map(\.element)
+        )
+    }
+}
+
+/// Runs at most one feed refresh operation at a time. Concurrent callers join
+/// the active task without owning or cancelling it.
+@MainActor
+final class FeedRefreshSingleFlight {
+    private var activeTask: Task<Void, Never>?
+    private var activeGeneration = 0
+
+    func run(_ operation: @escaping @MainActor @Sendable () async -> Void) async {
+        if let activeTask {
+            await activeTask.value
+            return
+        }
+
+        activeGeneration += 1
+        let generation = activeGeneration
+        let task = Task { @MainActor [weak self] in
+            await operation()
+            self?.finish(generation: generation)
+        }
+        activeTask = task
+
+        await task.value
+    }
+
+    private func finish(generation: Int) {
+        if activeGeneration == generation {
+            activeTask = nil
+        }
+    }
+}
+
 /// Subscription feed cache with disk persistence.
-/// Routes feed fetching based on the selected subscription account type:
-/// - Local accounts: Use Yattee Server (required)
-/// - Invidious accounts: Use Invidious /api/v1/auth/feed endpoint
+/// Builds the main feed exclusively from local SwiftData subscriptions.
+/// Yattee Server and public Invidious are interchangeable aggregation backends.
 @MainActor
 @Observable
 final class SubscriptionFeedCache {
@@ -54,6 +135,9 @@ final class SubscriptionFeedCache {
     /// Whether the disk cache has been loaded.
     private var diskCacheLoaded = false
 
+    /// Identifies the account/backend that owns the in-memory and disk snapshot.
+    private var cacheScopeKey: String?
+
     /// Current page for Invidious feed pagination (1-based).
     private var currentPage = 1
 
@@ -62,6 +146,9 @@ final class SubscriptionFeedCache {
 
     /// Whether app is in foreground (polling only allowed in foreground).
     private var isAppInForeground = true
+
+    /// Owns the lifetime of the current refresh independently of its callers.
+    private let refreshSingleFlight = FeedRefreshSingleFlight()
 
     private init() {
         setupLifecycleObservers()
@@ -123,15 +210,32 @@ final class SubscriptionFeedCache {
 
     /// Loads cached data from disk if not already loaded.
     /// Call this early (e.g., on app launch) to populate the feed quickly.
-    func loadFromDiskIfNeeded() async {
+    func loadFromDiskIfNeeded(using appEnvironment: AppEnvironment) async {
+        let expectedScope = cacheScope(using: appEnvironment)
         guard !diskCacheLoaded else {
+            if cacheScopeKey != expectedScope {
+                await activateCacheScope(expectedScope)
+            }
             LoggingService.shared.debug("Feed cache already loaded from disk, skipping", category: .general)
             return
         }
         diskCacheLoaded = true
 
-        if let cacheData = await FeedCache.shared.load() {
-            videos = cacheData.videos
+        cacheScopeKey = expectedScope
+
+        let scopedCache = await FeedCache.shared.load(scopeKey: expectedScope)
+        let legacyCache = scopedCache == nil ? await FeedCache.shared.load() : nil
+        if let cacheData = scopedCache ?? legacyCache,
+           FeedCacheScopePolicy.accepts(
+               storedScope: cacheData.scopeKey,
+               expectedScope: expectedScope,
+               allowsLegacyUnscopedCache: canAdoptLegacyCache(for: expectedScope)
+           ) {
+            videos = videosForActiveSubscriptions(
+                cacheData.videos,
+                scope: expectedScope,
+                dataManager: appEnvironment.dataManager
+            )
             lastUpdated = cacheData.lastUpdated
             hasLoadedOnce = true
             let videoCount = videos.count
@@ -141,8 +245,18 @@ final class SubscriptionFeedCache {
                 "Loaded feed cache from disk: \(videoCount) videos, lastUpdated: \(cacheData.lastUpdated) (\(Int(age))s ago), oldest video: \(oldestVideoDate?.description ?? "none")",
                 category: .general
             )
+            if cacheData.scopeKey == nil {
+                await FeedCache.shared.save(
+                    videos: cacheData.videos,
+                    lastUpdated: cacheData.lastUpdated,
+                    scopeKey: expectedScope
+                )
+            }
         } else {
-            LoggingService.shared.debug("No feed cache found on disk", category: .general)
+            videos = []
+            lastUpdated = nil
+            hasLoadedOnce = false
+            LoggingService.shared.debug("No feed cache found for active scope", category: .general)
         }
     }
 
@@ -150,6 +264,7 @@ final class SubscriptionFeedCache {
         cancelPolling()
         videos = []
         lastUpdated = nil
+        cacheScopeKey = nil
         hasMorePages = false
         currentPage = 1
         Task {
@@ -172,7 +287,7 @@ final class SubscriptionFeedCache {
         }
         LoggingService.shared.debug("Saving feed cache to disk: \(videos.count) videos, lastUpdated: \(lastUpdated)", category: .general)
         Task {
-            await FeedCache.shared.save(videos: videos, lastUpdated: lastUpdated)
+            await FeedCache.shared.save(videos: videos, lastUpdated: lastUpdated, scopeKey: cacheScopeKey)
         }
     }
 
@@ -191,6 +306,25 @@ final class SubscriptionFeedCache {
         TopShelfSnapshotWriter.writeFeed()
     }
 
+    /// Stores an incomplete Yattee Server snapshot without making the cache
+    /// appear freshly and completely synchronized.
+    private func updatePartialYatteeServerSnapshot(videos: [Video]) {
+        self.videos = videos
+        self.lastUpdated = lastUpdated ?? .distantPast
+        self.hasLoadedOnce = true
+        saveToDisk()
+        TopShelfSnapshotWriter.writeFeed()
+    }
+
+    /// Stores an incomplete local Invidious snapshot without marking it fresh.
+    private func updatePartialInvidiousSnapshot(videos: [Video]) {
+        self.videos = videos
+        self.lastUpdated = lastUpdated ?? .distantPast
+        self.hasLoadedOnce = true
+        saveToDisk()
+        TopShelfSnapshotWriter.writeFeed()
+    }
+
     /// Appends videos to the existing cache (for pagination).
     private func appendVideos(_ newVideos: [Video]) {
         let existingIDs = Set(videos.map { $0.id })
@@ -204,65 +338,128 @@ final class SubscriptionFeedCache {
         saveToDisk()
     }
 
-    // MARK: - Account Change Handling
+    // MARK: - Feed Context Change Handling
 
-    /// Clears cache when subscription account changes.
-    /// Call this when the user switches between local and Invidious accounts.
+    /// Releases the active snapshot when a setting affecting the feed context changes.
     func handleAccountChange() {
-        LoggingService.shared.info("Subscription account changed, clearing feed cache", category: .general)
-        clear()
+        LoggingService.shared.info("Feed context changed, releasing active feed snapshot", category: .general)
+        cancelPolling()
+        videos = []
+        lastUpdated = nil
+        cacheScopeKey = nil
+        diskCacheLoaded = false
+        hasLoadedOnce = false
+        hasMorePages = false
+        currentPage = 1
         feedLoadState = .idle
     }
 
     // MARK: - Refresh
 
     /// Refreshes the feed from network.
-    /// Routes based on subscription account type:
-    /// - Local: Requires Yattee Server
-    /// - Invidious: Uses authenticated feed endpoint
-    ///
-    /// Note: This method uses a detached task internally to prevent SwiftUI from
-    /// cancelling the network request when view state changes during refresh.
+    /// Concurrent callers await the same unstructured task. Cancelling one
+    /// caller therefore does not cancel the shared network operation.
     func refresh(using appEnvironment: AppEnvironment) async {
-        guard !isLoading else {
-            LoggingService.shared.debug("Feed refresh called but already loading, skipping", category: .general)
-            return
+        await refreshSingleFlight.run { [self] in
+            repeat {
+                let requestedScope = cacheScope(using: appEnvironment)
+                LoggingService.shared.debug("Starting feed refresh from local subscriptions", category: .general)
+                await activateCacheScope(requestedScope)
+                await refreshLocalAccount(using: appEnvironment)
+
+                // A source changed while the request was running. Serialize one
+                // refresh for the newly selected scope instead of letting the
+                // obsolete result become the active snapshot.
+                if cacheScope(using: appEnvironment) == requestedScope { break }
+            } while !Task.isCancelled
         }
-
-        let accountType = appEnvironment.settingsManager.subscriptionAccount.type
-        LoggingService.shared.debug("Starting feed refresh for account type: \(accountType)", category: .general)
-
-        // Use a detached task to prevent SwiftUI from cancelling the request
-        // when @State properties change during the refresh operation.
-        // This is necessary because loadSubscriptionsAsync() updates @State
-        // before feedCache.refresh() completes, which can cause SwiftUI to
-        // cancel the parent task.
-        await Task.detached { @MainActor in
-            switch accountType {
-            case .local:
-                await self.refreshLocalAccount(using: appEnvironment)
-            case .invidious:
-                await self.refreshInvidiousAccount(using: appEnvironment)
-            case .piped:
-                await self.refreshPipedAccount(using: appEnvironment)
-            }
-        }.value
     }
 
-    /// Refreshes feed for local account using Yattee Server.
+    /// Refreshes the local subscription feed using the selected aggregation backend.
     private func refreshLocalAccount(using appEnvironment: AppEnvironment) async {
-        // Require Yattee Server for local accounts
-        guard let serverInstance = appEnvironment.instancesManager.instances.first(where: {
-            $0.type == .yatteeServer && $0.isEnabled
-        }) else {
-            LoggingService.shared.warning("Local subscriptions require Yattee Server, but none is configured", category: .general)
-            feedLoadState = .error(.yatteeServerRequired)
+        switch LocalFeedSource.resolve(
+            from: appEnvironment.instancesManager.instances,
+            preference: appEnvironment.settingsManager.localFeedSourcePreference
+        ) {
+        case .yatteeServer(let serverInstance):
+            await activateCacheScope("local:yatteeServer:\(serverInstance.id.uuidString)")
+            LoggingService.shared.info("Refreshing feed using Yattee Server: \(serverInstance.url.absoluteString)", category: .general)
+            await refreshFromStatelessServer(instance: serverInstance, using: appEnvironment)
+
+        case .invidious(let instance):
+            await activateCacheScope("local:invidious:\(instance.id.uuidString)")
+            await refreshLocalAccountFromInvidious(instance: instance, using: appEnvironment)
+
+        case .unavailable:
+            LoggingService.shared.warning("The selected local feed source is unavailable", category: .general)
+            feedLoadState = .error(.compatibleSourceRequired)
             isLoading = false
-            return
+        }
+    }
+
+    private func refreshLocalAccountFromInvidious(
+        instance: Instance,
+        using appEnvironment: AppEnvironment
+    ) async {
+        let subscriptions = appEnvironment.dataManager.subscriptions()
+        let compatibleSubscriptions = subscriptions.compactMap { subscription -> InvidiousLocalFeedSubscription? in
+            guard case .global(let provider) = subscription.contentSource,
+                  provider == ContentSource.youtubeProvider else {
+                return nil
+            }
+            return InvidiousLocalFeedSubscription(channelID: subscription.channelID)
         }
 
-        LoggingService.shared.info("Refreshing feed using Yattee Server: \(serverInstance.url.absoluteString)", category: .general)
-        await refreshFromStatelessServer(instance: serverInstance, using: appEnvironment)
+        isLoading = true
+        let previousLoadState = feedLoadState
+        feedLoadState = .loading
+        loadingProgress = nil
+        hasMorePages = false
+        let compatibleChannelIDs = Set(compatibleSubscriptions.map(\.channelID))
+        let cachedVideos = videos.filter { compatibleChannelIDs.contains($0.author.id) }
+
+        do {
+            let aggregator = InvidiousLocalFeedAggregator(videoProvider: appEnvironment.contentService)
+            let aggregation = try await aggregator.aggregate(
+                subscriptions: compatibleSubscriptions,
+                instance: instance,
+                cachedVideos: cachedVideos
+            )
+            let resolvedVideos = InvidiousLocalFeedSnapshot.videos(
+                from: aggregation,
+                preserving: cachedVideos
+            )
+
+            if aggregation.status == .complete {
+                update(videos: resolvedVideos)
+                feedLoadState = .ready
+            } else if aggregation.successfulChannelCount > 0 {
+                updatePartialInvidiousSnapshot(videos: resolvedVideos)
+                feedLoadState = .partiallyLoaded(
+                    readyCount: aggregation.successfulChannelCount,
+                    pendingCount: 0,
+                    errorCount: aggregation.failedChannelCount
+                )
+            } else {
+                feedLoadState = .error(.networkError("All Invidious channel requests failed"))
+            }
+
+            if aggregation.successfulChannelCount > 0 || compatibleSubscriptions.isEmpty {
+                appEnvironment.dataManager.updateLastVideoPublishedDates(from: aggregation.videos)
+                prefetchDeArrow(for: aggregation.videos, using: appEnvironment)
+            }
+        } catch is CancellationError {
+            LoggingService.shared.debug("Local Invidious feed aggregation cancelled", category: .general)
+            feedLoadState = previousLoadState
+        } catch {
+            LoggingService.shared.error(
+                "Local Invidious feed aggregation failed: \(error.localizedDescription)",
+                category: .general
+            )
+            feedLoadState = .error(.networkError(error.localizedDescription))
+        }
+
+        isLoading = false
     }
 
     /// Refreshes feed for Invidious account using authenticated feed endpoint.
@@ -328,6 +525,8 @@ final class SubscriptionFeedCache {
         feedLoadState = .loading
         loadingProgress = nil
         hasMorePages = false // Piped doesn't support pagination
+        let requestStartedAt = Date()
+        let cachedVideos = videos
 
         do {
             let pipedAPI = PipedAPI(httpClient: appEnvironment.httpClient)
@@ -335,6 +534,17 @@ final class SubscriptionFeedCache {
 
             LoggingService.shared.info("Piped feed: Received \(feedVideos.count) videos", category: .general)
 
+            await registerNovelties(
+                feedVideos,
+                baselineSupplement: cachedVideos,
+                scope: FeedNoveltyScope.key(
+                    for: appEnvironment.settingsManager.subscriptionAccount,
+                    credential: authToken
+                ),
+                observedAt: requestStartedAt,
+                isCompleteSnapshot: true,
+                settings: appEnvironment.settingsManager
+            )
             update(videos: feedVideos)
             appEnvironment.dataManager.updateLastVideoPublishedDates(from: feedVideos)
             prefetchDeArrow(for: feedVideos, using: appEnvironment)
@@ -372,6 +582,8 @@ final class SubscriptionFeedCache {
         isLoading = true
         feedLoadState = .loading
         loadingProgress = nil
+        let requestStartedAt = Date()
+        let cachedVideos = videos
 
         do {
             let response = try await appEnvironment.invidiousAPI.feed(
@@ -381,13 +593,28 @@ final class SubscriptionFeedCache {
                 maxResults: 50
             )
 
-            let feedVideos = response.videos
+            let feedVideos = try await InvidiousFeedShortsClassifier.shared.excludingConfirmedShorts(
+                from: response.videos,
+                instance: instance,
+                provider: appEnvironment.contentService
+            )
             LoggingService.shared.info(
                 "Invidious feed: Received \(feedVideos.count) videos (page \(currentPage))",
                 category: .general
             )
 
             // For first page, replace all videos. For subsequent pages, this shouldn't be called.
+            await registerNovelties(
+                feedVideos,
+                baselineSupplement: cachedVideos,
+                scope: FeedNoveltyScope.key(
+                    for: appEnvironment.settingsManager.subscriptionAccount,
+                    credential: sid
+                ),
+                observedAt: requestStartedAt,
+                isCompleteSnapshot: !response.hasMore,
+                settings: appEnvironment.settingsManager
+            )
             update(videos: feedVideos)
             appEnvironment.dataManager.updateLastVideoPublishedDates(from: feedVideos)
 
@@ -424,6 +651,8 @@ final class SubscriptionFeedCache {
         feedLoadState = .loadingMore
 
         let nextPage = currentPage + 1
+        let requestStartedAt = Date()
+        let cachedVideos = videos
 
         do {
             let response = try await appEnvironment.invidiousAPI.feed(
@@ -433,13 +662,28 @@ final class SubscriptionFeedCache {
                 maxResults: 50
             )
 
-            let feedVideos = response.videos
+            let feedVideos = try await InvidiousFeedShortsClassifier.shared.excludingConfirmedShorts(
+                from: response.videos,
+                instance: instance,
+                provider: appEnvironment.contentService
+            )
             LoggingService.shared.info(
                 "Invidious feed: Loaded page \(nextPage), received \(feedVideos.count) videos",
                 category: .general
             )
 
             // Append new videos to existing cache
+            await registerNovelties(
+                feedVideos,
+                baselineSupplement: cachedVideos,
+                scope: FeedNoveltyScope.key(
+                    for: appEnvironment.settingsManager.subscriptionAccount,
+                    credential: sid
+                ),
+                observedAt: requestStartedAt,
+                isCompleteSnapshot: !response.hasMore,
+                settings: appEnvironment.settingsManager
+            )
             appendVideos(feedVideos)
 
             // Update pagination state
@@ -469,6 +713,14 @@ final class SubscriptionFeedCache {
         let subscriptions = appEnvironment.dataManager.subscriptions()
         LoggingService.shared.debug("refreshFromStatelessServer: Found \(subscriptions.count) subscriptions", category: .general)
         guard !subscriptions.isEmpty else {
+            await registerNovelties(
+                [],
+                baselineSupplement: videos,
+                scope: .key(for: appEnvironment.settingsManager.subscriptionAccount),
+                observedAt: Date(),
+                isCompleteSnapshot: true,
+                settings: appEnvironment.settingsManager
+            )
             videos = []
             isLoading = false
             hasLoadedOnce = true
@@ -492,6 +744,8 @@ final class SubscriptionFeedCache {
         }
 
         do {
+            let requestStartedAt = Date()
+            let cachedVideos = videos
             let httpClient = HTTPClient()
             if let authHeader = appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: instance) {
                 await httpClient.setDefaultHeaders(["Authorization": authHeader])
@@ -510,14 +764,20 @@ final class SubscriptionFeedCache {
                 "refreshFromStatelessServer: Received \(serverVideos.count) videos from server, status: \(response.status), ready: \(response.isReady)",
                 category: .general
             )
-            update(videos: serverVideos)
-            appEnvironment.dataManager.updateLastVideoPublishedDates(from: serverVideos)
+            let isComplete = await applyYatteeServerResponse(
+                response,
+                cachedVideos: cachedVideos,
+                baselineSupplement: cachedVideos,
+                expectedChannelCount: channelRequests.count,
+                requestStartedAt: requestStartedAt,
+                appEnvironment: appEnvironment
+            )
 
-            // Prefetch DeArrow branding
-            prefetchDeArrow(for: serverVideos, using: appEnvironment)
-
-            if response.isReady {
-                feedLoadState = .ready
+            if isComplete {
+                isLoading = false
+            } else if response.isReady {
+                // The server finished processing, but missing/error counts mean
+                // this is not a complete successful snapshot. Do not poll again.
                 isLoading = false
             } else {
                 // Show partial results and poll for completion
@@ -532,6 +792,8 @@ final class SubscriptionFeedCache {
                     await pollUntilReady(
                         channels: channelRequests,
                         instance: instance,
+                        baselineSupplement: cachedVideos,
+                        requestStartedAt: requestStartedAt,
                         appEnvironment: appEnvironment
                     )
                 }
@@ -553,6 +815,8 @@ final class SubscriptionFeedCache {
     private func pollUntilReady(
         channels: [StatelessChannelRequest],
         instance: Instance,
+        baselineSupplement: [Video],
+        requestStartedAt: Date,
         appEnvironment: AppEnvironment
     ) async {
         let statusChannels = channels.map {
@@ -601,18 +865,28 @@ final class SubscriptionFeedCache {
 
                 if status.isReady {
                     // Fetch full feed now that all channels are cached
-                    if let response = try? await yatteeServerAPI.postFeed(
-                        channels: channels,
-                        limit: 100,
-                        offset: 0,
-                        instance: instance
-                    ) {
-                        let serverVideos = response.toVideos()
-                        update(videos: serverVideos)
-                        appEnvironment.dataManager.updateLastVideoPublishedDates(from: serverVideos)
-                        prefetchDeArrow(for: serverVideos, using: appEnvironment)
+                    do {
+                        let response = try await yatteeServerAPI.postFeed(
+                            channels: channels,
+                            limit: 100,
+                            offset: 0,
+                            instance: instance
+                        )
+                        _ = await applyYatteeServerResponse(
+                            response,
+                            cachedVideos: videos,
+                            baselineSupplement: baselineSupplement,
+                            expectedChannelCount: channels.count,
+                            requestStartedAt: requestStartedAt,
+                            appEnvironment: appEnvironment
+                        )
+                    } catch {
+                        LoggingService.shared.error(
+                            "Yattee Server final feed fetch failed: \(error.localizedDescription)",
+                            category: .general
+                        )
+                        feedLoadState = .error(.networkError(error.localizedDescription))
                     }
-                    feedLoadState = .ready
                     isLoading = false
                     return
                 }
@@ -647,8 +921,8 @@ final class SubscriptionFeedCache {
             )
         }
 
-        // Show whatever we have
-        feedLoadState = .ready
+        // Keep the last partial/error state and its merged snapshot. A timeout,
+        // cancellation, or background transition is not a complete refresh.
         isLoading = false
     }
 
@@ -660,7 +934,7 @@ final class SubscriptionFeedCache {
 
         Task { @MainActor in
             // Load disk cache first to get accurate lastUpdated timestamp
-            await loadFromDiskIfNeeded()
+            await loadFromDiskIfNeeded(using: appEnvironment)
 
             guard !isCacheValid(using: appEnvironment.settingsManager) else { return }
 
@@ -670,6 +944,117 @@ final class SubscriptionFeedCache {
     }
 
     // MARK: - Helpers
+
+    private func registerNovelties(
+        _ videos: [Video],
+        baselineSupplement: [Video],
+        scope: FeedNoveltyScope,
+        observedAt: Date,
+        isCompleteSnapshot: Bool,
+        settings: SettingsManager
+    ) async {
+        await FeedNoveltyRegistry.shared.ingest(
+            videos: videos,
+            baselineSupplement: baselineSupplement,
+            scope: scope,
+            observedAt: observedAt,
+            isCompleteSnapshot: isCompleteSnapshot,
+            includeShorts: settings.badgesIncludeShorts
+        )
+    }
+
+    private func cacheScope(using appEnvironment: AppEnvironment) -> String {
+        switch LocalFeedSource.resolve(
+            from: appEnvironment.instancesManager.instances,
+            preference: appEnvironment.settingsManager.localFeedSourcePreference
+        ) {
+            case .yatteeServer(let instance):
+                return "local:yatteeServer:\(instance.id.uuidString)"
+            case .invidious(let instance):
+                return "local:invidious:\(instance.id.uuidString)"
+            case .unavailable:
+                return "local:unavailable"
+            }
+    }
+
+    private func canAdoptLegacyCache(for scope: String) -> Bool {
+        !scope.hasPrefix("local:invidious:")
+    }
+
+    private func videosForActiveSubscriptions(
+        _ cachedVideos: [Video],
+        scope: String,
+        dataManager: DataManager
+    ) -> [Video] {
+        guard scope.hasPrefix("local:") else { return cachedVideos }
+        let channelIDs = Set(dataManager.subscriptions().map(\.channelID))
+        return cachedVideos.filter { channelIDs.contains($0.author.id) }
+    }
+
+    private func activateCacheScope(_ scope: String) async {
+        guard cacheScopeKey != scope else { return }
+
+        cancelPolling()
+        videos = []
+        lastUpdated = nil
+        hasLoadedOnce = false
+        hasMorePages = false
+        currentPage = 1
+        cacheScopeKey = scope
+        diskCacheLoaded = true
+
+        if let cacheData = await FeedCache.shared.load(scopeKey: scope), cacheData.scopeKey == scope {
+            videos = cacheData.videos
+            lastUpdated = cacheData.lastUpdated
+            hasLoadedOnce = true
+        }
+    }
+
+    @discardableResult
+    private func applyYatteeServerResponse(
+        _ response: StatelessFeedResponse,
+        cachedVideos: [Video],
+        baselineSupplement: [Video],
+        expectedChannelCount: Int,
+        requestStartedAt: Date,
+        appEnvironment: AppEnvironment
+    ) async -> Bool {
+        let serverVideos = response.toVideos()
+        let isComplete = YatteeServerFeedSnapshot.isComplete(
+            response,
+            expectedChannelCount: expectedChannelCount
+        )
+        let resolvedVideos = YatteeServerFeedSnapshot.videos(
+            from: response,
+            preserving: cachedVideos,
+            expectedChannelCount: expectedChannelCount
+        )
+
+        await registerNovelties(
+            serverVideos,
+            baselineSupplement: baselineSupplement,
+            scope: .key(for: appEnvironment.settingsManager.subscriptionAccount),
+            observedAt: requestStartedAt,
+            isCompleteSnapshot: isComplete,
+            settings: appEnvironment.settingsManager
+        )
+
+        if isComplete {
+            update(videos: resolvedVideos)
+            feedLoadState = .ready
+        } else {
+            updatePartialYatteeServerSnapshot(videos: resolvedVideos)
+            feedLoadState = .partiallyLoaded(
+                readyCount: response.readyCount ?? 0,
+                pendingCount: response.pendingCount ?? 0,
+                errorCount: response.errorCount ?? 0
+            )
+        }
+
+        appEnvironment.dataManager.updateLastVideoPublishedDates(from: serverVideos)
+        prefetchDeArrow(for: serverVideos, using: appEnvironment)
+        return isComplete
+    }
 
     /// Prefetches DeArrow branding for YouTube videos.
     private func prefetchDeArrow(for videos: [Video], using appEnvironment: AppEnvironment) {

@@ -15,6 +15,7 @@ import NukeUI
 struct ChannelCardGridView: View {
     let channel: Channel
     var isCompact: Bool = false
+    var yatteeServerURL: URL?
     var authHeader: String?
 
     private var avatarSize: CGFloat { isCompact ? 80 : 100 }
@@ -33,17 +34,15 @@ struct ChannelCardGridView: View {
     var body: some View {
         VStack(alignment: .center, spacing: isCompact ? 8 : 12) {
             // Avatar
-            LazyImage(request: AvatarURLBuilder.imageRequest(url: channel.thumbnailURL, authHeader: authHeader)) { state in
-                if let image = state.image {
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    avatarPlaceholder
-                }
-            }
-            .frame(width: avatarSize, height: avatarSize)
-            .clipShape(Circle())
+            ChannelAvatarView(
+                channelID: channel.id.channelID,
+                name: channel.name,
+                directURL: channel.thumbnailURL,
+                yatteeServerURL: yatteeServerURL,
+                size: avatarSize,
+                authHeader: authHeader,
+                source: channel.id.source
+            )
             
             // Channel info
             VStack(alignment: .center, spacing: 4) {
@@ -87,15 +86,6 @@ struct ChannelCardGridView: View {
         .contentShape(Rectangle())
     }
     
-    private var avatarPlaceholder: some View {
-        Circle()
-            .fill(.quaternary)
-            .overlay {
-                Text(String(channel.name.prefix(1)))
-                    .font(.title)
-                    .foregroundStyle(.secondary)
-            }
-    }
 }
 
 // MARK: - Preview

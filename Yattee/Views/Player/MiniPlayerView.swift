@@ -14,9 +14,17 @@ struct MiniPlayerView: View {
 
     /// Whether this is displayed as a tab bottom accessory (affects styling)
     var isTabAccessory: Bool = false
+    var isFloatingDragEnabled = false
+    var floatingVideoWidth: CGFloat?
+    var isFloatingResizeEnabled = false
+    var onFloatingDragChanged: (CGSize) -> Void = { _ in }
+    var onFloatingDragEnded: (CGSize, CGSize) -> Void = { _, _ in }
+    var onFloatingMagnificationChanged: (CGFloat) -> Void = { _ in }
+    var onFloatingMagnificationEnded: (CGFloat) -> Void = { _ in }
 
     @State private var buttonTapCounts: [UUID: Int] = [:]
     @State private var miniPlayerSettings: MiniPlayerSettings = MiniPlayerSettings.cached
+    @State private var isFloatingMagnifying = false
 
     private var playerService: PlayerService? { appEnvironment?.playerService }
     private var playerState: PlayerState? { playerService?.state }
@@ -28,8 +36,19 @@ struct MiniPlayerView: View {
 
     private var currentVideo: Video? { playerState?.currentVideo }
 
-    /// Whether PiP is currently active
-    private var isPiPActive: Bool { playerState?.pipState == .active }
+    /// Whether PiP is currently active. The backend owns the effective AVKit
+    /// lifecycle; PlayerState mirrors it for observable UI updates.
+    private var isPiPActive: Bool {
+        playerState?.pipState == .active ||
+            (playerService?.currentBackend as? MPVBackend)?.isPiPActive == true
+    }
+
+    private var playbackThumbnailStatus: PlaybackThumbnailStatus? {
+        guard currentVideo != nil, let playbackState = playerState?.playbackState else {
+            return nil
+        }
+        return PlaybackThumbnailStatus(playbackState: playbackState)
+    }
 
     /// Whether video preview should be shown (video ready and player not expanded/expanding)
     private var shouldShowVideoPreview: Bool {
@@ -136,6 +155,8 @@ struct MiniPlayerView: View {
             #else
             if isTabAccessory {
                 accessoryLayout
+            } else if miniPlayerSettings.style == .video {
+                videoOverlayLayout
             } else {
                 overlayLayout
             }
@@ -214,6 +235,87 @@ struct MiniPlayerView: View {
     }
 
     // MARK: - Overlay Layout
+
+    /// Floating 16:9 video style. This reuses the same preview surface as Bar, so
+    /// only one MPV render view can be mounted while the player is collapsed.
+    private var videoOverlayLayout: some View {
+        let width = floatingVideoWidth ?? 320
+        let height = width / MiniPlayerStyleMetrics.videoAspectRatio
+
+        return ZStack(alignment: .topTrailing) {
+            videoPreviewView
+                .frame(width: width, height: height)
+                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .onTapGesture {
+                    handleVideoPreviewTap()
+                }
+                .simultaneousGesture(
+                    // Use a fixed screen coordinate space because this view moves while dragging.
+                    // A local coordinate space moves with the card and destabilizes translation.
+                    DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                        .onChanged { value in
+                            guard !isFloatingMagnifying else { return }
+                            onFloatingDragChanged(value.translation)
+                        }
+                        .onEnded { value in
+                            guard !isFloatingMagnifying else { return }
+                            onFloatingDragEnded(value.translation, value.predictedEndTranslation)
+                        },
+                    including: isFloatingDragEnabled ? .all : .none
+                )
+                .simultaneousGesture(
+                    MagnifyGesture()
+                        .onChanged { value in
+                            isFloatingMagnifying = true
+                            onFloatingMagnificationChanged(value.magnification)
+                        }
+                        .onEnded { value in
+                            onFloatingMagnificationEnded(value.magnification)
+                            isFloatingMagnifying = false
+                        },
+                    including: isFloatingResizeEnabled ? .all : .none
+                )
+
+            if isPiPActive, let playbackThumbnailStatus {
+                PiPPlaybackStatusOverlay(isPaused: playbackThumbnailStatus == .paused)
+                    .allowsHitTesting(false)
+            }
+
+            videoControlsView
+                .padding(.top, 4)
+                .padding(.trailing, 4)
+        }
+            .frame(width: width, height: height)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.horizontal, 16)
+    }
+
+    /// Commands shared with the mini-player settings, in their persisted order.
+    /// Keeping them as a sibling of the gesture surface prevents button presses
+    /// from being interpreted as video taps, drags, or magnification gestures.
+    private var videoControlsView: some View {
+        HStack(spacing: 2) {
+            ForEach(miniPlayerSettings.videoButtons) { configuration in
+                miniPlayerButton(for: configuration)
+                    .frame(width: 32, height: 32)
+                    .foregroundStyle(.white)
+                    .glassBackground(.regular, in: .circle, fallback: .ultraThinMaterial)
+                    .frame(width: 44, height: 44, alignment: .topTrailing)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel(configuration.buttonType.displayName)
+                    .disabled(
+                        configuration.buttonType == .pictureInPicture && !isVideoPiPAvailable
+                    )
+                    .opacity(
+                        configuration.buttonType == .pictureInPicture && !isVideoPiPAvailable
+                            ? 0.5
+                            : 1
+                    )
+            }
+        }
+    }
 
     private var overlayLayout: some View {
         HStack(spacing: 12) {
@@ -377,8 +479,13 @@ struct MiniPlayerView: View {
             thumbnailView
                 .opacity(shouldShowVideoPreview && !isPiPActive ? 0 : 1)
                 .animation(.easeInOut(duration: 0.15), value: shouldShowVideoPreview)
-                .animation(.easeInOut(duration: 0.25), value: isPiPActive)
                 .allowsHitTesting(false)
+
+            if isPiPActive,
+               miniPlayerSettings.style != .video,
+               let playbackThumbnailStatus {
+                PiPPlaybackStatusOverlay(isPaused: playbackThumbnailStatus == .paused)
+            }
         }
         .onChange(of: navigationCoordinator?.isPlayerCollapsing) { _, isCollapsing in
             // When collapse animation finishes, resume rendering if video preview should be shown
@@ -534,7 +641,9 @@ struct MiniPlayerView: View {
         } label: {
             Image(systemName: "xmark")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    miniPlayerSettings.style == .video && !isTabAccessory ? .white : .secondary
+                )
                 .frame(width: 32, height: 32)
                 .contentShape(Rectangle())
         }
@@ -679,6 +788,11 @@ struct MiniPlayerView: View {
                state.playbackState == .buffering ||
                !state.isFirstFrameReady ||
                !state.isBufferReady
+    }
+
+    private var isVideoPiPAvailable: Bool {
+        guard let state = playerState else { return false }
+        return state.isPiPPossible && state.currentStream?.isAudioOnly != true
     }
 
     private var playPauseIcon: String {

@@ -15,35 +15,12 @@ struct AboutView: View {
         SettingsFormContainer {
             #if !os(tvOS)
             SettingsFormSection("settings.about.community") {
-                communityLink("GitHub", icon: "github", url: "https://github.com/yattee/yattee")
-                communityLink("Discord", icon: "discord", url: "https://yattee.stream/discord")
+                communityLink("GitHub", icon: "github", url: "https://github.com/Guizmos123/YaTubee")
             }
             #endif
 
             SettingsFormSection {
                 #if os(tvOS)
-                NavigationLink {
-                    TVSidebarDetailContainer(
-                        systemImage: "person.3",
-                        title: AppLocalization.string("settings.contributors.title")
-                    ) {
-                        ContributorsView()
-                    }
-                } label: {
-                    Label(AppLocalization.string("settings.contributors.title"), systemImage: "person.3")
-                }
-
-                NavigationLink {
-                    TVSidebarDetailContainer(
-                        systemImage: "globe",
-                        title: AppLocalization.string("settings.translators.title")
-                    ) {
-                        TranslationContributorsView()
-                    }
-                } label: {
-                    Label(AppLocalization.string("settings.translators.title"), systemImage: "globe")
-                }
-
                 NavigationLink {
                     TVSidebarDetailContainer(
                         systemImage: "heart.text.square",
@@ -55,12 +32,6 @@ struct AboutView: View {
                     Label(AppLocalization.string("settings.acknowledgements.title"), systemImage: "heart.text.square")
                 }
                 #else
-                SettingsNavigationRow("settings.contributors.title", systemImage: "person.3") {
-                    ContributorsView()
-                }
-                SettingsNavigationRow("settings.translators.title", systemImage: "globe") {
-                    TranslationContributorsView()
-                }
                 SettingsNavigationRow("settings.acknowledgements.title", systemImage: "heart.text.square") {
                     AcknowledgementsView()
                 }

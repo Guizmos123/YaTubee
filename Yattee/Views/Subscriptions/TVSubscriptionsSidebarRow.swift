@@ -8,7 +8,6 @@
 
 #if os(tvOS)
 import SwiftUI
-import NukeUI
 
 struct TVSubscriptionsSidebarRow: View {
     let name: String
@@ -16,21 +15,12 @@ struct TVSubscriptionsSidebarRow: View {
     let serverURL: URL?
     let authHeader: String?
     let channelID: String?
+    var source: ContentSource? = nil
     let isAllChannels: Bool
     let isSelected: Bool
     let onTap: () -> Void
 
     private let avatarSize: CGFloat = 50
-
-    private var effectiveAvatarURL: URL? {
-        guard let channelID else { return nil }
-        return AvatarURLBuilder.avatarURL(
-            channelID: channelID,
-            directURL: avatarURL,
-            serverURL: serverURL,
-            size: Int(avatarSize)
-        )
-    }
 
     var body: some View {
         Button(action: onTap) {
@@ -66,21 +56,16 @@ struct TVSubscriptionsSidebarRow: View {
                     .padding(avatarSize * 0.25)
             }
         } else {
-            LazyImage(request: AvatarURLBuilder.imageRequest(url: effectiveAvatarURL, authHeader: authHeader)) { state in
-                if let image = state.image {
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Circle()
-                        .fill(.quaternary)
-                        .overlay {
-                            Text(String(name.prefix(1)))
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                        }
-                }
-            }
+            ChannelAvatarView(
+                channelID: channelID ?? "",
+                name: name,
+                directURL: avatarURL,
+                yatteeServerURL: serverURL,
+                size: avatarSize,
+                authHeader: authHeader,
+                source: source,
+                placeholderFont: .headline
+            )
         }
     }
 }

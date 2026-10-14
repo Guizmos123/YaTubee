@@ -8,11 +8,17 @@
 import SwiftUI
 
 struct SearchView: View {
+    private static let pullToCollapseThreshold: CGFloat = 110
+
     @Environment(\.appEnvironment) private var appEnvironment
+    @Environment(\.dismiss) private var dismiss
     @Namespace private var sheetTransition
 
     /// Initial query for deep linking. When set, auto-executes search on appear.
     var initialQuery: String? = nil
+
+    /// Whether the native search field should receive focus when this view is first presented.
+    var automaticallyFocusSearchField = false
 
     /// External search text binding (from CompactTabView iOS 18+ integration)
     private var externalSearchText: Binding<String>?
@@ -25,6 +31,34 @@ struct SearchView: View {
         externalSearchText ?? $internalSearchText
     }
 
+    /// Tracks the native search presentation. SwiftUI writes `false` here when
+    /// the native Cancel control is used. Programmatic collapses update the
+    /// backing state directly so they remain on this navigation destination.
+    private var searchPresentationBinding: Binding<Bool> {
+        Binding(
+            get: { isSearchPresented },
+            set: { newValue in
+                guard newValue != isSearchPresented else { return }
+                if !newValue, automaticallyFocusSearchField {
+                    dismiss()
+                } else {
+                    isSearchPresented = newValue
+                }
+            }
+        )
+    }
+
+    private func collapseSearch() {
+        #if DEBUG
+        LoggingService.shared.debug(
+            "Search pull-to-collapse: collapseSearch() invoked",
+            category: .general
+        )
+        #endif
+        isSearchPresented = false
+        isSearchFieldFocused = false
+    }
+
     @State private var showFilterSheet = false
     @State private var selectedSearchInstance: Instance?
     @State private var searchViewModel: SearchViewModel?
@@ -34,6 +68,9 @@ struct SearchView: View {
     @State private var showingClearAllRecentsConfirmation = false
     @State private var showViewOptions = false
     @State private var isSearchHistoryExpanded = false
+    @State private var didRequestInitialSearchFocus = false
+    @State private var isSearchPresented = false
+    @FocusState private var isSearchFieldFocused: Bool
 
     /// Suppresses the next onChange suggestion-fetch when the search text is set
     /// programmatically (recent search / suggestion tap / deep link), so it goes
@@ -80,6 +117,20 @@ struct SearchView: View {
         selectedSearchInstance ?? appEnvironment?.instancesManager.activeInstance
     }
 
+    private var yatteeServer: Instance? {
+        appEnvironment?.instancesManager.enabledYatteeServerInstances.first
+    }
+
+    private var yatteeServerAuthHeader: String? {
+        guard let yatteeServer else { return nil }
+        return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: yatteeServer)
+    }
+
+    private func channelWithCachedAvatar(_ channel: Channel) -> Channel {
+        guard let appEnvironment else { return channel }
+        return channel.enrichedThumbnail(using: appEnvironment.dataManager)
+    }
+
     /// All enabled instances available for searching.
     private var availableInstances: [Instance] {
         appEnvironment?.instancesManager.enabledInstances ?? []
@@ -94,9 +145,14 @@ struct SearchView: View {
     }
 
     /// Initialize SearchView with optional external search text binding
-    init(searchText: Binding<String>? = nil, initialQuery: String? = nil) {
+    init(
+        searchText: Binding<String>? = nil,
+        initialQuery: String? = nil,
+        automaticallyFocusSearchField: Bool = false
+    ) {
         self.externalSearchText = searchText
         self.initialQuery = initialQuery
+        self.automaticallyFocusSearchField = automaticallyFocusSearchField
     }
 
     /// View options button lives on the leading edge on macOS, trailing elsewhere.
@@ -141,6 +197,14 @@ struct SearchView: View {
         }
         .task {
             initializeViewModel()
+        }
+        .task {
+            #if os(iOS)
+            guard automaticallyFocusSearchField, !didRequestInitialSearchFocus else { return }
+            didRequestInitialSearchFocus = true
+            isSearchPresented = true
+            isSearchFieldFocused = true
+            #endif
         }
         .task(id: initialQuery) {
             // Auto-execute search when opened with an initial query
@@ -317,7 +381,16 @@ struct SearchView: View {
             }
             #endif
         }
+        #if os(iOS)
+        .searchable(
+            text: searchTextBinding,
+            isPresented: searchPresentationBinding,
+            prompt: Text(AppLocalization.string("search.placeholder"))
+        )
+        .searchFocused($isSearchFieldFocused)
+        #else
         .searchable(text: searchTextBinding, prompt: Text(AppLocalization.string("search.placeholder")))
+        #endif
         .onSubmit(of: .search) {
             searchViewModel?.cancelSuggestions()
             #if !os(macOS)
@@ -341,32 +414,42 @@ struct SearchView: View {
 
     @ViewBuilder
     private var searchContent: some View {
-        Group {
-            if searchTextBinding.wrappedValue.isEmpty {
-                emptySearchView
-            } else if let vm = searchViewModel {
-                if !vm.hasSearched {
-                    if !vm.suggestions.isEmpty && !hasResults {
-                        suggestionsView
-                    } else if vm.isFetchingSuggestions && !hasResults {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        Spacer()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                } else if vm.isSearching && !hasResults {
-                    resultsViewWithLoading
-                } else if let error = vm.errorMessage, !hasResults {
-                    errorView(error)
-                } else if hasResults {
-                    resultsView
-                } else {
-                    noResultsView
+        ZStack {
+            #if os(iOS)
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    collapseSearch()
                 }
-            } else {
-                Spacer()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            #endif
+
+            Group {
+                if searchTextBinding.wrappedValue.isEmpty {
+                    emptySearchView
+                } else if let vm = searchViewModel {
+                    if !vm.hasSearched {
+                        if !vm.suggestions.isEmpty && !hasResults {
+                            suggestionsView
+                        } else if vm.isFetchingSuggestions && !hasResults {
+                            ProgressView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            Spacer()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    } else if vm.isSearching && !hasResults {
+                        resultsViewWithLoading
+                    } else if let error = vm.errorMessage, !hasResults {
+                        errorView(error)
+                    } else if hasResults {
+                        resultsView
+                    } else {
+                        noResultsView
+                    }
+                } else {
+                    Spacer()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
     }
@@ -809,8 +892,10 @@ struct SearchView: View {
                                                 )
                                             ) {
                                                 ChannelCardGridView(
-                                                    channel: channelFromRecent(recentChannel),
-                                                    isCompact: false
+                                                    channel: channelWithCachedAvatar(channelFromRecent(recentChannel)),
+                                                    isCompact: false,
+                                                    yatteeServerURL: yatteeServer?.url,
+                                                    authHeader: yatteeServerAuthHeader
                                                 )
                                                 #if os(tvOS)
                                                 .frame(width: 240)
@@ -899,6 +984,15 @@ struct SearchView: View {
                     }
                     .padding(.vertical)
                 }
+                #if os(iOS)
+                .searchPullToCollapse(
+                    container: "recents",
+                    threshold: Self.pullToCollapseThreshold
+                ) {
+                    guard isSearchPresented else { return }
+                    collapseSearch()
+                }
+                #endif
                 #if os(tvOS)
                 .scrollClipDisabled()
                 #endif
@@ -949,6 +1043,15 @@ struct SearchView: View {
                 }
             }
             .listStyle(.plain)
+            #if os(iOS)
+            .searchPullToCollapse(
+                container: "suggestions",
+                threshold: Self.pullToCollapseThreshold
+            ) {
+                guard isSearchPresented else { return }
+                collapseSearch()
+            }
+            #endif
         }
     }
 
@@ -1072,6 +1175,15 @@ struct SearchView: View {
                                 .padding(.top, 40)
                         }
                     }
+                    #if os(iOS)
+                    .searchPullToCollapse(
+                        container: "loading",
+                        threshold: Self.pullToCollapseThreshold
+                    ) {
+                        guard isSearchPresented else { return }
+                        collapseSearch()
+                    }
+                    #endif
                 )
             #endif
         }
@@ -1113,6 +1225,15 @@ struct SearchView: View {
                         }
                     }
                     .accessibilityLabel("search.results")
+                    #if os(iOS)
+                    .searchPullToCollapse(
+                        container: "results",
+                        threshold: Self.pullToCollapseThreshold
+                    ) {
+                        guard isSearchPresented else { return }
+                        collapseSearch()
+                    }
+                    #endif
                     .background(
                         GeometryReader { geometry in
                             Color.clear
@@ -1244,7 +1365,12 @@ struct SearchView: View {
                         channel.id.source
                     )
                 ) {
-                    ChannelRowView(channel: channel, style: rowStyle)
+                    ChannelRowView(
+                        channel: channelWithCachedAvatar(channel),
+                        style: rowStyle,
+                        yatteeServerURL: yatteeServer?.url,
+                        authHeader: yatteeServerAuthHeader
+                    )
                         .contentShape(Rectangle())
                 }
                 .zoomTransitionSource(id: channel.id.channelID)
@@ -1316,7 +1442,12 @@ struct SearchView: View {
                                     channel.id.source
                                 )
                             ) {
-                                ChannelCardGridView(channel: channel, isCompact: gridConfig.isCompactCards)
+                                ChannelCardGridView(
+                                    channel: channelWithCachedAvatar(channel),
+                                    isCompact: gridConfig.isCompactCards,
+                                    yatteeServerURL: yatteeServer?.url,
+                                    authHeader: yatteeServerAuthHeader
+                                )
                                     .frame(maxHeight: .infinity, alignment: .top)
                                     .contentShape(Rectangle())
                             }
@@ -1516,6 +1647,136 @@ struct SearchView: View {
         return (videos, continuation)
     }
 }
+
+#if os(iOS)
+private struct SearchPullToCollapseModifier: ViewModifier {
+    let container: String
+    let threshold: CGFloat
+    let onTriggered: () -> Void
+
+    @State private var isAtTop = false
+    @State private var isTrackingGesture = false
+    @State private var gestureStartedAtTop = false
+    @State private var maximumDownwardTranslation: CGFloat = 0
+    @State private var maximumHorizontalTranslation: CGFloat = 0
+    @State private var didLogThreshold = false
+    @State private var didTriggerDuringGesture = false
+    @GestureState private var isDirectTouchActive = false
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y <= -geometry.contentInsets.top + 0.5
+            } action: { _, newValue in
+                isAtTop = newValue
+            }
+            .simultaneousGesture(pullGesture)
+            .onChange(of: isDirectTouchActive) { _, isActive in
+                // GestureState also resets after cancellation, for which
+                // DragGesture does not provide a separate public callback.
+                if !isActive, isTrackingGesture {
+                    resetGestureState()
+                }
+            }
+    }
+
+    private var pullGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .updating($isDirectTouchActive) { _, state, _ in
+                state = true
+            }
+            .onChanged { value in
+                if !isTrackingGesture {
+                    isTrackingGesture = true
+                    gestureStartedAtTop = isAtTop
+                    didTriggerDuringGesture = false
+                    maximumDownwardTranslation = 0
+                    maximumHorizontalTranslation = 0
+                    didLogThreshold = false
+                    debugLog(
+                        "begin container=\(container) startedAtTop=\(gestureStartedAtTop)"
+                    )
+                }
+
+                maximumDownwardTranslation = max(
+                    maximumDownwardTranslation,
+                    value.translation.height
+                )
+                maximumHorizontalTranslation = max(
+                    maximumHorizontalTranslation,
+                    abs(value.translation.width)
+                )
+
+                if !didLogThreshold, maximumDownwardTranslation >= threshold {
+                    didLogThreshold = true
+                    debugLog(
+                        "threshold container=\(container) vertical=\(maximumDownwardTranslation) horizontal=\(maximumHorizontalTranslation)"
+                    )
+                }
+            }
+            .onEnded { value in
+                maximumDownwardTranslation = max(
+                    maximumDownwardTranslation,
+                    value.translation.height
+                )
+                maximumHorizontalTranslation = max(
+                    maximumHorizontalTranslation,
+                    abs(value.translation.width)
+                )
+
+                let isVertical = maximumDownwardTranslation > maximumHorizontalTranslation
+                let shouldTrigger = gestureStartedAtTop
+                    && maximumDownwardTranslation >= threshold
+                    && isVertical
+                    && !didTriggerDuringGesture
+
+                debugLog(
+                    "end container=\(container) startedAtTop=\(gestureStartedAtTop) vertical=\(maximumDownwardTranslation) horizontal=\(maximumHorizontalTranslation) trigger=\(shouldTrigger)"
+                )
+
+                if shouldTrigger {
+                    didTriggerDuringGesture = true
+                    onTriggered()
+                }
+                resetGestureState()
+            }
+    }
+
+    private func resetGestureState() {
+        isTrackingGesture = false
+        gestureStartedAtTop = false
+        maximumDownwardTranslation = 0
+        maximumHorizontalTranslation = 0
+        didLogThreshold = false
+        didTriggerDuringGesture = false
+    }
+
+    private func debugLog(_ message: String) {
+        #if DEBUG
+        LoggingService.shared.debug(
+            "Search pull-to-collapse: \(message)",
+            category: .general
+        )
+        #endif
+    }
+}
+
+private extension View {
+    func searchPullToCollapse(
+        container: String,
+        threshold: CGFloat,
+        onTriggered: @escaping () -> Void
+    ) -> some View {
+        modifier(
+            SearchPullToCollapseModifier(
+                container: container,
+                threshold: threshold,
+                onTriggered: onTriggered
+            )
+        )
+    }
+}
+#endif
 
 // MARK: - Search Filters Sheet
 

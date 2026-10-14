@@ -7,6 +7,27 @@
 
 @preconcurrency import Foundation
 
+/// Semantic content classification when a source supplies reliable metadata.
+enum VideoContentKind: String, Codable, Sendable {
+    case regular
+    case short
+    case unknown
+
+    init(pipedIsShort: Bool?) {
+        switch pipedIsShort {
+        case true: self = .short
+        case false: self = .regular
+        case nil: self = .unknown
+        }
+    }
+
+    /// Whether content remains eligible for a feature's "Include Shorts" setting.
+    /// Unknown content stays eligible so ordinary videos are never discarded without proof.
+    func isIncluded(whenIncludingShorts includeShorts: Bool) -> Bool {
+        includeShorts || self != .short
+    }
+}
+
 /// Represents a video from any content source.
 struct Video: Identifiable, Codable, Sendable {
     /// Unique identifier combining source and video ID.
@@ -45,6 +66,9 @@ struct Video: Identifiable, Codable, Sendable {
     /// Whether this is an upcoming premiere/stream.
     let isUpcoming: Bool
 
+    /// Whether reliable source metadata identifies this as regular or short-form content.
+    let contentKind: VideoContentKind
+
     /// Scheduled start time for upcoming content.
     let scheduledStartTime: Date?
 
@@ -66,6 +90,7 @@ struct Video: Identifiable, Codable, Sendable {
         thumbnails: [Thumbnail],
         isLive: Bool,
         isUpcoming: Bool,
+        contentKind: VideoContentKind = .unknown,
         scheduledStartTime: Date?,
         relatedVideos: [Video]? = nil
     ) {
@@ -81,8 +106,55 @@ struct Video: Identifiable, Codable, Sendable {
         self.thumbnails = thumbnails
         self.isLive = isLive
         self.isUpcoming = isUpcoming
+        self.contentKind = contentKind
         self.scheduledStartTime = scheduledStartTime
         self.relatedVideos = relatedVideos
+    }
+
+    // MARK: - Codable
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, description, author, duration, publishedAt, publishedText
+        case viewCount, likeCount, thumbnails, isLive, isUpcoming, contentKind
+        case scheduledStartTime, relatedVideos
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(VideoID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        author = try container.decode(Author.self, forKey: .author)
+        duration = try container.decode(TimeInterval.self, forKey: .duration)
+        publishedAt = try container.decodeIfPresent(Date.self, forKey: .publishedAt)
+        publishedText = try container.decodeIfPresent(String.self, forKey: .publishedText)
+        viewCount = try container.decodeIfPresent(Int.self, forKey: .viewCount)
+        likeCount = try container.decodeIfPresent(Int.self, forKey: .likeCount)
+        thumbnails = try container.decode([Thumbnail].self, forKey: .thumbnails)
+        isLive = try container.decode(Bool.self, forKey: .isLive)
+        isUpcoming = try container.decode(Bool.self, forKey: .isUpcoming)
+        contentKind = try container.decodeIfPresent(VideoContentKind.self, forKey: .contentKind) ?? .unknown
+        scheduledStartTime = try container.decodeIfPresent(Date.self, forKey: .scheduledStartTime)
+        relatedVideos = try container.decodeIfPresent([Video].self, forKey: .relatedVideos)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encode(author, forKey: .author)
+        try container.encode(duration, forKey: .duration)
+        try container.encodeIfPresent(publishedAt, forKey: .publishedAt)
+        try container.encodeIfPresent(publishedText, forKey: .publishedText)
+        try container.encodeIfPresent(viewCount, forKey: .viewCount)
+        try container.encodeIfPresent(likeCount, forKey: .likeCount)
+        try container.encode(thumbnails, forKey: .thumbnails)
+        try container.encode(isLive, forKey: .isLive)
+        try container.encode(isUpcoming, forKey: .isUpcoming)
+        try container.encode(contentKind, forKey: .contentKind)
+        try container.encodeIfPresent(scheduledStartTime, forKey: .scheduledStartTime)
+        try container.encodeIfPresent(relatedVideos, forKey: .relatedVideos)
     }
 
     // MARK: - Computed Properties
@@ -134,6 +206,7 @@ struct Video: Identifiable, Codable, Sendable {
     var formattedPublishedDate: String? {
         if let publishedAt {
             let formatter = RelativeDateTimeFormatter()
+            formatter.locale = AppLocalization.selectedLocale
             formatter.unitsStyle = .full
             return formatter.localizedString(for: publishedAt, relativeTo: Date())
         }

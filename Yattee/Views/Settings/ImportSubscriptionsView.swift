@@ -17,6 +17,16 @@ struct ImportSubscriptionsView: View {
     @State private var isLoading = true
     @State private var error: Error?
     @State private var showAddAllConfirmation = false
+    @State private var importResult: RemoteSubscriptionImportResult?
+
+    private var yatteeServer: Instance? {
+        appEnvironment?.instancesManager.enabledYatteeServerInstances.first
+    }
+
+    private var yatteeServerAuthHeader: String? {
+        guard let yatteeServer else { return nil }
+        return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: yatteeServer)
+    }
 
     // MARK: - Accessibility Identifiers
 
@@ -128,6 +138,15 @@ struct ImportSubscriptionsView: View {
 
     private var listView: some View {
         List {
+            if let importResult {
+                Section(AppLocalization.string("import.subscriptions.result.title")) {
+                    resultRow("import.subscriptions.result.found", value: importResult.found)
+                    resultRow("import.subscriptions.result.imported", value: importResult.imported)
+                    resultRow("import.subscriptions.result.alreadyPresent", value: importResult.alreadyPresent)
+                    resultRow("import.subscriptions.result.errors", value: importResult.errors)
+                }
+            }
+
             ForEach(channels) { channel in
                 subscriptionRow(channel)
                     .accessibilityIdentifier(AccessibilityID.row(channel.id.channelID))
@@ -137,30 +156,25 @@ struct ImportSubscriptionsView: View {
         .accessibilityIdentifier(AccessibilityID.list)
     }
 
+    private func resultRow(_ key: String.LocalizationValue, value: Int) -> some View {
+        LabeledContent(AppLocalization.string(key), value: String(value))
+    }
+
     // MARK: - Row View
 
     @ViewBuilder
     private func subscriptionRow(_ channel: Channel) -> some View {
         HStack(spacing: 12) {
             // Channel avatar
-            if let avatarURL = channel.thumbnailURL {
-                AsyncImage(url: avatarURL) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .foregroundStyle(.secondary)
-                }
-                .frame(width: 32, height: 32)
-                .clipShape(Circle())
-            } else {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .frame(width: 32, height: 32)
-                    .foregroundStyle(.secondary)
-            }
+            ChannelAvatarView(
+                channelID: channel.id.channelID,
+                name: channel.name,
+                directURL: channel.thumbnailURL,
+                yatteeServerURL: yatteeServer?.url,
+                size: 32,
+                authHeader: yatteeServerAuthHeader,
+                source: channel.id.source
+            )
 
             // Name
             VStack(alignment: .leading, spacing: 2) {
@@ -258,24 +272,25 @@ struct ImportSubscriptionsView: View {
     private func addSubscription(_ channel: Channel) {
         guard let dataManager = appEnvironment?.dataManager else { return }
 
-        dataManager.subscribe(to: channel)
-        subscribedChannelIDs.insert(channel.id.channelID)
+        let result = dataManager.importRemoteSubscriptions([channel])
+        importResult = result
+        subscribedChannelIDs = Set(dataManager.subscriptions().map(\.channelID))
 
-        appEnvironment?.toastManager.showSuccess(AppLocalization.string("import.subscriptions.added.title"))
+        if result.imported > 0 {
+            appEnvironment?.toastManager.showSuccess(AppLocalization.string("import.subscriptions.added.title"))
+        }
     }
 
     private func addAllSubscriptions() {
         guard let dataManager = appEnvironment?.dataManager else { return }
 
-        let toAdd = unsubscribedChannels
-        for channel in toAdd {
-            dataManager.subscribe(to: channel)
-            subscribedChannelIDs.insert(channel.id.channelID)
-        }
+        let result = dataManager.importRemoteSubscriptions(channels)
+        importResult = result
+        subscribedChannelIDs = Set(dataManager.subscriptions().map(\.channelID))
 
         appEnvironment?.toastManager.showSuccess(
-            AppLocalization.string("import.subscriptions.added.title"),
-            subtitle: AppLocalization.string("import.subscriptions.count.subtitle \(toAdd.count)")
+            AppLocalization.string("import.subscriptions.result.title"),
+            subtitle: AppLocalization.string("import.subscriptions.count.subtitle \(result.imported)")
         )
     }
 

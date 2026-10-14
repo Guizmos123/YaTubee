@@ -125,6 +125,7 @@ final class SettingsManager {
     var _homeSectionVisibility: [HomeSectionItem: Bool]?
     var _homeSectionItemsLimit: Int?
     var _homeSectionLayout: HomeSectionLayout?
+    var _moreHomePresentation: HomePresentationSettings?
 
     // Top Shelf (tvOS)
     var _topShelfSections: [TopShelfSection]?
@@ -184,6 +185,10 @@ final class SettingsManager {
     // Notification settings
     var _backgroundNotificationsEnabled: Bool?
     var _defaultNotificationsForNewChannels: Bool?
+    var _notificationsIncludeShorts: Bool?
+    var _videoTabBadgeEnabled: Bool?
+    var _appIconBadgeEnabled: Bool?
+    var _badgesIncludeShorts: Bool?
     var _lastBackgroundCheck: Date?
     var _clipboardURLDetectionEnabled: Bool?
     var _incognitoModeEnabled: Bool?
@@ -195,6 +200,7 @@ final class SettingsManager {
 
     // Subscription account settings
     var _subscriptionAccount: SubscriptionAccount?
+    var _localFeedSourcePreference: LocalFeedSourcePreference?
 
     // Queue settings
     var _queueEnabled: Bool?
@@ -493,6 +499,7 @@ final class SettingsManager {
         _homeSectionVisibility = nil
         _homeSectionItemsLimit = nil
         _homeSectionLayout = nil
+        _moreHomePresentation = nil
         _topShelfSections = nil
         _tabBarItemOrder = nil
         _tabBarItemVisibility = nil
@@ -530,6 +537,10 @@ final class SettingsManager {
         _landscapeDetailsPanelPinned = nil
         _backgroundNotificationsEnabled = nil
         _defaultNotificationsForNewChannels = nil
+        _notificationsIncludeShorts = nil
+        _videoTabBadgeEnabled = nil
+        _appIconBadgeEnabled = nil
+        _badgesIncludeShorts = nil
         _lastBackgroundCheck = nil
         _clipboardURLDetectionEnabled = nil
         _incognitoModeEnabled = nil

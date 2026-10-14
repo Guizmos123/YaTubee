@@ -12,6 +12,8 @@ struct HomeShortcutCardView<StatusIndicator: View>: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// Position-resolved colorful color; when set it overrides `colorfulColor`.
     @Environment(\.homeShortcutColorfulColor) private var positionColorfulColor
+    @Environment(\.homeShortcutCardStyle) private var configuredCardStyle
+    @Environment(\.homeShortcutCardColor) private var configuredCardColor
     #if os(tvOS)
     @Environment(\.isFocused) private var isFocused
     #endif
@@ -66,7 +68,7 @@ struct HomeShortcutCardView<StatusIndicator: View>: View {
         #if os(tvOS)
         return .compact
         #else
-        return styleOverride ?? (appEnvironment?.settingsManager.homeShortcutCardStyle ?? .regular)
+        return styleOverride ?? configuredCardStyle
         #endif
     }
 
@@ -74,7 +76,7 @@ struct HomeShortcutCardView<StatusIndicator: View>: View {
         #if os(tvOS)
         return .soft
         #else
-        return colorOverride ?? (appEnvironment?.settingsManager.homeShortcutCardColor ?? .soft)
+        return colorOverride ?? configuredCardColor
         #endif
     }
 

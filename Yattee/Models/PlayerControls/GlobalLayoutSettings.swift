@@ -66,7 +66,7 @@ enum ButtonSize: String, Codable, Hashable, Sendable, CaseIterable {
     var iconSize: CGFloat {
         switch self {
         case .small:
-            return 18
+            return 15
         case .medium:
             return 22
         case .large:

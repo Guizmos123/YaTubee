@@ -109,6 +109,16 @@ struct VideoChannelRow: View {
         return author.enriched(using: dataManager)
     }
 
+    private var yatteeServerAuthHeader: String? {
+        guard let appEnvironment,
+              let server = appEnvironment.instancesManager.yatteeServerInstances.first(where: {
+                  $0.isEnabled && $0.url == yatteeServerURL
+              }) else {
+            return nil
+        }
+        return appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: server)
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             if let onChannelTap {
@@ -140,7 +150,8 @@ struct VideoChannelRow: View {
                 author: enrichedAuthor,
                 size: 40,
                 yatteeServerURL: yatteeServerURL,
-                source: source
+                source: source,
+                authHeader: yatteeServerAuthHeader
             )
 
             VStack(alignment: .leading, spacing: 2) {

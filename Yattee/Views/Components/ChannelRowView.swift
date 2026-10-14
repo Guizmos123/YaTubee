@@ -6,11 +6,11 @@
 //
 
 import SwiftUI
-import NukeUI
 
 struct ChannelRowView: View {
     let channel: Channel
     var style: VideoRowStyle = .regular
+    var yatteeServerURL: URL?
     var authHeader: String?
 
     // Style-based dimensions - use thumbnail height to keep avatar square and match row height
@@ -49,17 +49,15 @@ struct ChannelRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             // Avatar - centered in container with same width as video thumbnail
-            LazyImage(request: AvatarURLBuilder.imageRequest(url: channel.thumbnailURL, authHeader: authHeader)) { state in
-                if let image = state.image {
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    avatarPlaceholder
-                }
-            }
-            .frame(width: avatarSize, height: avatarSize)
-            .clipShape(Circle())
+            ChannelAvatarView(
+                channelID: channel.id.channelID,
+                name: channel.name,
+                directURL: channel.thumbnailURL,
+                yatteeServerURL: yatteeServerURL,
+                size: avatarSize,
+                authHeader: authHeader,
+                source: channel.id.source
+            )
             .frame(width: style.thumbnailWidth)
 
             // Info
@@ -93,13 +91,4 @@ struct ChannelRowView: View {
         }
     }
 
-    private var avatarPlaceholder: some View {
-        Circle()
-            .fill(.quaternary)
-            .overlay {
-                Text(String(channel.name.prefix(1)))
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
-    }
 }

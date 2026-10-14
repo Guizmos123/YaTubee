@@ -6,13 +6,13 @@
 //
 
 import SwiftUI
-import NukeUI
 
 struct ChannelFilterChip: View {
     let channelID: String
     let name: String
     let avatarURL: URL?
     let serverURL: URL?
+    var source: ContentSource? = nil
     let isSelected: Bool
     let avatarSize: CGFloat
     let onTap: () -> Void
@@ -20,28 +20,18 @@ struct ChannelFilterChip: View {
     let onUnsubscribe: (() -> Void)?
     var authHeader: String?
 
-    private var effectiveAvatarURL: URL? {
-        AvatarURLBuilder.avatarURL(
-            channelID: channelID,
-            directURL: avatarURL,
-            serverURL: serverURL,
-            size: Int(avatarSize)
-        )
-    }
-
     var body: some View {
         Button(action: onTap) {
-            LazyImage(request: AvatarURLBuilder.imageRequest(url: effectiveAvatarURL, authHeader: authHeader)) { state in
-                if let image = state.image {
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    avatarPlaceholder
-                }
-            }
-            .frame(width: avatarSize, height: avatarSize)
-            .clipShape(Circle())
+            ChannelAvatarView(
+                channelID: channelID,
+                name: name,
+                directURL: avatarURL,
+                yatteeServerURL: serverURL,
+                size: avatarSize,
+                authHeader: authHeader,
+                source: source,
+                placeholderFont: .headline
+            )
             .overlay {
                 Circle()
                     .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 3)
@@ -64,15 +54,6 @@ struct ChannelFilterChip: View {
         }
     }
 
-    private var avatarPlaceholder: some View {
-        Circle()
-            .fill(.quaternary)
-            .overlay {
-                Text(String(name.prefix(1)))
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-            }
-    }
 }
 
 // MARK: - Preview

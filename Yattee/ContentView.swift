@@ -221,7 +221,12 @@ struct iOS18AdaptiveTabView: View {
             }
 
             // Mini player overlay
-            miniPlayerOverlay
+            FloatingMiniPlayerHost(
+                isEnabled: true,
+                hasActiveVideo: appEnvironment.playerService.state.currentVideo != nil,
+                isPlayerExpanded: appEnvironment.navigationCoordinator.isPlayerExpanded,
+                style: appEnvironment.activeMiniPlayerStyle
+            )
 
             // Black overlay when player is fully expanded
             // Hides scaled content behind player sheet, removed during dismiss gesture for parallax effect
@@ -274,30 +279,12 @@ struct iOS18AdaptiveTabView: View {
         }
     }
 
-    @ViewBuilder
-    private var miniPlayerOverlay: some View {
-        let playerState = appEnvironment.playerService.state
-        let hasActiveVideo = playerState.currentVideo != nil
-        let isExpanded = appEnvironment.navigationCoordinator.isPlayerExpanded
-
-        if hasActiveVideo && !isExpanded {
-            VStack(spacing: 0) {
-                Spacer()
-                MiniPlayerView()
-            }
-            .padding(.bottom, 49)
-            // Use move-only transition (no opacity) to prevent thumbnail flash during collapse
-            // The opacity transition caused video to appear faded during player sheet dismiss
-            .transition(.move(edge: .bottom))
-            .animation(.spring(response: 0.3), value: hasActiveVideo)
-        }
-    }
-
     private func presentExpandedPlayer() {
         let shouldAnimate = !appEnvironment.navigationCoordinator.skipNextPlayerExpandAnimation
         appEnvironment.navigationCoordinator.skipNextPlayerExpandAnimation = false
         ExpandedPlayerWindowManager.shared.show(with: appEnvironment, animated: shouldAnimate)
     }
+
 }
 
 // MARK: - iOS 26+ Adaptive Tab View
@@ -312,6 +299,24 @@ struct iOS26AdaptiveTabView: View {
 
     @State private var showingMiniPlayerQueueSheet = false
     @State private var showingMiniPlayerPlaylistSheet = false
+
+    private var miniPlayerPresentation: MiniPlayerPresentation {
+        MiniPlayerPresentation.resolve(
+            style: appEnvironment.activeMiniPlayerStyle,
+            supportsTabAccessory: true,
+            supportsProminentTab: usesProminentBubbleTab
+        )
+    }
+
+    /// iOS 27 PoC: the compact tab bar owns Bubble through a native prominent tab.
+    /// Keep the regular-width presentation and pre-iOS 27 fallback unchanged.
+    private var usesProminentBubbleTab: Bool {
+        if #available(iOS 27.0, *) {
+            return (horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone)
+                && appEnvironment.activeMiniPlayerStyle == .bubble
+        }
+        return false
+    }
 
     /// Whether to show the black overlay that covers scaled content when player is expanded
     private var shouldShowExpandedOverlay: Bool {
@@ -331,12 +336,14 @@ struct iOS26AdaptiveTabView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             Group {
                 if horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone {
                     // Compact: Use CompactTabView with settings-based customization
-                    // No bottom accessory since we're not using sidebarAdaptable style
-                    CompactTabView()
+                    CompactTabView(
+                        usesMiniPlayerAccessory: miniPlayerPresentation == .tabAccessory,
+                        usesProminentBubbleTab: miniPlayerPresentation == .prominentTab
+                    )
                         .environment(appEnvironment.settingsManager)
                 } else {
                     // Regular: Use UnifiedTabView which has bottom accessory support via sidebarAdaptable
@@ -344,11 +351,19 @@ struct iOS26AdaptiveTabView: View {
                         selectedTab: Binding(
                             get: { appEnvironment.navigationCoordinator.selectedTab },
                             set: { appEnvironment.navigationCoordinator.selectedTab = $0 }
-                        )
+                        ),
+                        usesMiniPlayerAccessory: miniPlayerPresentation == .tabAccessory
                     )
                     .environment(appEnvironment.settingsManager)
                 }
             }
+
+            FloatingMiniPlayerHost(
+                isEnabled: miniPlayerPresentation == .rootOverlay,
+                hasActiveVideo: appEnvironment.playerService.state.currentVideo != nil,
+                isPlayerExpanded: appEnvironment.navigationCoordinator.isPlayerExpanded,
+                style: appEnvironment.activeMiniPlayerStyle
+            )
 
             // Black overlay when player is fully expanded
             // Hides scaled content behind player sheet, removed during dismiss gesture for parallax effect
@@ -374,6 +389,14 @@ struct iOS26AdaptiveTabView: View {
         .onChange(of: appEnvironment.navigationCoordinator.playerExpandTrigger) { _, _ in
             presentExpandedPlayer()
         }
+        #if DEBUG
+        .onAppear {
+            logMiniPlayerPresentation(reason: "appear")
+        }
+        .onChange(of: appEnvironment.activeMiniPlayerStyle) { _, _ in
+            logMiniPlayerPresentation(reason: "styleChanged")
+        }
+        #endif
         .onChange(of: appEnvironment.navigationCoordinator.isPlayerExpanded) { _, isExpanded in
             if !isExpanded {
                 ExpandedPlayerWindowManager.shared.hide()
@@ -406,6 +429,21 @@ struct iOS26AdaptiveTabView: View {
         appEnvironment.navigationCoordinator.skipNextPlayerExpandAnimation = false
         ExpandedPlayerWindowManager.shared.show(with: appEnvironment, animated: shouldAnimate)
     }
+
+    #if DEBUG
+    private func logMiniPlayerPresentation(reason: String) {
+        let variant = horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone
+            ? "compact"
+            : "regular"
+        LoggingService.shared.debug(
+            "[ProminentTabPoC] ContentView reason=\(reason) variant=\(variant) " +
+                "style=\(appEnvironment.activeMiniPlayerStyle.rawValue) " +
+                "presentation=\(String(describing: miniPlayerPresentation)) " +
+                "supportsProminent=\(usesProminentBubbleTab)",
+            category: .general
+        )
+    }
+    #endif
 }
 #endif
 

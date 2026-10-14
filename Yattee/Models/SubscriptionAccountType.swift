@@ -78,3 +78,11 @@ struct SubscriptionAccount: Codable, Sendable, Equatable, Hashable {
         }
     }
 }
+
+/// Selects the backend used to aggregate locally stored subscriptions.
+/// Authentication-backed accounts remain represented by `SubscriptionAccount`.
+enum LocalFeedSourcePreference: Codable, Sendable, Equatable, Hashable {
+    case automatic
+    case yatteeServer(UUID)
+    case invidious(UUID)
+}

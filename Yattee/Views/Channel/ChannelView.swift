@@ -46,6 +46,37 @@ struct ChannelView: View {
         appEnvironment?.settingsManager.listStyle ?? .inset
     }
 
+    private var yatteeServer: Instance? {
+        appEnvironment?.instancesManager.enabledYatteeServerInstances.first
+    }
+
+    private var yatteeServerAuthHeader: String? {
+        guard let yatteeServer else { return nil }
+        return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: yatteeServer)
+    }
+
+    private func channelAvatar(
+        name: String,
+        directURL: URL?,
+        size: CGFloat,
+        placeholderFont: Font? = nil,
+        placeholderFill: AnyShapeStyle = AnyShapeStyle(.quaternary),
+        showsPlaceholderInitial: Bool = true
+    ) -> some View {
+        ChannelAvatarView(
+            channelID: channelID,
+            name: name,
+            directURL: directURL,
+            yatteeServerURL: yatteeServer?.url,
+            size: size,
+            authHeader: yatteeServerAuthHeader,
+            source: source,
+            placeholderFont: placeholderFont,
+            placeholderFill: placeholderFill,
+            showsPlaceholderInitial: showsPlaceholderInitial
+        )
+    }
+
     // UI state for view options
     @State private var showViewOptions = false
     @State private var viewWidth: CGFloat = 0
@@ -404,18 +435,12 @@ struct ChannelView: View {
                 // Collapsed title in toolbar
                 HStack(spacing: 8) {
                     if collapseProgress > 0.5 {
-                        LazyImage(url: channel.thumbnailURL) { state in
-                            if let image = state.image {
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } else {
-                                Circle()
-                                    .fill(.quaternary)
-                            }
-                        }
-                        .frame(width: 28, height: 28)
-                        .clipShape(Circle())
+                        channelAvatar(
+                            name: channel.name,
+                            directURL: channel.thumbnailURL,
+                            size: 28,
+                            showsPlaceholderInitial: false
+                        )
                     }
 
                     Text(channel.name)
@@ -559,18 +584,13 @@ struct ChannelView: View {
                 // Collapsed title in toolbar (using cached data)
                 HStack(spacing: 8) {
                     if collapseProgress > 0.5 {
-                        LazyImage(url: cached.thumbnailURL) { state in
-                            if let image = state.image {
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } else {
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                            }
-                        }
-                        .frame(width: collapsedAvatarSize, height: collapsedAvatarSize)
-                        .clipShape(Circle())
+                        channelAvatar(
+                            name: cached.name,
+                            directURL: cached.thumbnailURL,
+                            size: collapsedAvatarSize,
+                            placeholderFill: AnyShapeStyle(.ultraThinMaterial),
+                            showsPlaceholderInitial: false
+                        )
 
                         Text(cached.name)
                             .font(.headline)
@@ -751,23 +771,13 @@ struct ChannelView: View {
 
     @ViewBuilder
     private func tvOSAvatar(name: String, thumbnailURL: URL?) -> some View {
-        LazyImage(url: thumbnailURL) { state in
-            if let image = state.image {
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        Text(String(name.prefix(1)))
-                            .font(.system(size: 56, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                    }
-            }
-        }
-        .frame(width: 140, height: 140)
-        .clipShape(Circle())
+        channelAvatar(
+            name: name,
+            directURL: thumbnailURL,
+            size: 140,
+            placeholderFont: .system(size: 56, weight: .semibold),
+            placeholderFill: AnyShapeStyle(.ultraThinMaterial)
+        )
         .overlay(
             Circle()
                 .stroke(.white.opacity(0.8), lineWidth: 3)
@@ -966,18 +976,12 @@ struct ChannelView: View {
     @ViewBuilder
     private func collapsedToolbarTitle(name: String, thumbnailURL: URL?) -> some View {
         let label = HStack(spacing: 8) {
-            LazyImage(url: thumbnailURL) { state in
-                if let image = state.image {
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Circle()
-                        .fill(.quaternary)
-                }
-            }
-            .frame(width: 28, height: 28)
-            .clipShape(Circle())
+            channelAvatar(
+                name: name,
+                directURL: thumbnailURL,
+                size: 28,
+                showsPlaceholderInitial: false
+            )
 
             Text(name)
                 .font(.headline)
@@ -1067,23 +1071,13 @@ struct ChannelView: View {
                 #endif
 
                 VStack(spacing: 8) {
-                    LazyImage(url: thumbnailURL) { state in
-                        if let image = state.image {
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } else {
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .overlay {
-                                    Text(String(name.prefix(1)))
-                                        .font(.system(size: headerAvatarSize * 0.4, weight: .semibold))
-                                        .foregroundStyle(.secondary)
-                                }
-                        }
-                    }
-                    .frame(width: headerAvatarSize, height: headerAvatarSize)
-                    .clipShape(Circle())
+                    channelAvatar(
+                        name: name,
+                        directURL: thumbnailURL,
+                        size: headerAvatarSize,
+                        placeholderFont: .system(size: headerAvatarSize * 0.4, weight: .semibold),
+                        placeholderFill: AnyShapeStyle(.ultraThinMaterial)
+                    )
                     .overlay(
                         Circle()
                             .stroke(.white.opacity(0.8), lineWidth: 3)

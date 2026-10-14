@@ -328,17 +328,6 @@ struct SettingsView: View {
                         }
                     }
 
-                    Section {
-                        VStack(spacing: 4) {
-                            Text(verbatim: "YaTubee")
-                                .font(.headline)
-                            Text("\(appVersion) (\(buildNumber))")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .listRowBackground(Color.clear)
-                    }
                 }
             }
             .reactiveNavigationTitle(AppLocalization.string("settings.title"))

@@ -61,6 +61,10 @@ final class AppEnvironment {
     /// they cannot await the layout service actor.
     private(set) var activeControlsCenterSettings: CenterSectionSettings = .default
 
+    /// Mini-player style of the active controls preset, cached for synchronous,
+    /// observable presentation decisions in the SwiftUI root hierarchy.
+    private(set) var activeMiniPlayerStyle: MiniPlayerStyle = MiniPlayerSettings.cached.style
+
     @ObservationIgnored private var controlsSettingsObservers: [NSObjectProtocol] = []
 
     // MARK: - Shared Instance
@@ -288,8 +292,7 @@ final class AppEnvironment {
             instancesManager: instances,
             invidiousCredentialsManager: invidiousCreds,
             pipedCredentialsManager: pipedCreds,
-            toastManager: toast,
-            feedCache: .shared
+            toastManager: toast
         )
 
         // Initialize Player Controls Layout Service
@@ -377,6 +380,7 @@ final class AppEnvironment {
     func refreshActiveControlsSettings() async {
         let layout = await playerControlsLayoutService.activeLayout()
         activeControlsCenterSettings = layout.centerSettings
+        activeMiniPlayerStyle = layout.effectiveMiniPlayerSettings.style
     }
 
     /// Updates the HTTP client's User-Agent configuration from current settings.

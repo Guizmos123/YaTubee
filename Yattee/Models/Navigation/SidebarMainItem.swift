@@ -181,6 +181,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch tabBarItem {
         case .subscriptions: self = .subscriptions
         case .channels: self = .channels
+        case .more: return nil
         case .bookmarks: self = .bookmarks
         case .playlists: self = .playlists
         case .history: self = .history

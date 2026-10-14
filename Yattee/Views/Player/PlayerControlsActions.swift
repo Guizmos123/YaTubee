@@ -99,6 +99,9 @@ struct PlayerControlsActions {
     /// Yattee Server URL for channel avatar fallback
     let yatteeServerURL: URL?
 
+    /// Basic Auth header for the selected Yattee Server avatar endpoint.
+    let yatteeServerAuthHeader: String?
+
     /// DeArrow branding provider for title replacement
     let deArrowBrandingProvider: DeArrowBrandingProvider?
 

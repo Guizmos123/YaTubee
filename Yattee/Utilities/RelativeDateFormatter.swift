@@ -27,6 +27,7 @@ enum RelativeDateFormatter {
         }
 
         let formatter = RelativeDateTimeFormatter()
+        formatter.locale = AppLocalization.selectedLocale
         formatter.unitsStyle = unitsStyle
         return formatter.localizedString(for: date, relativeTo: Date())
     }

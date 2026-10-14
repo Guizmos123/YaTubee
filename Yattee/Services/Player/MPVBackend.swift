@@ -1928,7 +1928,7 @@ extension MPVBackend: MPVClientDelegate {
             applyTVDisplayCriteria()
             #endif
             #if os(iOS) || os(tvOS)
-            reactivateAudioSession()
+            scheduleAudioSessionReactivation()
             #endif
 
         case MPV_EVENT_PLAYBACK_RESTART:
@@ -1944,7 +1944,7 @@ extension MPVBackend: MPVClientDelegate {
             checkAndMarkReadyIfAudioOnlyDetected()
 
             #if os(iOS) || os(tvOS)
-            reactivateAudioSession()
+            scheduleAudioSessionReactivation()
             #endif
 
         case MPV_EVENT_SEEK:
@@ -1953,7 +1953,7 @@ extension MPVBackend: MPVClientDelegate {
         case MPV_EVENT_AUDIO_RECONFIG:
             LoggingService.shared.debug("MPV: Audio reconfigured", category: .mpv)
             #if os(iOS) || os(tvOS)
-            reactivateAudioSession()
+            scheduleAudioSessionReactivation()
             #endif
 
         default:
@@ -1967,18 +1967,24 @@ extension MPVBackend: MPVClientDelegate {
     /// Ensures audio session is active for Now Playing integration.
     /// Call this before setting up Now Playing info to ensure the system
     /// recognizes the app as an active media source.
-    func ensureAudioSessionActive() {
-        reactivateAudioSession()
+    func ensureAudioSessionActive() async {
+        await reactivateAudioSession()
+    }
+
+    /// Event callbacks are synchronous; enqueue their activation without blocking
+    /// the main actor. The coordinator preserves ordering across all callers.
+    private func scheduleAudioSessionReactivation() {
+        Task {
+            await reactivateAudioSession()
+        }
     }
 
     /// Re-activates the audio session to ensure Now Playing integration works.
     /// MPV's audio handling can cause iOS to lose track of the active audio source,
     /// so we need to re-activate the session at key playback events.
-    private func reactivateAudioSession() {
+    private func reactivateAudioSession() async {
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .moviePlayback, options: [])
-            try session.setActive(true, options: [])
+            try await AudioSessionCoordinator.shared.activatePlaybackSession()
             LoggingService.shared.debug("MPV: Audio session reactivated for Now Playing", category: .mpv)
         } catch {
             LoggingService.shared.error("MPV: Failed to reactivate audio session: \(error.localizedDescription)", category: .mpv)

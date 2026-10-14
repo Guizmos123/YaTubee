@@ -7,7 +7,92 @@
 
 import Foundation
 
+enum HomeCustomizationContext: Sendable {
+    case home
+    case more
+}
+
+struct HomePresentationSettings: Codable, Equatable, Sendable {
+    var shortcutLayout: HomeShortcutLayout
+    var shortcutCardStyle: HomeShortcutCardStyle
+    var shortcutCardColor: HomeShortcutCardColor
+    var shortcutColorfulPalette: HomeShortcutColorfulPalette
+    var shortcutCustomPaletteColors: [String]
+    var shortcutOrder: [HomeShortcutItem]
+    var shortcutVisibility: [HomeShortcutItem: Bool]
+    var sectionOrder: [HomeSectionItem]
+    var sectionVisibility: [HomeSectionItem: Bool]
+    var sectionItemsLimit: Int
+    var sectionLayout: HomeSectionLayout
+
+    var visibleShortcuts: [HomeShortcutItem] {
+        shortcutOrder.filter { shortcutVisibility[$0] ?? true }
+    }
+
+    var visibleSections: [HomeSectionItem] {
+        sectionOrder.filter { sectionVisibility[$0] ?? false }
+    }
+}
+
 extension SettingsManager {
+    func presentationSettings(for context: HomeCustomizationContext) -> HomePresentationSettings {
+        switch context {
+        case .home:
+            return currentHomePresentationSettings
+        case .more:
+            if let cached = _moreHomePresentation { return cached }
+            if let data = data(for: .moreHomePresentation),
+               let saved = try? JSONDecoder().decode(HomePresentationSettings.self, from: data) {
+                _moreHomePresentation = saved
+                return saved
+            }
+
+            // First use only: clone the existing Home presentation, then persist
+            // an independent snapshot for the More tab.
+            let initial = currentHomePresentationSettings
+            setPresentationSettings(initial, for: .more)
+            return initial
+        }
+    }
+
+    func setPresentationSettings(_ presentation: HomePresentationSettings, for context: HomeCustomizationContext) {
+        switch context {
+        case .home:
+            homeShortcutLayout = presentation.shortcutLayout
+            homeShortcutCardStyle = presentation.shortcutCardStyle
+            homeShortcutCardColor = presentation.shortcutCardColor
+            homeShortcutColorfulPalette = presentation.shortcutColorfulPalette
+            homeShortcutCustomPaletteColors = presentation.shortcutCustomPaletteColors
+            homeShortcutOrder = presentation.shortcutOrder
+            homeShortcutVisibility = presentation.shortcutVisibility
+            homeSectionOrder = presentation.sectionOrder
+            homeSectionVisibility = presentation.sectionVisibility
+            homeSectionItemsLimit = presentation.sectionItemsLimit
+            homeSectionLayout = presentation.sectionLayout
+        case .more:
+            _moreHomePresentation = presentation
+            if let data = try? JSONEncoder().encode(presentation) {
+                set(data, for: .moreHomePresentation)
+            }
+        }
+    }
+
+    private var currentHomePresentationSettings: HomePresentationSettings {
+        HomePresentationSettings(
+            shortcutLayout: homeShortcutLayout,
+            shortcutCardStyle: homeShortcutCardStyle,
+            shortcutCardColor: homeShortcutCardColor,
+            shortcutColorfulPalette: homeShortcutColorfulPalette,
+            shortcutCustomPaletteColors: homeShortcutCustomPaletteColors,
+            shortcutOrder: homeShortcutOrder,
+            shortcutVisibility: homeShortcutVisibility,
+            sectionOrder: homeSectionOrder,
+            sectionVisibility: homeSectionVisibility,
+            sectionItemsLimit: homeSectionItemsLimit,
+            sectionLayout: homeSectionLayout
+        )
+    }
+
     // MARK: - Home Shortcut Settings
 
     /// Ordered list of home shortcuts. Default order is playlists, history, downloads.
@@ -160,7 +245,7 @@ extension SettingsManager {
         }
     }
 
-    /// Layout mode for home sections (list or grid). Default is list on iOS/macOS, grid on tvOS.
+    /// Layout mode for home sections. Default is list on iOS/macOS, grid on tvOS.
     var homeSectionLayout: HomeSectionLayout {
         get {
             if let cached = _homeSectionLayout { return cached }

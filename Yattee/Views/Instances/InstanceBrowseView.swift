@@ -85,6 +85,11 @@ struct InstanceBrowseView: View {
         return appEnvironment?.basicAuthCredentialsManager.basicAuthHeader(for: server)
     }
 
+    private func channelWithCachedAvatar(_ channel: Channel) -> Channel {
+        guard let appEnvironment else { return channel }
+        return channel.enrichedThumbnail(using: appEnvironment.dataManager)
+    }
+
     enum BrowseTab: String, CaseIterable, Identifiable {
         case popular
         case trending
@@ -773,6 +778,7 @@ struct InstanceBrowseView: View {
                         name: subscription.name,
                         avatarURL: subscription.thumbnailURL,
                         serverURL: yatteeServerURL,
+                        source: subscription.id.source,
                         isSelected: selectedFeedChannelID == subscription.id.channelID,
                         avatarSize: 44,
                         onTap: {
@@ -1022,7 +1028,12 @@ struct InstanceBrowseView: View {
                                 channel.id.source
                             )
                         ) {
-                            ChannelRowView(channel: channel, style: rowStyle)
+                            ChannelRowView(
+                                channel: channelWithCachedAvatar(channel),
+                                style: rowStyle,
+                                yatteeServerURL: yatteeServerURL,
+                                authHeader: avatarAuthHeader
+                            )
                                 .contentShape(Rectangle())
                         }
                         .zoomTransitionSource(id: channel.id.channelID)
@@ -1089,7 +1100,12 @@ struct InstanceBrowseView: View {
                             channel.id.source
                         )
                     ) {
-                        ChannelCardGridView(channel: channel, isCompact: gridConfig.isCompactCards)
+                        ChannelCardGridView(
+                            channel: channelWithCachedAvatar(channel),
+                            isCompact: gridConfig.isCompactCards,
+                            yatteeServerURL: yatteeServerURL,
+                            authHeader: avatarAuthHeader
+                        )
                             .contentShape(Rectangle())
                     }
                     .zoomTransitionSource(id: channel.id.channelID)

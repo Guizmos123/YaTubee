@@ -19,14 +19,19 @@ import UIKit
 /// A channel icon that pre-scales the image for use in TabSection labels.
 /// Standard SwiftUI frame/resizable modifiers don't work in Tab labels.
 struct SidebarChannelIcon: View {
-    let url: URL?
+    let requests: [ImageRequest]
     let name: String
-    var authHeader: String?
 
     private let size: CGFloat = 22
 
     @State private var platformImage: PlatformImage?
-    @State private var isLoading = false
+
+    private var requestIdentity: [String] {
+        requests.map { request in
+            let authorization = request.urlRequest?.value(forHTTPHeaderField: "Authorization") ?? ""
+            return "\(request.url?.absoluteString ?? "")|\(authorization)"
+        }
+    }
 
     var body: some View {
         Group {
@@ -38,12 +43,9 @@ struct SidebarChannelIcon: View {
                     .symbolRenderingMode(.hierarchical)
             }
         }
-        .onAppear {
-            loadImage()
-        }
-        .onChange(of: url) { _, _ in
+        .task(id: requestIdentity) {
             platformImage = nil
-            loadImage()
+            await loadImage()
         }
     }
 
@@ -60,28 +62,20 @@ struct SidebarChannelIcon: View {
         #endif
     }
 
-    private func loadImage() {
-        guard let request = AvatarURLBuilder.imageRequest(url: url, authHeader: authHeader), !isLoading else { return }
+    private func loadImage() async {
+        for request in requests {
+            if Task.isCancelled { return }
 
-        // Check memory cache first (synchronous)
-        if let cached = ImagePipeline.shared.cache.cachedImage(for: request)?.image {
-            platformImage = cached
-            return
-        }
+            if let cached = ImagePipeline.shared.cache.cachedImage(for: request)?.image {
+                platformImage = cached
+                return
+            }
 
-        isLoading = true
-
-        Task {
             do {
-                let image = try await ImagePipeline.shared.image(for: request)
-                await MainActor.run {
-                    platformImage = image
-                    isLoading = false
-                }
+                platformImage = try await ImagePipeline.shared.image(for: request)
+                return
             } catch {
-                await MainActor.run {
-                    isLoading = false
-                }
+                continue
             }
         }
     }
@@ -136,14 +130,14 @@ private extension UIImage {
         Label {
             Text("Apple")
         } icon: {
-            SidebarChannelIcon(url: nil, name: "Apple")
+            SidebarChannelIcon(requests: [], name: "Apple")
         }
 
         Label {
             Text("Test Channel")
         } icon: {
             SidebarChannelIcon(
-                url: URL(string: "https://example.com/avatar.jpg"),
+                requests: [ImageRequest(url: URL(string: "https://example.com/avatar.jpg"))],
                 name: "Test"
             )
         }

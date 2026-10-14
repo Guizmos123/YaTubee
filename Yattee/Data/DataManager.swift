@@ -45,7 +45,7 @@ final class DataManager {
 
     // MARK: - Initialization
 
-    init(inMemory: Bool = false, iCloudSyncEnabled _: Bool = false) throws {
+    convenience init(inMemory: Bool = false, iCloudSyncEnabled _: Bool = false) throws {
         let configuration: ModelConfiguration
 
         // IMPORTANT: We intentionally do NOT use SwiftData's built-in CloudKit sync.
@@ -71,6 +71,13 @@ final class DataManager {
             )
         }
 
+        try self.init(configuration: configuration)
+    }
+
+    /// Creates a manager with an explicit configuration. Production uses the
+    /// default persistent configuration above; tests use this initializer with
+    /// an isolated temporary URL so real application data is never touched.
+    init(configuration: ModelConfiguration) throws {
         self.modelContainer = try ModelContainer(
             for: Self.schema,
             configurations: [configuration]

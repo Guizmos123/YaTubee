@@ -69,18 +69,12 @@ final class AppEnvironment {
 
     // MARK: - Shared Instance
 
-    /// The single, process-wide app environment.
+    /// The successfully bootstrapped process-wide environment.
     ///
-    /// SwiftUI may evaluate a `@State` property's default-value autoclosure more
-    /// than once (it keeps only the first result but still runs the side effects
-    /// of the discarded instances). Constructing `AppEnvironment` more than once
-    /// would create multiple `DownloadManager`s — and therefore multiple
-    /// background `URLSession`s registered under the same identifier — causing
-    /// download-completion delegate callbacks to be delivered to an instance
-    /// whose `activeDownloads` is empty (the finished file is then dropped).
-    /// Referencing this `static let` from the App's `@State` guarantees exactly
-    /// one instance for the lifetime of the process.
-    static let shared = AppEnvironment()
+    /// This remains nil until the persistent SwiftData store has opened. Keeping
+    /// it optional prevents secondary entry points from implicitly constructing
+    /// an environment (and its CloudKit/player services) after a storage failure.
+    private(set) static weak var current: AppEnvironment?
 
     // MARK: - Initialization
 
@@ -88,9 +82,11 @@ final class AppEnvironment {
         httpClient: HTTPClient? = nil,
         settingsManager: SettingsManager? = nil,
         instancesManager: InstancesManager? = nil,
-        dataManager: DataManager? = nil,
+        dataManager: DataManager,
         navigationCoordinator: NavigationCoordinator? = nil,
-        downloadManager: DownloadManager? = nil
+        downloadManager: DownloadManager? = nil,
+        notificationManager: NotificationManager? = nil,
+        backgroundRefreshManager: BackgroundRefreshManager? = nil
     ) {
         let client = httpClient ?? HTTPClient()
         self.httpClient = client
@@ -120,18 +116,9 @@ final class AppEnvironment {
         self.downloadManager = downloadManager ?? DownloadManager()
         self.downloadSettings = DownloadSettings()
 
-        // Initialize DataManager, falling back to in-memory for failures
-        let dm: DataManager
-        if let manager = dataManager {
-            dm = manager
-        } else {
-            do {
-                dm = try DataManager(iCloudSyncEnabled: settings.iCloudSyncEnabled)
-            } catch {
-                // Fall back to in-memory storage if persistent storage fails
-                dm = try! DataManager(inMemory: true)
-            }
-        }
+        // The persistent store is opened by AppStartupCoordinator before any
+        // dependent service is constructed.
+        let dm = dataManager
         self.dataManager = dm
 
         // Initialize Invidious Credentials Manager (needed for SubscriptionService)
@@ -205,13 +192,14 @@ final class AppEnvironment {
         self.queueManager = queue
 
         // Initialize Notification & Background Refresh managers
-        let notifManager = NotificationManager()
+        let notifManager = notificationManager ?? NotificationManager()
         #if !os(tvOS)
         notifManager.registerNotificationCategories()
         #endif
         self.notificationManager = notifManager
 
-        let bgRefreshManager = BackgroundRefreshManager(notificationManager: notifManager)
+        let bgRefreshManager = backgroundRefreshManager
+            ?? BackgroundRefreshManager(notificationManager: notifManager)
         self.backgroundRefreshManager = bgRefreshManager
 
         // Initialize URL Session and Client Factories
@@ -353,6 +341,11 @@ final class AppEnvironment {
         }
         #endif
     }
+
+    /// Publishes the environment only after its complete, successful construction.
+    static func registerCurrent(_ environment: AppEnvironment) {
+        current = environment
+    }
     
     /// Cleans up all temporary subtitle files from previous sessions.
     /// Call this on app launch to ensure temp directory doesn't accumulate old files.
@@ -477,7 +470,7 @@ final class AppEnvironment {
 
     @MainActor
     static var preview: AppEnvironment {
-        let dataManager = try? DataManager.preview()
+        let dataManager = try! DataManager.preview()
         return AppEnvironment(dataManager: dataManager)
     }
 }

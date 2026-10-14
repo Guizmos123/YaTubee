@@ -27,7 +27,7 @@ struct YatteeApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     #endif
 
-    @State private var appEnvironment = AppEnvironment.shared
+    @State private var startupCoordinator: AppStartupCoordinator
     @State private var backgroundTasksRegistered = false
     @State private var showingClipboardAlert = false
     @State private var detectedClipboardURL: URL?
@@ -57,17 +57,29 @@ struct YatteeApp: App {
     // be dual-hosted by the root app view (here) and the expanded player sheet.
 
     init() {
+        let startupCoordinator = AppStartupCoordinator.shared
+        _startupCoordinator = State(initialValue: startupCoordinator)
+
         // Configure Nuke image loading pipeline
         ImageLoadingService.shared.configure()
 
         // Register background tasks early — Apple requires BGTaskScheduler.register()
         // to be called during the app launch sequence, before the run loop starts.
-        AppEnvironment.shared.backgroundRefreshManager.registerBackgroundTasks()
+        startupCoordinator.registerBackgroundTasks()
+        startupCoordinator.startOrRetry()
+    }
+
+    private var appEnvironment: AppEnvironment {
+        guard let environment = startupCoordinator.readyEnvironment else {
+            preconditionFailure("AppEnvironment accessed before persistent storage was ready")
+        }
+        return environment
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if let appEnvironment = startupCoordinator.readyEnvironment {
+                ContentView()
                 .appEnvironment(appEnvironment)
                 .environment(\.locale, appEnvironment.settingsManager.appLanguage.locale)
                 #if !os(tvOS)
@@ -259,6 +271,12 @@ struct YatteeApp: App {
                     shouldHost: !appEnvironment.navigationCoordinator.isPlayerExpanded,
                     appEnvironment: appEnvironment
                 )
+            } else {
+                StorageStartupView(
+                    isInitializing: startupCoordinator.isInitializing,
+                    retry: startupCoordinator.startOrRetry
+                )
+            }
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)
@@ -269,13 +287,16 @@ struct YatteeApp: App {
         #endif
         #if os(iOS) || os(macOS)
         .commands {
-            FileCommands()
-            PlaybackCommands(appEnvironment: appEnvironment)
-            NavigationCommands(appEnvironment: appEnvironment)
+            if let appEnvironment = startupCoordinator.readyEnvironment {
+                FileCommands()
+                PlaybackCommands(appEnvironment: appEnvironment)
+                NavigationCommands(appEnvironment: appEnvironment)
+            }
         }
         #endif
         #if os(tvOS)
         .onChange(of: scenePhase) { _, newPhase in
+            guard let appEnvironment = startupCoordinator.readyEnvironment else { return }
             LoggingService.shared.logCloudKit("[ScenePhase] Transition to: \(newPhase)")
 
             // Handle background playback
@@ -314,6 +335,7 @@ struct YatteeApp: App {
         }
         #else
         .onChange(of: scenePhase) { _, newPhase in
+            guard let appEnvironment = startupCoordinator.readyEnvironment else { return }
             LoggingService.shared.logCloudKit("[ScenePhase] Transition to: \(newPhase)")
 
             // Handle background playback
@@ -395,15 +417,24 @@ struct YatteeApp: App {
         #endif
         #if os(macOS)
         Window(AppLocalization.string("menu.app.settings"), id: "settings") {
-            SettingsView(showCloseButton: false)
-                .appEnvironment(appEnvironment)
-                .frame(minWidth: 600, idealWidth: 900, maxWidth: .infinity, minHeight: 520, idealHeight: 600, maxHeight: .infinity)
+            if let appEnvironment = startupCoordinator.readyEnvironment {
+                SettingsView(showCloseButton: false)
+                    .appEnvironment(appEnvironment)
+                    .frame(minWidth: 600, idealWidth: 900, maxWidth: .infinity, minHeight: 520, idealHeight: 600, maxHeight: .infinity)
+            } else {
+                StorageStartupView(
+                    isInitializing: startupCoordinator.isInitializing,
+                    retry: startupCoordinator.startOrRetry
+                )
+            }
         }
         .windowResizability(.contentMinSize)
         .defaultSize(width: 900, height: 600)
         .commands {
-            CommandGroup(replacing: .appSettings) {
-                SettingsWindowMenuItem()
+            if startupCoordinator.readyEnvironment != nil {
+                CommandGroup(replacing: .appSettings) {
+                    SettingsWindowMenuItem()
+                }
             }
             #if SPARKLE
             CommandGroup(after: .appInfo) {

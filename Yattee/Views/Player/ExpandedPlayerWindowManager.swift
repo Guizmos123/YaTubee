@@ -388,6 +388,7 @@ final class ExpandedPlayerWindowManager: NSObject {
     /// fullscreen state into `isMacInlinePlayerFullScreen`.
     func beginInlineOverlay() {
         guard overlayParent == nil else { return }
+        guard let coordinator = AppEnvironment.current?.navigationCoordinator else { return }
         guard let parent = mainContentWindow ?? NSApp.mainWindow ?? NSApp.keyWindow else {
             LoggingService.shared.debug(
                 "ExpandedPlayerWindowManager: beginInlineOverlay found no main window",
@@ -402,7 +403,6 @@ final class ExpandedPlayerWindowManager: NSObject {
         parent.toolbar?.isVisible = false
         overlayWasFullScreenAtBegin = parent.styleMask.contains(.fullScreen)
 
-        let coordinator = AppEnvironment.shared.navigationCoordinator
         coordinator.isMacInlinePlayerFullScreen = overlayWasFullScreenAtBegin
         observeOverlayFullScreenTransitions(of: parent)
 
@@ -433,7 +433,7 @@ final class ExpandedPlayerWindowManager: NSObject {
             parent.toolbar?.isVisible = wasVisible
         }
 
-        AppEnvironment.shared.navigationCoordinator.isMacInlinePlayerFullScreen = false
+        AppEnvironment.current?.navigationCoordinator.isMacInlinePlayerFullScreen = false
         overlayToolbarWasVisible = nil
         overlayWasFullScreenAtBegin = false
         overlayParent = nil
@@ -455,7 +455,7 @@ final class ExpandedPlayerWindowManager: NSObject {
                 queue: .main
             ) { _ in
                 Task { @MainActor in
-                    AppEnvironment.shared.navigationCoordinator.isMacInlinePlayerFullScreen = true
+                    AppEnvironment.current?.navigationCoordinator.isMacInlinePlayerFullScreen = true
                 }
             },
             center.addObserver(
@@ -464,7 +464,7 @@ final class ExpandedPlayerWindowManager: NSObject {
                 queue: .main
             ) { _ in
                 Task { @MainActor in
-                    AppEnvironment.shared.navigationCoordinator.isMacInlinePlayerFullScreen = false
+                    AppEnvironment.current?.navigationCoordinator.isMacInlinePlayerFullScreen = false
                 }
             },
         ]

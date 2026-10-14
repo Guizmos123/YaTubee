@@ -28883,6 +28883,74 @@
         }
       }
     },
+    "startup.storage.message" : {
+      "comment" : "Explanation shown when the persistent SwiftData store cannot be opened",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YaTubee could not open its local data. To prevent any data loss, the app cannot start normally."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YaTubee n'a pas pu ouvrir ses données locales. Pour éviter toute perte, l'application ne peut pas démarrer normalement."
+          }
+        }
+      }
+    },
+    "startup.storage.preservation" : {
+      "comment" : "Reassurance that startup recovery never changes the existing store",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data is deleted or reset automatically."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune donnée n'est supprimée ou réinitialisée automatiquement."
+          }
+        }
+      }
+    },
+    "startup.storage.retrying" : {
+      "comment" : "Accessibility label for the persistent storage retry progress indicator",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retrying access to local data"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle tentative d'accès aux données locales"
+          }
+        }
+      }
+    },
+    "startup.storage.title" : {
+      "comment" : "Title shown when the persistent SwiftData store cannot be opened",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Access Data"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'accéder aux données"
+          }
+        }
+      }
+    },
     "subscription.error.providerNotAvailable" : {
       "localizations" : {
         "en" : {

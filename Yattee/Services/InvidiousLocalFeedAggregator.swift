@@ -9,6 +9,12 @@ import Foundation
 
 struct InvidiousLocalFeedSubscription: Hashable, Sendable {
     let channelID: String
+    let channelName: String
+
+    init(channelID: String, channelName: String? = nil) {
+        self.channelID = channelID
+        self.channelName = channelName ?? channelID
+    }
 }
 
 protocol InvidiousLocalFeedVideoProviding: Sendable {
@@ -34,6 +40,7 @@ struct InvidiousLocalFeedAggregation: Sendable {
     let failedChannelCount: Int
     let status: Status
     let unreliablePublishedDateIDs: Set<VideoID>
+    let channelResults: [InvidiousLocalFeedChannelResult]
 
     init(
         videos: [Video],
@@ -41,7 +48,8 @@ struct InvidiousLocalFeedAggregation: Sendable {
         successfulChannelCount: Int,
         failedChannelCount: Int,
         status: Status,
-        unreliablePublishedDateIDs: Set<VideoID> = []
+        unreliablePublishedDateIDs: Set<VideoID> = [],
+        channelResults: [InvidiousLocalFeedChannelResult] = []
     ) {
         self.videos = videos
         self.requestedChannelCount = requestedChannelCount
@@ -49,7 +57,21 @@ struct InvidiousLocalFeedAggregation: Sendable {
         self.failedChannelCount = failedChannelCount
         self.status = status
         self.unreliablePublishedDateIDs = unreliablePublishedDateIDs
+        self.channelResults = channelResults
     }
+}
+
+struct InvidiousLocalFeedChannelResult: Hashable, Sendable {
+    enum Status: Hashable, Sendable {
+        case success
+        case failure
+    }
+
+    let channelID: String
+    let channelName: String
+    let status: Status
+    let errorDescription: String?
+    let completedAt: Date
 }
 
 enum LocalFeedSource: Equatable, Sendable {
@@ -144,7 +166,8 @@ struct InvidiousLocalFeedAggregator: Sendable {
                 requestedChannelCount: 0,
                 successfulChannelCount: 0,
                 failedChannelCount: 0,
-                status: .complete
+                status: .complete,
+                channelResults: []
             )
         }
 
@@ -154,6 +177,9 @@ struct InvidiousLocalFeedAggregator: Sendable {
             return nil
         }
         let failedCount = outcomes.count - successfulOutcomes.count
+        let channelResults = outcomes
+            .sorted { $0.subscriptionIndex < $1.subscriptionIndex }
+            .map(\.channelResult)
 
         var seen = Set<VideoID>()
         var videos = successfulOutcomes
@@ -181,7 +207,8 @@ struct InvidiousLocalFeedAggregator: Sendable {
             successfulChannelCount: successfulOutcomes.count,
             failedChannelCount: failedCount,
             status: failedCount == 0 ? .complete : .partial,
-            unreliablePublishedDateIDs: enrichment.unreliablePublishedDateIDs
+            unreliablePublishedDateIDs: enrichment.unreliablePublishedDateIDs,
+            channelResults: channelResults
         )
     }
 
@@ -309,23 +336,42 @@ struct InvidiousLocalFeedAggregator: Sendable {
             func addNextTask() {
                 guard nextIndex < subscriptions.count else { return }
                 let index = nextIndex
-                let channelID = subscriptions[index].channelID
+                let subscription = subscriptions[index]
                 nextIndex += 1
 
                 group.addTask {
                     do {
                         try Task.checkCancellation()
                         let videos = try await videoProvider.latestVideos(
-                            channelID: channelID,
+                            channelID: subscription.channelID,
                             instance: instance
                         )
                         try Task.checkCancellation()
                         return .success(
-                            SuccessfulFetch(subscriptionIndex: index, videos: videos)
+                            SuccessfulFetch(
+                                subscriptionIndex: index,
+                                videos: videos,
+                                channelResult: InvidiousLocalFeedChannelResult(
+                                    channelID: subscription.channelID,
+                                    channelName: subscription.channelName,
+                                    status: .success,
+                                    errorDescription: nil,
+                                    completedAt: now()
+                                )
+                            )
                         )
                     } catch {
                         try Task.checkCancellation()
-                        return .failure
+                        return .failure(
+                            subscriptionIndex: index,
+                            channelResult: InvidiousLocalFeedChannelResult(
+                                channelID: subscription.channelID,
+                                channelName: subscription.channelName,
+                                status: .failure,
+                                errorDescription: error.localizedDescription,
+                                completedAt: now()
+                            )
+                        )
                     }
                 }
             }
@@ -382,11 +428,26 @@ private extension InvidiousLocalFeedAggregator {
     struct SuccessfulFetch: Sendable {
         let subscriptionIndex: Int
         let videos: [Video]
+        let channelResult: InvidiousLocalFeedChannelResult
     }
 
     enum FetchOutcome: Sendable {
         case success(SuccessfulFetch)
-        case failure
+        case failure(subscriptionIndex: Int, channelResult: InvidiousLocalFeedChannelResult)
+
+        var subscriptionIndex: Int {
+            switch self {
+            case .success(let fetch): fetch.subscriptionIndex
+            case .failure(let index, _): index
+            }
+        }
+
+        var channelResult: InvidiousLocalFeedChannelResult {
+            switch self {
+            case .success(let fetch): fetch.channelResult
+            case .failure(_, let result): result
+            }
+        }
     }
 }
 

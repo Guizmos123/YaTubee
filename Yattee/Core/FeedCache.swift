@@ -72,8 +72,18 @@ actor FeedCache {
     }
 
     /// Saves the feed to disk.
-    func save(videos: [Video], lastUpdated: Date, scopeKey: String?) async {
-        let cacheData = FeedCacheData(videos: videos, lastUpdated: lastUpdated, scopeKey: scopeKey)
+    func save(
+        videos: [Video],
+        lastUpdated: Date,
+        scopeKey: String?,
+        syncSnapshot: SubscriptionSyncSnapshot? = nil
+    ) async {
+        let cacheData = FeedCacheData(
+            videos: videos,
+            lastUpdated: lastUpdated,
+            scopeKey: scopeKey,
+            syncSnapshot: syncSnapshot
+        )
 
         // Update in-memory cache
         cachedData = cacheData
@@ -116,7 +126,12 @@ actor FeedCache {
         guard var data = cachedData else { return }
         data.lastUpdated = .distantPast
         cachedData = data
-        await save(videos: data.videos, lastUpdated: .distantPast, scopeKey: data.scopeKey)
+        await save(
+            videos: data.videos,
+            lastUpdated: .distantPast,
+            scopeKey: data.scopeKey,
+            syncSnapshot: data.syncSnapshot
+        )
     }
 }
 
@@ -137,4 +152,17 @@ struct FeedCacheData: Codable {
     var videos: [Video]
     var lastUpdated: Date
     var scopeKey: String?
+    var syncSnapshot: SubscriptionSyncSnapshot?
+
+    init(
+        videos: [Video],
+        lastUpdated: Date,
+        scopeKey: String?,
+        syncSnapshot: SubscriptionSyncSnapshot? = nil
+    ) {
+        self.videos = videos
+        self.lastUpdated = lastUpdated
+        self.scopeKey = scopeKey
+        self.syncSnapshot = syncSnapshot
+    }
 }

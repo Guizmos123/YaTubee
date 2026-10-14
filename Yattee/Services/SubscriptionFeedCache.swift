@@ -126,6 +126,9 @@ final class SubscriptionFeedCache {
     var loadingProgress: (loaded: Int, total: Int)?
     var hasLoadedOnce = false
 
+    /// Last completed diagnostic cycle for the active source and instance.
+    private(set) var syncSnapshot: SubscriptionSyncSnapshot?
+
     /// State of feed loading.
     var feedLoadState: FeedLoadState = .idle
 
@@ -237,6 +240,9 @@ final class SubscriptionFeedCache {
                 dataManager: appEnvironment.dataManager
             )
             lastUpdated = cacheData.lastUpdated
+            syncSnapshot = cacheData.syncSnapshot.flatMap {
+                $0.cacheScopeKey == expectedScope ? $0 : nil
+            }
             hasLoadedOnce = true
             let videoCount = videos.count
             let oldestVideoDate = videos.compactMap { $0.publishedAt }.min()
@@ -249,12 +255,14 @@ final class SubscriptionFeedCache {
                 await FeedCache.shared.save(
                     videos: cacheData.videos,
                     lastUpdated: cacheData.lastUpdated,
-                    scopeKey: expectedScope
+                    scopeKey: expectedScope,
+                    syncSnapshot: syncSnapshot
                 )
             }
         } else {
             videos = []
             lastUpdated = nil
+            syncSnapshot = nil
             hasLoadedOnce = false
             LoggingService.shared.debug("No feed cache found for active scope", category: .general)
         }
@@ -264,6 +272,7 @@ final class SubscriptionFeedCache {
         cancelPolling()
         videos = []
         lastUpdated = nil
+        syncSnapshot = nil
         cacheScopeKey = nil
         hasMorePages = false
         currentPage = 1
@@ -287,7 +296,12 @@ final class SubscriptionFeedCache {
         }
         LoggingService.shared.debug("Saving feed cache to disk: \(videos.count) videos, lastUpdated: \(lastUpdated)", category: .general)
         Task {
-            await FeedCache.shared.save(videos: videos, lastUpdated: lastUpdated, scopeKey: cacheScopeKey)
+            await FeedCache.shared.save(
+                videos: videos,
+                lastUpdated: lastUpdated,
+                scopeKey: cacheScopeKey,
+                syncSnapshot: syncSnapshot
+            )
         }
     }
 
@@ -347,6 +361,7 @@ final class SubscriptionFeedCache {
         videos = []
         lastUpdated = nil
         cacheScopeKey = nil
+        syncSnapshot = nil
         diskCacheLoaded = false
         hasLoadedOnce = false
         hasMorePages = false
@@ -407,9 +422,13 @@ final class SubscriptionFeedCache {
                   provider == ContentSource.youtubeProvider else {
                 return nil
             }
-            return InvidiousLocalFeedSubscription(channelID: subscription.channelID)
+            return InvidiousLocalFeedSubscription(
+                channelID: subscription.channelID,
+                channelName: subscription.name
+            )
         }
 
+        let refreshStartedAt = Date()
         isLoading = true
         let previousLoadState = feedLoadState
         feedLoadState = .loading
@@ -428,6 +447,14 @@ final class SubscriptionFeedCache {
             let resolvedVideos = InvidiousLocalFeedSnapshot.videos(
                 from: aggregation,
                 preserving: cachedVideos
+            )
+            await storeSyncSnapshot(
+                invidiousSnapshot(
+                    aggregation: aggregation,
+                    instance: instance,
+                    refreshStartedAt: refreshStartedAt,
+                    refreshFinishedAt: Date()
+                )
             )
 
             if aggregation.status == .complete {
@@ -457,6 +484,15 @@ final class SubscriptionFeedCache {
                 category: .general
             )
             feedLoadState = .error(.networkError(error.localizedDescription))
+            await storeSyncSnapshot(
+                invidiousFailureSnapshot(
+                    subscriptions: compatibleSubscriptions,
+                    instance: instance,
+                    refreshStartedAt: refreshStartedAt,
+                    refreshFinishedAt: Date(),
+                    error: error
+                )
+            )
         }
 
         isLoading = false
@@ -711,6 +747,7 @@ final class SubscriptionFeedCache {
     /// Refreshes feed from Yattee Server's stateless POST feed API.
     private func refreshFromStatelessServer(instance: Instance, using appEnvironment: AppEnvironment) async {
         let subscriptions = appEnvironment.dataManager.subscriptions()
+        let requestStartedAt = Date()
         LoggingService.shared.debug("refreshFromStatelessServer: Found \(subscriptions.count) subscriptions", category: .general)
         guard !subscriptions.isEmpty else {
             await registerNovelties(
@@ -725,6 +762,15 @@ final class SubscriptionFeedCache {
             isLoading = false
             hasLoadedOnce = true
             feedLoadState = .ready
+            await storeSyncSnapshot(
+                unknownYatteeServerSnapshot(
+                    instance: instance,
+                    requestedChannels: [],
+                    refreshStartedAt: requestStartedAt,
+                    refreshFinishedAt: Date(),
+                    observationError: nil
+                )
+            )
             LoggingService.shared.debug("refreshFromStatelessServer: No subscriptions, clearing feed", category: .general)
             return
         }
@@ -744,9 +790,8 @@ final class SubscriptionFeedCache {
         }
 
         do {
-            let requestStartedAt = Date()
             let cachedVideos = videos
-            let httpClient = HTTPClient()
+            let httpClient = appEnvironment.httpClientFactory.createClient(for: instance)
             if let authHeader = appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: instance) {
                 await httpClient.setDefaultHeaders(["Authorization": authHeader])
             }
@@ -800,6 +845,13 @@ final class SubscriptionFeedCache {
                 await pollingTask?.value
                 pollingTask = nil
             }
+
+            await captureYatteeServerSyncSnapshot(
+                api: yatteeServerAPI,
+                instance: instance,
+                requestedChannels: channelRequests,
+                refreshStartedAt: requestStartedAt
+            )
         } catch {
             LoggingService.shared.error(
                 "Yattee Server feed failed: \(error.localizedDescription)",
@@ -807,6 +859,15 @@ final class SubscriptionFeedCache {
             )
             feedLoadState = .error(.networkError(error.localizedDescription))
             isLoading = false
+            await storeSyncSnapshot(
+                unknownYatteeServerSnapshot(
+                    instance: instance,
+                    requestedChannels: channelRequests,
+                    refreshStartedAt: requestStartedAt,
+                    refreshFinishedAt: Date(),
+                    observationError: error.localizedDescription
+                )
+            )
         }
     }
 
@@ -822,7 +883,7 @@ final class SubscriptionFeedCache {
         let statusChannels = channels.map {
             StatelessChannelStatusRequest(channelId: $0.channelId, site: $0.site)
         }
-        let httpClient = HTTPClient()
+        let httpClient = appEnvironment.httpClientFactory.createClient(for: instance)
         if let authHeader = appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: instance) {
             await httpClient.setDefaultHeaders(["Authorization": authHeader])
         }
@@ -945,6 +1006,175 @@ final class SubscriptionFeedCache {
 
     // MARK: - Helpers
 
+    private func storeSyncSnapshot(_ snapshot: SubscriptionSyncSnapshot) async {
+        syncSnapshot = snapshot
+        await FeedCache.shared.save(
+            videos: videos,
+            lastUpdated: lastUpdated ?? .distantPast,
+            scopeKey: cacheScopeKey,
+            syncSnapshot: snapshot
+        )
+    }
+
+    private func invidiousSnapshot(
+        aggregation: InvidiousLocalFeedAggregation,
+        instance: Instance,
+        refreshStartedAt: Date,
+        refreshFinishedAt: Date
+    ) -> SubscriptionSyncSnapshot {
+        let channels = aggregation.channelResults.map { result in
+            SubscriptionSyncSnapshot.Channel(
+                channelID: result.channelID,
+                site: ContentSource.youtubeProvider,
+                channelName: result.channelName,
+                state: result.status == .success ? .success : .failure,
+                errorDescription: result.errorDescription,
+                lastRequestedAt: nil,
+                lastFetchedAt: nil,
+                requestCompletedAt: result.completedAt,
+                videoCount: nil
+            )
+        }
+        return SubscriptionSyncSnapshot(
+            source: syncSource(kind: .invidious, instance: instance),
+            refreshStartedAt: refreshStartedAt,
+            refreshFinishedAt: refreshFinishedAt,
+            channels: channels,
+            serverInformationObservedAt: nil,
+            observationError: nil
+        )
+    }
+
+    private func invidiousFailureSnapshot(
+        subscriptions: [InvidiousLocalFeedSubscription],
+        instance: Instance,
+        refreshStartedAt: Date,
+        refreshFinishedAt: Date,
+        error: Error
+    ) -> SubscriptionSyncSnapshot {
+        SubscriptionSyncSnapshot(
+            source: syncSource(kind: .invidious, instance: instance),
+            refreshStartedAt: refreshStartedAt,
+            refreshFinishedAt: refreshFinishedAt,
+            channels: subscriptions.map {
+                SubscriptionSyncSnapshot.Channel(
+                    channelID: $0.channelID,
+                    site: ContentSource.youtubeProvider,
+                    channelName: $0.channelName,
+                    state: .unknown,
+                    errorDescription: nil,
+                    lastRequestedAt: nil,
+                    lastFetchedAt: nil,
+                    requestCompletedAt: nil,
+                    videoCount: nil
+                )
+            },
+            serverInformationObservedAt: nil,
+            observationError: error.localizedDescription
+        )
+    }
+
+    private func captureYatteeServerSyncSnapshot(
+        api: YatteeServerAPI,
+        instance: Instance,
+        requestedChannels: [StatelessChannelRequest],
+        refreshStartedAt: Date
+    ) async {
+        let refreshFinishedAt = Date()
+        var feedFetchIntervalSeconds: TimeInterval?
+        do {
+            feedFetchIntervalSeconds = try await api.settings(instance: instance).feedFetchInterval
+        } catch {
+            LoggingService.shared.debug(
+                "Failed to fetch Yattee Server collection settings: \(error.localizedDescription)",
+                category: .general
+            )
+        }
+
+        do {
+            let watchedChannels = try await api.watchedChannels(instance: instance)
+            let observedAt = Date()
+            await storeSyncSnapshot(
+                YatteeServerSyncClassification.snapshot(
+                    source: syncSource(kind: .yatteeServer, instance: instance),
+                    requestedChannels: requestedChannels,
+                    watchedChannels: watchedChannels,
+                    refreshStartedAt: refreshStartedAt,
+                    refreshFinishedAt: refreshFinishedAt,
+                    observedAt: observedAt,
+                    serverFeedFetchIntervalSeconds: feedFetchIntervalSeconds
+                )
+            )
+        } catch {
+            LoggingService.shared.debug(
+                "Failed to fetch Yattee Server channel sync details: \(error.localizedDescription)",
+                category: .general
+            )
+            await storeSyncSnapshot(
+                unknownYatteeServerSnapshot(
+                    instance: instance,
+                    requestedChannels: requestedChannels,
+                    refreshStartedAt: refreshStartedAt,
+                    refreshFinishedAt: refreshFinishedAt,
+                    observationError: error.localizedDescription,
+                    serverFeedFetchIntervalSeconds: feedFetchIntervalSeconds
+                )
+            )
+        }
+    }
+
+    private func unknownYatteeServerSnapshot(
+        instance: Instance,
+        requestedChannels: [StatelessChannelRequest],
+        refreshStartedAt: Date,
+        refreshFinishedAt: Date,
+        observationError: String?,
+        serverFeedFetchIntervalSeconds: TimeInterval? = nil
+    ) -> SubscriptionSyncSnapshot {
+        let previousByKey = Dictionary(
+            (syncSnapshot?.channels ?? []).map { (syncChannelKey(site: $0.site, channelID: $0.channelID), $0) },
+            uniquingKeysWith: { _, newest in newest }
+        )
+        let channels = requestedChannels.map { requested in
+            let previous = previousByKey[syncChannelKey(site: requested.site, channelID: requested.channelId)]
+            return SubscriptionSyncSnapshot.Channel(
+                channelID: requested.channelId,
+                site: requested.site,
+                channelName: requested.channelName ?? previous?.channelName ?? requested.channelId,
+                state: .unknown,
+                errorDescription: nil,
+                lastRequestedAt: previous?.lastRequestedAt,
+                lastFetchedAt: previous?.lastFetchedAt,
+                requestCompletedAt: nil,
+                videoCount: previous?.videoCount
+            )
+        }
+        return SubscriptionSyncSnapshot(
+            source: syncSource(kind: .yatteeServer, instance: instance),
+            refreshStartedAt: refreshStartedAt,
+            refreshFinishedAt: refreshFinishedAt,
+            channels: channels,
+            serverInformationObservedAt: nil,
+            observationError: observationError,
+            serverFeedFetchIntervalSeconds: serverFeedFetchIntervalSeconds
+        )
+    }
+
+    private func syncSource(
+        kind: SubscriptionSyncSnapshot.Source.Kind,
+        instance: Instance
+    ) -> SubscriptionSyncSnapshot.Source {
+        SubscriptionSyncSnapshot.Source(
+            kind: kind,
+            instanceID: instance.id,
+            instanceURL: instance.url
+        )
+    }
+
+    private func syncChannelKey(site: String, channelID: String) -> String {
+        "\(site.lowercased())\u{1F}\(channelID)"
+    }
+
     private func registerNovelties(
         _ videos: [Video],
         baselineSupplement: [Video],
@@ -997,6 +1227,7 @@ final class SubscriptionFeedCache {
         cancelPolling()
         videos = []
         lastUpdated = nil
+        syncSnapshot = nil
         hasLoadedOnce = false
         hasMorePages = false
         currentPage = 1
@@ -1007,6 +1238,9 @@ final class SubscriptionFeedCache {
             videos = cacheData.videos
             lastUpdated = cacheData.lastUpdated
             hasLoadedOnce = true
+            syncSnapshot = cacheData.syncSnapshot.flatMap {
+                $0.cacheScopeKey == scope ? $0 : nil
+            }
         }
     }
 

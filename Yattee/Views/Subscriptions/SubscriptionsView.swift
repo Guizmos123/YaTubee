@@ -40,6 +40,8 @@ struct SubscriptionsView: View {
     #if os(macOS)
     @State private var showSubscriptionsData = false
     @State private var pendingSubscriptionsData = false
+    @State private var showSubscriptionSyncStatus = false
+    @State private var pendingSubscriptionSyncStatus = false
     #endif
 
     init(isTabActive: Bool = false) {
@@ -169,6 +171,13 @@ struct SubscriptionsView: View {
                 } label: {
                     Label(AppLocalization.string("manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
                 }
+
+                Button {
+                    pendingSubscriptionSyncStatus = true
+                    showViewOptions = false
+                } label: {
+                    Label(AppLocalization.string("subscriptions.syncStatus.title"), systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
+                }
             }
             #elseif os(iOS)
             Section {
@@ -176,6 +185,13 @@ struct SubscriptionsView: View {
                     SubscriptionsSettingsView()
                 } label: {
                     Label(AppLocalization.string("manageChannels.subscriptionsData"), systemImage: "person.2.badge.gearshape")
+                }
+
+
+                NavigationLink {
+                    SubscriptionSyncStatusView()
+                } label: {
+                    Label(AppLocalization.string("subscriptions.syncStatus.title"), systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
                 }
             }
             #endif
@@ -191,6 +207,16 @@ struct SubscriptionsView: View {
                 }
         }
         .frame(minWidth: 500, minHeight: 450)
+    }
+
+    private var subscriptionSyncStatusSheet: some View {
+        NavigationStack {
+            SubscriptionSyncStatusView()
+                .toolbar {
+                    sheetCloseToolbarItem { showSubscriptionSyncStatus = false }
+                }
+        }
+        .frame(minWidth: 500, minHeight: 500)
     }
     #endif
 
@@ -439,6 +465,9 @@ struct SubscriptionsView: View {
                                     if pendingSubscriptionsData {
                                         pendingSubscriptionsData = false
                                         showSubscriptionsData = true
+                                    } else if pendingSubscriptionSyncStatus {
+                                        pendingSubscriptionSyncStatus = false
+                                        showSubscriptionSyncStatus = true
                                     }
                                 }
                         }
@@ -458,6 +487,9 @@ struct SubscriptionsView: View {
                 #if os(macOS)
                 .sheet(isPresented: $showSubscriptionsData) {
                     subscriptionsDataSheet
+                }
+                .sheet(isPresented: $showSubscriptionSyncStatus) {
+                    subscriptionSyncStatusSheet
                 }
                 #else
                 .sheet(isPresented: $showViewOptions) {

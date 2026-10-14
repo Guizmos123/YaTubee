@@ -99,6 +99,11 @@ struct InvidiousLocalFeedAggregatorTests {
         #expect(result.successfulChannelCount == 1)
         #expect(result.failedChannelCount == 1)
         #expect(result.status == .partial)
+        #expect(result.channelResults.map(\.channelID) == ["a", "b"])
+        #expect(result.channelResults[0].status == .success)
+        #expect(result.channelResults[1].status == .failure)
+        #expect(result.channelResults[1].errorDescription != nil)
+        #expect(result.channelResults.allSatisfy { $0.completedAt <= Date() })
     }
 
     @Test("All failed channels never produce a complete result")
@@ -179,6 +184,7 @@ struct InvidiousLocalFeedAggregatorTests {
         #expect(result.successfulChannelCount == 0)
         #expect(result.failedChannelCount == 0)
         #expect(result.status == .complete)
+        #expect(result.channelResults.isEmpty)
         #expect(await provider.startedRequestCount() == 0)
     }
 
@@ -316,7 +322,7 @@ struct InvidiousLocalFeedAggregatorTests {
     }
 
     private func subscriptions(_ channelIDs: String...) -> [InvidiousLocalFeedSubscription] {
-        channelIDs.map(InvidiousLocalFeedSubscription.init(channelID:))
+        channelIDs.map { InvidiousLocalFeedSubscription(channelID: $0) }
     }
 
     private func video(

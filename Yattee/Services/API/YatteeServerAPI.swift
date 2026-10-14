@@ -377,6 +377,19 @@ actor YatteeServerAPI: InstanceAPI {
         return StatelessFeedStatusResponse.merged(responses)
     }
 
+    /// Returns the server's last known collection state for watched channels.
+    /// This endpoint is observational and does not enqueue a collection.
+    func watchedChannels(instance: Instance) async throws -> [WatchedChannelStatus] {
+        let endpoint = GenericEndpoint.get("/api/watched-channels")
+        return try await httpClient.fetch(endpoint, baseURL: instance.url)
+    }
+
+    /// Returns collection scheduling settings without starting a collection.
+    func settings(instance: Instance) async throws -> YatteeServerSettings {
+        let endpoint = GenericEndpoint.get("/api/settings")
+        return try await httpClient.fetch(endpoint, baseURL: instance.url)
+    }
+
     // MARK: - Channel Metadata
 
     /// Fetches cached channel metadata (subscriber counts, verified status) for multiple channels.
@@ -583,6 +596,29 @@ struct StatelessFeedStatusResponse: Decodable, Sendable {
             pendingCount: responses.reduce(0) { $0 + $1.pendingCount },
             errorCount: responses.reduce(0) { $0 + $1.errorCount }
         )
+    }
+}
+
+struct WatchedChannelStatus: Codable, Hashable, Sendable {
+    let channelId: String
+    let site: String
+    let channelName: String?
+    let lastRequested: Date?
+    let lastFetch: Date?
+    let fetchError: String?
+    let videoCount: Int?
+}
+
+struct YatteeServerSettings: Decodable, Hashable, Sendable {
+    let feedFetchInterval: TimeInterval?
+
+    private enum CodingKeys: String, CodingKey {
+        case feedFetchInterval
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        feedFetchInterval = try? container.decodeIfPresent(TimeInterval.self, forKey: .feedFetchInterval)
     }
 }
 

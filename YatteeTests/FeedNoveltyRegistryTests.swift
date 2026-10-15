@@ -214,6 +214,207 @@ struct FeedNoveltyRegistryTests {
         }
     }
 
+    @Test("BADGE-01 local Feed scopes follow source type and instance")
+    func localFeedScopeIdentity() {
+        let sharedID = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!
+        let otherID = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+        let server = Instance(
+            id: sharedID,
+            type: .yatteeServer,
+            url: URL(string: "https://server.example")!
+        )
+        let invidious = Instance(
+            id: sharedID,
+            type: .invidious,
+            url: URL(string: "https://invidious.example")!
+        )
+        let otherInvidious = Instance(
+            id: otherID,
+            type: .invidious,
+            url: URL(string: "https://other.example")!
+        )
+
+        let serverScope = FeedNoveltyScope.localFeed(yatteeServer: server)
+        let invidiousScope = FeedNoveltyScope.localFeed(invidious: invidious)
+        let otherScope = FeedNoveltyScope.localFeed(invidious: otherInvidious)
+
+        #expect(serverScope != invidiousScope)
+        #expect(invidiousScope != otherScope)
+        #expect(FeedNoveltyScope.localFeed(source: .yatteeServer(server)) == serverScope)
+        #expect(FeedNoveltyScope.localFeed(source: .invidious(invidious)) == invidiousScope)
+        #expect(FeedNoveltyScope.localFeed(source: .unavailable) == nil)
+    }
+
+    @Test("BADGE-01 Invidious baseline and later novelty share one scope")
+    func invidiousBaselineAndNovelty() async {
+        await withRegistry { registry, _, _ in
+            let instance = Instance(
+                id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!,
+                type: .invidious,
+                url: URL(string: "https://invidious.example")!
+            )
+            let producerScope = FeedNoveltyScope.localFeed(invidious: instance)
+            let consumerScope = FeedNoveltyScope.localFeed(source: .invidious(instance))!
+
+            await registry.ingest(
+                videos: [video("historical", publishedAt: 900)],
+                scope: producerScope,
+                observedAt: baselineDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+            #expect(await registry.snapshot(for: consumerScope).count == 0)
+
+            await registry.ingest(
+                videos: [video("new", publishedAt: 1_500)],
+                scope: producerScope,
+                observedAt: refreshDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+            let snapshot = await registry.snapshot(for: consumerScope)
+            #expect(snapshot.count == 1)
+            #expect(snapshot.unconsulted.map(\.videoID) == ["global:youtube:new"])
+        }
+    }
+
+    @Test("BADGE-01 incomplete Invidious snapshots never establish or advance a baseline")
+    func invidiousIncompleteSnapshot() async {
+        await withRegistry { registry, _, _ in
+            let instance = Instance(
+                type: .invidious,
+                url: URL(string: "https://invidious.example")!
+            )
+            let scope = FeedNoveltyScope.localFeed(invidious: instance)
+
+            await registry.ingest(
+                videos: [video("partial-history", publishedAt: 900)],
+                scope: scope,
+                observedAt: baselineDate,
+                isCompleteSnapshot: false,
+                includeShorts: false
+            )
+            var snapshot = await registry.snapshot(for: scope)
+            #expect(!snapshot.isInitialized)
+            #expect(snapshot.referenceDate == nil)
+
+            await registry.ingest(
+                videos: [],
+                scope: scope,
+                observedAt: baselineDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+            await registry.ingest(
+                videos: [video("partial-new", publishedAt: 1_500)],
+                scope: scope,
+                observedAt: refreshDate,
+                isCompleteSnapshot: false,
+                includeShorts: false
+            )
+            snapshot = await registry.snapshot(for: scope)
+            #expect(snapshot.count == 1)
+            #expect(snapshot.referenceDate == baselineDate)
+        }
+    }
+
+    @Test("BADGE-01 Yattee Server baseline and novelty use the server scope")
+    func yatteeServerBaselineAndNovelty() async {
+        await withRegistry { registry, _, _ in
+            let instance = Instance(
+                type: .yatteeServer,
+                url: URL(string: "https://server.example")!
+            )
+            let scope = FeedNoveltyScope.localFeed(yatteeServer: instance)
+
+            await registry.ingest(
+                videos: [video("historical", publishedAt: 900)],
+                scope: scope,
+                observedAt: baselineDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+            await registry.ingest(
+                videos: [
+                    video("historical", publishedAt: 900),
+                    video("new", publishedAt: 1_500),
+                ],
+                scope: scope,
+                observedAt: refreshDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+
+            let snapshot = await registry.snapshot(for: scope)
+            #expect(snapshot.count == 1)
+            #expect(snapshot.unconsulted.map(\.videoID) == ["global:youtube:new"])
+        }
+    }
+
+    @Test("BADGE-01 changing local Feed source keeps registries isolated")
+    func localFeedSourceChange() async {
+        await withRegistry { registry, _, _ in
+            let server = Instance(
+                type: .yatteeServer,
+                url: URL(string: "https://server.example")!
+            )
+            let invidious = Instance(
+                type: .invidious,
+                url: URL(string: "https://invidious.example")!
+            )
+            let serverScope = FeedNoveltyScope.localFeed(yatteeServer: server)
+            let invidiousScope = FeedNoveltyScope.localFeed(invidious: invidious)
+
+            await establishBaseline(registry, scope: serverScope)
+            await registry.ingest(
+                videos: [video("server-new", publishedAt: 1_500)],
+                scope: serverScope,
+                observedAt: refreshDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+            await registry.ingest(
+                videos: [video("invidious-history", publishedAt: 900)],
+                scope: invidiousScope,
+                observedAt: refreshDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+
+            #expect(await registry.snapshot(for: serverScope).count == 1)
+            #expect(await registry.snapshot(for: invidiousScope).count == 0)
+        }
+    }
+
+    @Test("BADGE-01 legacy local state migrates once and survives relaunch")
+    func legacyLocalMigrationAndPersistence() async {
+        let suiteName = "FeedNoveltyRegistryTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let legacyScope = FeedNoveltyScope(rawValue: "local")
+        let server = Instance(
+            type: .yatteeServer,
+            url: URL(string: "https://server.example")!
+        )
+        let migratedScope = FeedNoveltyScope.localFeed(yatteeServer: server)
+
+        var registry = FeedNoveltyRegistry(defaults: defaults, storageKey: storageKey)
+        await establishBaseline(registry, scope: legacyScope)
+        await registry.ingest(
+            videos: [video("preserved", publishedAt: 1_500)],
+            scope: legacyScope,
+            observedAt: refreshDate,
+            isCompleteSnapshot: true,
+            includeShorts: false
+        )
+
+        #expect(await registry.snapshot(for: migratedScope).count == 1)
+        registry = FeedNoveltyRegistry(defaults: defaults, storageKey: storageKey)
+        #expect(await registry.snapshot(for: migratedScope).count == 1)
+        #expect(await registry.snapshot(for: legacyScope).count == 0)
+    }
+
     @Test("State and unconsulted novelties survive registry recreation")
     func persistence() async {
         await withRegistry { registry, scope, defaults in

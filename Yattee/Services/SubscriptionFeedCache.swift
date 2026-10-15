@@ -448,6 +448,14 @@ final class SubscriptionFeedCache {
                 from: aggregation,
                 preserving: cachedVideos
             )
+            await registerNovelties(
+                aggregation.videos,
+                baselineSupplement: cachedVideos,
+                scope: FeedNoveltyScope.localFeed(invidious: instance),
+                observedAt: refreshStartedAt,
+                isCompleteSnapshot: aggregation.status == .complete,
+                settings: appEnvironment.settingsManager
+            )
             await storeSyncSnapshot(
                 invidiousSnapshot(
                     aggregation: aggregation,
@@ -753,7 +761,7 @@ final class SubscriptionFeedCache {
             await registerNovelties(
                 [],
                 baselineSupplement: videos,
-                scope: .key(for: appEnvironment.settingsManager.subscriptionAccount),
+                scope: FeedNoveltyScope.localFeed(yatteeServer: instance),
                 observedAt: Date(),
                 isCompleteSnapshot: true,
                 settings: appEnvironment.settingsManager
@@ -815,6 +823,7 @@ final class SubscriptionFeedCache {
                 baselineSupplement: cachedVideos,
                 expectedChannelCount: channelRequests.count,
                 requestStartedAt: requestStartedAt,
+                instance: instance,
                 appEnvironment: appEnvironment
             )
 
@@ -939,6 +948,7 @@ final class SubscriptionFeedCache {
                             baselineSupplement: baselineSupplement,
                             expectedChannelCount: channels.count,
                             requestStartedAt: requestStartedAt,
+                            instance: instance,
                             appEnvironment: appEnvironment
                         )
                     } catch {
@@ -1251,6 +1261,7 @@ final class SubscriptionFeedCache {
         baselineSupplement: [Video],
         expectedChannelCount: Int,
         requestStartedAt: Date,
+        instance: Instance,
         appEnvironment: AppEnvironment
     ) async -> Bool {
         let serverVideos = response.toVideos()
@@ -1267,7 +1278,7 @@ final class SubscriptionFeedCache {
         await registerNovelties(
             serverVideos,
             baselineSupplement: baselineSupplement,
-            scope: .key(for: appEnvironment.settingsManager.subscriptionAccount),
+            scope: FeedNoveltyScope.localFeed(yatteeServer: instance),
             observedAt: requestStartedAt,
             isCompleteSnapshot: isComplete,
             settings: appEnvironment.settingsManager

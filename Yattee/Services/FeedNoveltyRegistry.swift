@@ -2,16 +2,42 @@
 //  FeedNoveltyRegistry.swift
 //  Yattee
 //
-//  Persistent, account-scoped registry of subscription feed novelties.
+//  Persistent, local-feed-source-scoped registry of subscription feed novelties.
 //
 
 import CryptoKit
 import Foundation
 import Observation
 
-/// Stable local partition for one subscription account session.
+/// Stable partition for the backend and instance that produce the local Feed.
 struct FeedNoveltyScope: Hashable, Sendable {
     let rawValue: String
+
+    /// Legacy keys that may be adopted once when this scope is first used.
+    /// BADGE-01 replaces the account-based `local` partition with a partition
+    /// that follows the actual local Feed backend and instance.
+    var legacyRawValues: [String] {
+        rawValue.hasPrefix("local-feed:") ? ["local"] : []
+    }
+
+    static func localFeed(yatteeServer instance: Instance) -> FeedNoveltyScope {
+        FeedNoveltyScope(rawValue: "local-feed:yattee-server:\(instance.id.uuidString)")
+    }
+
+    static func localFeed(invidious instance: Instance) -> FeedNoveltyScope {
+        FeedNoveltyScope(rawValue: "local-feed:invidious:\(instance.id.uuidString)")
+    }
+
+    static func localFeed(source: LocalFeedSource) -> FeedNoveltyScope? {
+        switch source {
+        case .yatteeServer(let instance):
+            return localFeed(yatteeServer: instance)
+        case .invidious(let instance):
+            return localFeed(invidious: instance)
+        case .unavailable:
+            return nil
+        }
+    }
 
     static func key(for account: SubscriptionAccount, credential: String? = nil) -> FeedNoveltyScope {
         switch account.type {
@@ -32,30 +58,11 @@ struct FeedNoveltyScope: Hashable, Sendable {
     @MainActor
     static func active(in appEnvironment: AppEnvironment?) -> FeedNoveltyScope? {
         guard let appEnvironment else { return nil }
-        let account = appEnvironment.settingsManager.subscriptionAccount
-        guard let instanceID = account.instanceID else {
-            return key(for: account)
-        }
-        guard let instance = appEnvironment.instancesManager.instances.first(where: {
-            $0.id == instanceID
-        }) else {
-            return key(for: account)
-        }
-
-        switch account.type {
-        case .local:
-            return key(for: account)
-        case .invidious:
-            return key(
-                for: account,
-                credential: appEnvironment.invidiousCredentialsManager.sid(for: instance)
-            )
-        case .piped:
-            return key(
-                for: account,
-                credential: appEnvironment.pipedCredentialsManager.credential(for: instance)
-            )
-        }
+        let source = LocalFeedSource.resolve(
+            from: appEnvironment.instancesManager.instances,
+            preference: appEnvironment.settingsManager.localFeedSourcePreference
+        )
+        return localFeed(source: source)
     }
 }
 
@@ -213,6 +220,7 @@ actor FeedNoveltyRegistry {
         isCompleteSnapshot: Bool,
         includeShorts: Bool
     ) async {
+        migrateLegacyStateIfNeeded(for: scope)
         var state = states[scope.rawValue] ?? FeedNoveltyPersistentState()
         removeExcludedShorts(from: &state, includeShorts: includeShorts)
 
@@ -287,6 +295,7 @@ actor FeedNoveltyRegistry {
 
     /// Removes only the supplied visible identifiers from the unconsulted set.
     func markConsulted(videoIDs: Set<String>, in scope: FeedNoveltyScope) async {
+        migrateLegacyStateIfNeeded(for: scope)
         guard !videoIDs.isEmpty, var state = states[scope.rawValue] else { return }
         let previousCount = state.unconsulted.count
         for videoID in videoIDs {
@@ -301,10 +310,12 @@ actor FeedNoveltyRegistry {
     }
 
     func synchronizeBadgeState(for scope: FeedNoveltyScope) async {
+        migrateLegacyStateIfNeeded(for: scope)
         await publishSnapshot(for: scope)
     }
 
     func snapshot(for scope: FeedNoveltyScope) -> FeedNoveltySnapshot {
+        migrateLegacyStateIfNeeded(for: scope)
         let state = states[scope.rawValue] ?? FeedNoveltyPersistentState()
         return FeedNoveltySnapshot(
             isInitialized: state.isInitialized,
@@ -382,6 +393,14 @@ actor FeedNoveltyRegistry {
     private func persist() {
         guard let data = try? JSONEncoder().encode(states) else { return }
         defaults.set(data, forKey: storageKey)
+    }
+
+    private func migrateLegacyStateIfNeeded(for scope: FeedNoveltyScope) {
+        guard states[scope.rawValue] == nil else { return }
+        guard let legacyKey = scope.legacyRawValues.first(where: { states[$0] != nil }),
+              let legacyState = states.removeValue(forKey: legacyKey) else { return }
+        states[scope.rawValue] = legacyState
+        persist()
     }
 
     private func publishSnapshot(for scope: FeedNoveltyScope) async {

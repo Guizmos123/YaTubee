@@ -51,6 +51,14 @@ final class ChannelBadgePreferences {
 
     func excludedChannelIDs(in scope: FeedNoveltyScope?) -> Set<String> {
         guard let scope else { return [] }
+        if excludedChannelIDsByScope[scope.rawValue] == nil,
+           let legacyKey = scope.legacyRawValues.first(where: {
+               excludedChannelIDsByScope[$0] != nil
+           }),
+           let legacyExclusions = excludedChannelIDsByScope.removeValue(forKey: legacyKey) {
+            excludedChannelIDsByScope[scope.rawValue] = legacyExclusions
+            persist()
+        }
         return excludedChannelIDsByScope[scope.rawValue] ?? []
     }
 

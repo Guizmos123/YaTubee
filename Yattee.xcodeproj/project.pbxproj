@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		370000012FA0000000000001 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 370000002FA0000000000001 /* AppIntents.framework */; };
+		370000022FA0000000000001 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 370000002FA0000000000001 /* AppIntents.framework */; };
+		370000032FA0000000000001 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 370000002FA0000000000001 /* AppIntents.framework */; };
 		370E71982F9A1A41000E04B2 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 370E71972F9A1A41000E04B2 /* Sparkle */; };
 		37767AB32F05766100D248FC /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = 37767AB22F05766100D248FC /* Nuke */; };
 		37767AB52F05766100D248FC /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = 37767AB42F05766100D248FC /* NukeUI */; };
@@ -57,7 +60,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		372D1A272EDB163800F58F7A /* Yattee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yattee.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		370000002FA0000000000001 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
+		372D1A272EDB163800F58F7A /* YaTubee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YaTubee.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37BA19A52EE4DFEE001D7B0F /* Yattee2.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Yattee2.icon; sourceTree = "<group>"; };
 		37BA19AB2EE4EB7F001D7B0F /* YatteeShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YatteeShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		37C0AAAA00000000AAAA0002 /* YatteeTopShelf.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YatteeTopShelf.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -126,6 +130,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				370000012FA0000000000001 /* AppIntents.framework in Frameworks */,
 				370E71982F9A1A41000E04B2 /* Sparkle in Frameworks */,
 				37767AB32F05766100D248FC /* Nuke in Frameworks */,
 				378CF2FE2EF21767002C1CD7 /* MPVKit-GPL in Frameworks */,
@@ -138,6 +143,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				370000022FA0000000000001 /* AppIntents.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -145,6 +151,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				370000032FA0000000000001 /* AppIntents.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -161,6 +168,7 @@
 		372D1A1E2EDB163800F58F7A = {
 			isa = PBXGroup;
 			children = (
+				370000002FA0000000000001 /* AppIntents.framework */,
 				372D1A292EDB163800F58F7A /* Yattee */,
 				37D0B2952EDB23BD00B9C4ED /* YatteeTests */,
 				37BA19AC2EE4EB7F001D7B0F /* YatteeShareExtension */,
@@ -173,7 +181,7 @@
 		372D1A282EDB163800F58F7A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				372D1A272EDB163800F58F7A /* Yattee.app */,
+				372D1A272EDB163800F58F7A /* YaTubee.app */,
 				37D0B2942EDB23BD00B9C4ED /* YatteeTests.xctest */,
 				37BA19AB2EE4EB7F001D7B0F /* YatteeShareExtension.appex */,
 				37C0AAAA00000000AAAA0002 /* YatteeTopShelf.appex */,
@@ -212,7 +220,7 @@
 				370E71972F9A1A41000E04B2 /* Sparkle */,
 			);
 			productName = Yattee;
-			productReference = 372D1A272EDB163800F58F7A /* Yattee.app */;
+			productReference = 372D1A272EDB163800F58F7A /* YaTubee.app */;
 			productType = "com.apple.product-type.application";
 		};
 		37BA19AA2EE4EB7F001D7B0F /* YatteeShareExtension */ = {
@@ -484,6 +492,8 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				"EXCLUDED_ARCHS[sdk=appletvsimulator*]" = x86_64;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -549,6 +559,8 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				"EXCLUDED_ARCHS[sdk=appletvsimulator*]" = x86_64;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -577,7 +589,7 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = Yattee/Yattee.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 121;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				ENABLE_APP_SANDBOX = YES;
@@ -631,7 +643,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.yatubee;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = YaTubee;
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -667,8 +679,9 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = Yattee/Yattee.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Yattee/Yattee-macOS.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 121;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				ENABLE_APP_SANDBOX = YES;
@@ -724,7 +737,8 @@
 					"-Wl,-dead_strip_dylibs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.yatubee;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=appletvos*]" = com.app.yatubee;
+				PRODUCT_NAME = YaTubee;
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -789,6 +803,8 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				"EXCLUDED_ARCHS[sdk=appletvsimulator*]" = x86_64;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -818,7 +834,7 @@
 				CODE_SIGN_ENTITLEMENTS = Yattee/Yattee.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Yattee/Yattee-macOS-DeveloperID.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 121;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				ENABLE_APP_SANDBOX = YES;
@@ -870,7 +886,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.yatubee;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = YaTubee;
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -929,7 +945,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = YatteeShareExtension/YatteeShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 121;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YatteeShareExtension/Info.plist;
@@ -961,7 +977,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = YatteeTopShelf/YatteeTopShelf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 270;
+				CURRENT_PROJECT_VERSION = 121;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YatteeTopShelf/Info.plist;
@@ -973,7 +989,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.yatubee.TopShelf;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
@@ -996,7 +1012,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = YatteeShareExtension/YatteeShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 121;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YatteeShareExtension/Info.plist;
@@ -1027,7 +1043,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = YatteeShareExtension/YatteeShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 121;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YatteeShareExtension/Info.plist;
@@ -1059,7 +1075,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = YatteeTopShelf/YatteeTopShelf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 270;
+				CURRENT_PROJECT_VERSION = 121;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YatteeTopShelf/Info.plist;
@@ -1071,7 +1087,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.yatubee.TopShelf;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
@@ -1093,7 +1109,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = YatteeTopShelf/YatteeTopShelf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 270;
+				CURRENT_PROJECT_VERSION = 121;
 				DEVELOPMENT_TEAM = L5PRYAZ8B5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YatteeTopShelf/Info.plist;
@@ -1105,7 +1121,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.yatubee.TopShelf;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
@@ -1147,6 +1163,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Yattee.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Yattee";
+				"TEST_HOST[sdk=iphone*]" = "$(BUILT_PRODUCTS_DIR)/YaTubee.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YaTubee";
 				TVOS_DEPLOYMENT_TARGET = 18.0;
 				XROS_DEPLOYMENT_TARGET = 26.1;
 			};
@@ -1176,6 +1193,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Yattee.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Yattee";
+				"TEST_HOST[sdk=iphone*]" = "$(BUILT_PRODUCTS_DIR)/YaTubee.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YaTubee";
 				TVOS_DEPLOYMENT_TARGET = 18.0;
 				XROS_DEPLOYMENT_TARGET = 26.1;
 			};

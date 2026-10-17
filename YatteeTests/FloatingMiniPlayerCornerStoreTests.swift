@@ -7,7 +7,7 @@
 
 import Foundation
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Floating Mini Player Corner Store Tests")
 struct FloatingMiniPlayerCornerStoreTests {

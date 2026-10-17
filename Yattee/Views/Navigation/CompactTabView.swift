@@ -11,7 +11,6 @@ import SwiftUI
 #if os(iOS)
 struct CompactTabView: View {
     @Environment(\.appEnvironment) private var appEnvironment
-    @Environment(\.scenePhase) private var scenePhase
 
     /// Whether this hierarchy owns the mini player through the native tab accessory.
     var usesMiniPlayerAccessory = true
@@ -97,16 +96,8 @@ struct CompactTabView: View {
     private var realNoveltyCount: Int {
         noveltyBadgeState.count(
             for: activeNoveltyScope,
-            excluding: channelBadgePreferences.excludedChannelIDs(in: activeNoveltyScope)
-        )
-    }
-
-    private var appIconBadgeSynchronizationID: AppIconBadgeSynchronizationKey {
-        AppIconBadgeSynchronizationKey(
-            scopeRawValue: activeNoveltyScope?.rawValue,
-            realNoveltyCount: realNoveltyCount,
-            isEnabled: settingsManager?.appIconBadgeEnabled == true,
-            isSceneActive: scenePhase == .active
+            excluding: channelBadgePreferences.excludedChannelIDs(in: activeNoveltyScope),
+            includeShorts: settingsManager?.badgesIncludeShorts == true
         )
     }
 
@@ -236,12 +227,6 @@ struct CompactTabView: View {
         .task(id: activeNoveltyScope?.rawValue) {
             guard let activeNoveltyScope else { return }
             await FeedNoveltyRegistry.shared.synchronizeBadgeState(for: activeNoveltyScope)
-        }
-        .task(id: appIconBadgeSynchronizationID) {
-            await AppIconBadgeManager.shared.synchronize(
-                realNoveltyCount: realNoveltyCount,
-                isEnabled: settingsManager?.appIconBadgeEnabled == true
-            )
         }
     }
 

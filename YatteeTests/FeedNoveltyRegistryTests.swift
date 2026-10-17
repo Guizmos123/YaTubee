@@ -10,7 +10,7 @@ import Testing
 #if os(iOS)
 import UserNotifications
 #endif
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Feed novelty registry", .serialized)
 struct FeedNoveltyRegistryTests {
@@ -18,66 +18,166 @@ struct FeedNoveltyRegistryTests {
     private let refreshDate = Date(timeIntervalSince1970: 2_000)
 
     #if os(iOS)
-    @Test("App icon badge follows ON, OFF and zero without redundant writes")
-    func appIconBadgePreferenceAndDeduplication() async {
-        let center = TestAppIconBadgeCenter(setting: .enabled)
-        let manager = AppIconBadgeManager(center: center)
+    @Test("App icon badge uses an authorization that is already granted")
+    @MainActor
+    func appIconBadgeAlreadyAuthorized() async {
+        let provider = TestAppIconBadgeProvider(state: .authorized)
+        let manager = AppIconBadgeManager(provider: provider)
 
-        await manager.synchronize(realNoveltyCount: 4, isEnabled: true)
-        await manager.synchronize(realNoveltyCount: 4, isEnabled: true)
-        await manager.synchronize(realNoveltyCount: 4, isEnabled: false)
-        await manager.synchronize(realNoveltyCount: 0, isEnabled: true)
-
-        #expect(await center.appliedCounts == [4, 0])
+        #expect(await manager.enable(count: 4))
+        #expect(await provider.requestCount == 0)
+        #expect(await provider.appliedCounts == [4])
     }
 
-    @Test("App icon badge follows consultation and active scope counts")
-    func appIconBadgeCountChanges() async {
-        let center = TestAppIconBadgeCenter(setting: .enabled)
-        let manager = AppIconBadgeManager(center: center)
+    @Test("App icon badge requests badge-only permission once and applies the count")
+    @MainActor
+    func appIconBadgeFirstRequestAccepted() async {
+        let provider = TestAppIconBadgeProvider(state: .notDetermined, requestResult: true)
+        let manager = AppIconBadgeManager(provider: provider)
 
-        await manager.synchronize(realNoveltyCount: 5, isEnabled: true)
-        await manager.synchronize(realNoveltyCount: 2, isEnabled: true)
-        await manager.synchronize(realNoveltyCount: 7, isEnabled: true)
+        #expect(await manager.enable(count: 5))
+        #expect(await provider.requestCount == 1)
+        #expect(await provider.appliedCounts == [5])
+    }
 
-        #expect(await center.appliedCounts == [5, 2, 7])
+    @Test("A refused first badge request disables application without applying a count")
+    @MainActor
+    func appIconBadgeFirstRequestRefused() async {
+        let provider = TestAppIconBadgeProvider(state: .notDetermined, requestResult: false)
+        let manager = AppIconBadgeManager(provider: provider)
 
-        let firstScope = AppIconBadgeSynchronizationKey(
-            scopeRawValue: "local",
-            realNoveltyCount: 2,
-            isEnabled: true,
-            isSceneActive: true
+        #expect(!(await manager.enable(count: 5)))
+        #expect(await provider.requestCount == 1)
+        #expect(await provider.appliedCounts.isEmpty)
+    }
+
+    @Test("A previous badge refusal never prompts again")
+    @MainActor
+    func appIconBadgePreviousRefusal() async {
+        let provider = TestAppIconBadgeProvider(state: .denied)
+        let manager = AppIconBadgeManager(provider: provider)
+
+        #expect(!(await manager.enable(count: 3)))
+        #expect(!(await manager.enable(count: 3)))
+        #expect(await provider.requestCount == 0)
+        #expect(await provider.appliedCounts.isEmpty)
+    }
+
+    @Test("Disabling always attempts to clear the app icon badge")
+    @MainActor
+    func appIconBadgeDisableClearsUnconditionally() async {
+        let provider = TestAppIconBadgeProvider(state: .denied)
+        let manager = AppIconBadgeManager(provider: provider)
+
+        await manager.apply(count: 99, enabled: false)
+
+        #expect(await provider.appliedCounts == [0])
+    }
+
+    @Test("Foreground reconciliation observes a changed system badge permission")
+    @MainActor
+    func appIconBadgeForegroundReconciliation() async {
+        let provider = TestAppIconBadgeProvider(state: .denied)
+        let manager = AppIconBadgeManager(provider: provider)
+
+        #expect(!(await manager.reconcile(count: 2, enabled: true)))
+        await provider.setState(.authorized)
+        #expect(await manager.reconcile(count: 2, enabled: true))
+
+        #expect(await provider.settingsReadCount == 2)
+        #expect(await provider.appliedCounts == [2])
+    }
+
+    @Test("A notification payload keeps the global count when direct badge application fails")
+    @MainActor
+    func notificationPayloadSurvivesBadgeApplicationFailure() async {
+        let provider = TestAppIconBadgeProvider(state: .authorized, failsToApply: true)
+        let manager = AppIconBadgeManager(provider: provider)
+
+        #expect(await manager.reconcile(count: 7, enabled: true))
+        let content = NotificationManager.notificationContent(
+            for: [(video: video("notification", publishedAt: 1_500), channelName: "Channel")],
+            appIconBadgeCount: 7
         )
-        let secondScope = AppIconBadgeSynchronizationKey(
-            scopeRawValue: "piped:other-account",
-            realNoveltyCount: 2,
-            isEnabled: true,
-            isSceneActive: true
+
+        #expect(await provider.appliedCounts == [7])
+        #expect(content.badge?.intValue == 7)
+    }
+
+    @Test("App icon restoration waits for the active BADGE-01 scope hydration")
+    func appIconBadgeHydrationAndScopePolicy() {
+        let serverScope = "local-feed:yattee-server:server"
+        let invidiousScope = "local-feed:invidious:invidious"
+
+        #expect(!AppIconBadgeProjectionPolicy.canApply(
+            activeScopeRawValue: serverScope,
+            hydratedScopeRawValue: nil,
+            isHydrated: false
+        ))
+        #expect(AppIconBadgeProjectionPolicy.canApply(
+            activeScopeRawValue: serverScope,
+            hydratedScopeRawValue: serverScope,
+            isHydrated: true
+        ))
+        #expect(!AppIconBadgeProjectionPolicy.canApply(
+            activeScopeRawValue: invidiousScope,
+            hydratedScopeRawValue: serverScope,
+            isHydrated: true
+        ))
+    }
+
+    @Test("App icon projection applies Shorts and channel preferences without mutation")
+    func appIconBadgeProjectionPreferences() {
+        let regular = FeedNoveltyEntry(
+            videoID: "regular",
+            channelID: "included",
+            publishedAt: baselineDate,
+            discoveredAt: refreshDate,
+            contentKind: .regular
         )
-        #expect(firstScope != secondScope)
+        let short = FeedNoveltyEntry(
+            videoID: "short",
+            channelID: "included",
+            publishedAt: baselineDate,
+            discoveredAt: refreshDate,
+            contentKind: .short
+        )
+        let excluded = FeedNoveltyEntry(
+            videoID: "excluded",
+            channelID: "excluded",
+            publishedAt: baselineDate,
+            discoveredAt: refreshDate,
+            contentKind: .regular
+        )
+        let entries = [regular, short, excluded]
+
+        #expect(AppIconBadgeProjectionPolicy.count(
+            entries: entries,
+            excluding: ["excluded"],
+            includeShorts: false
+        ) == 1)
+        #expect(AppIconBadgeProjectionPolicy.count(
+            entries: entries,
+            excluding: ["excluded"],
+            includeShorts: true
+        ) == 2)
+        #expect(entries.count == 3)
     }
 
-    @Test("App icon badge respects disabled system badge permission")
-    func appIconBadgePermissionDenied() async {
-        let center = TestAppIconBadgeCenter(setting: .disabled)
-        let manager = AppIconBadgeManager(center: center)
-
-        await manager.synchronize(realNoveltyCount: 6, isEnabled: true)
-
-        #expect(await center.appliedCounts.isEmpty)
-    }
-
-    @Test("App icon badge receives only the real registry count")
-    func appIconBadgeExcludesDebugSimulation() async {
-        let center = TestAppIconBadgeCenter(setting: .enabled)
-        let manager = AppIconBadgeManager(center: center)
-        let realRegistryCount = 2
-        let simulatedDebugCount = 10
-
-        await manager.synchronize(realNoveltyCount: realRegistryCount, isEnabled: true)
-
-        #expect(await center.appliedCounts == [2])
-        #expect(await center.appliedCounts != [simulatedDebugCount])
+    @Test("Authorized system status still requires the badge setting")
+    func appIconBadgeSystemStateResolution() {
+        #expect(SystemAppIconBadgeProvider.authorizationState(
+            status: .authorized,
+            badgeSetting: .enabled
+        ) == .authorized)
+        #expect(SystemAppIconBadgeProvider.authorizationState(
+            status: .authorized,
+            badgeSetting: .disabled
+        ) == .denied)
+        #expect(SystemAppIconBadgeProvider.authorizationState(
+            status: .notDetermined,
+            badgeSetting: .notSupported
+        ) == .notDetermined)
     }
     #endif
 
@@ -121,6 +221,44 @@ struct FeedNoveltyRegistryTests {
         #expect(preferences.isIncluded(channelID: "channel", in: firstScope))
     }
 
+    @Test("Defaults affect only new unconfigured badge subscriptions")
+    @MainActor
+    func newSubscriptionBadgeDefaultsPreserveExistingChoices() {
+        let suiteName = "ChannelBadgePreferencesDefaultsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let scope = FeedNoveltyScope(rawValue: "local-feed:invidious:instance")
+        let preferences = ChannelBadgePreferences(defaults: defaults, storageKey: "excluded")
+
+        preferences.setIncluded(true, channelID: "existing-included", in: scope)
+        preferences.setIncluded(false, channelID: "existing-excluded", in: scope)
+        preferences.applyDefault(
+            includeByDefault: false,
+            channelIDs: ["existing-included", "existing-excluded", "new-excluded"],
+            in: scope
+        )
+
+        #expect(preferences.isIncluded(channelID: "existing-included", in: scope))
+        #expect(!preferences.isIncluded(channelID: "existing-excluded", in: scope))
+        #expect(!preferences.isIncluded(channelID: "new-excluded", in: scope))
+
+        preferences.applyDefault(
+            includeByDefault: true,
+            channelIDs: ["new-included"],
+            in: scope
+        )
+        #expect(preferences.isIncluded(channelID: "new-included", in: scope))
+
+        preferences.setIncluded(true, channelID: "new-excluded", in: scope)
+        preferences.applyDefault(
+            includeByDefault: false,
+            channelIDs: ["new-excluded"],
+            in: scope
+        )
+        #expect(preferences.isIncluded(channelID: "new-excluded", in: scope))
+    }
+
     @Test("Channel exclusions recalculate badges without deleting novelties")
     @MainActor
     func channelBadgeFilteringPreservesRegistry() async {
@@ -151,10 +289,10 @@ struct FeedNoveltyRegistryTests {
             #expect(filteredCount == 1)
             #expect(await registry.snapshot(for: scope).count == 2)
             #if os(iOS)
-            let center = TestAppIconBadgeCenter(setting: .enabled)
-            let iconManager = AppIconBadgeManager(center: center)
-            await iconManager.synchronize(realNoveltyCount: filteredCount, isEnabled: true)
-            #expect(await center.appliedCounts == [1])
+            let provider = TestAppIconBadgeProvider(state: .authorized)
+            let iconManager = AppIconBadgeManager(provider: provider)
+            #expect(await iconManager.enable(count: filteredCount))
+            #expect(await provider.appliedCounts == [1])
             #endif
             preferences.setIncluded(true, channelID: "first", in: scope)
             #expect(badgeState.count(for: scope, excluding: preferences.excludedChannelIDs(in: scope)) == 2)
@@ -558,9 +696,9 @@ struct FeedNoveltyRegistryTests {
         }
     }
 
-    @Test("Shorts policy excludes only confirmed Shorts without later catch-up")
+    @Test("Shorts preference filters non-destructively OFF to ON to OFF")
     func shortsPolicyAndPreferenceChanges() async {
-        await withRegistry { registry, scope, _ in
+        await withRegistry { registry, scope, defaults in
             await establishBaseline(registry, scope: scope)
             await registry.ingest(
                 videos: [
@@ -573,7 +711,18 @@ struct FeedNoveltyRegistryTests {
                 isCompleteSnapshot: false,
                 includeShorts: false
             )
-            #expect(await registry.snapshot(for: scope).count == 2)
+            var snapshot = await registry.snapshot(for: scope)
+            #expect(snapshot.count == 3)
+            #expect(FeedNoveltyBadgeFilter.count(
+                entries: snapshot.unconsulted,
+                excluding: [],
+                includeShorts: false
+            ) == 2)
+            #expect(FeedNoveltyBadgeFilter.count(
+                entries: snapshot.unconsulted,
+                excluding: [],
+                includeShorts: true
+            ) == 3)
 
             await registry.ingest(
                 videos: [
@@ -585,7 +734,13 @@ struct FeedNoveltyRegistryTests {
                 isCompleteSnapshot: false,
                 includeShorts: true
             )
-            #expect(await registry.snapshot(for: scope).count == 3)
+            snapshot = await registry.snapshot(for: scope)
+            #expect(snapshot.count == 4)
+            #expect(FeedNoveltyBadgeFilter.count(
+                entries: snapshot.unconsulted,
+                excluding: [],
+                includeShorts: true
+            ) == 4)
 
             await registry.ingest(
                 videos: [],
@@ -594,8 +749,62 @@ struct FeedNoveltyRegistryTests {
                 isCompleteSnapshot: false,
                 includeShorts: false
             )
-            #expect(await registry.snapshot(for: scope).count == 2)
+            snapshot = await registry.snapshot(for: scope)
+            #expect(snapshot.count == 4)
+            #expect(FeedNoveltyBadgeFilter.count(
+                entries: snapshot.unconsulted,
+                excluding: [],
+                includeShorts: false
+            ) == 2)
+
+            let restored = FeedNoveltyRegistry(defaults: defaults, storageKey: storageKey)
+            let restoredSnapshot = await restored.snapshot(for: scope)
+            #expect(restoredSnapshot.count == 4)
+            #expect(restoredSnapshot.unconsulted.filter { $0.contentKind == .short }.count == 2)
+
+            let otherScope = FeedNoveltyScope(rawValue: "other-scope")
+            await establishBaseline(restored, scope: otherScope)
+            #expect(await restored.snapshot(for: otherScope).count == 0)
         }
+    }
+
+    @Test("Shorts and channel exclusions share one non-destructive badge filter")
+    func shortsAndChannelBadgeFiltering() {
+        let entries = [
+            FeedNoveltyEntry(
+                videoID: "regular",
+                channelID: "included",
+                publishedAt: baselineDate,
+                discoveredAt: refreshDate,
+                contentKind: .regular
+            ),
+            FeedNoveltyEntry(
+                videoID: "short",
+                channelID: "included",
+                publishedAt: baselineDate,
+                discoveredAt: refreshDate,
+                contentKind: .short
+            ),
+            FeedNoveltyEntry(
+                videoID: "excluded",
+                channelID: "excluded",
+                publishedAt: baselineDate,
+                discoveredAt: refreshDate,
+                contentKind: .regular
+            ),
+        ]
+
+        #expect(FeedNoveltyBadgeFilter.count(
+            entries: entries,
+            excluding: ["excluded"],
+            includeShorts: false
+        ) == 1)
+        #expect(FeedNoveltyBadgeFilter.count(
+            entries: entries,
+            excluding: ["excluded"],
+            includeShorts: true
+        ) == 2)
+        #expect(entries.count == 3)
     }
 
     @Test("Consultation removes only the supplied identifiers")
@@ -655,29 +864,82 @@ struct FeedNoveltyRegistryTests {
         #expect(FeedNoveltyBadgePresentation.count(registryCount: 3, isEnabled: true) == 3)
     }
 
-    @Test("Consultation requires a visible cell, active tab, and active scene")
+    @Test("Consultation requires a genuinely visible active Feed")
     func consultationPolicy() {
         let visibleIDs: Set<String> = ["global:youtube:visible"]
         #expect(FeedNoveltyConsultationPolicy.shouldConsult(
             isTabActive: true,
             isSceneActive: true,
+            isPlayerObscuringFeed: false,
             visibleVideoIDs: visibleIDs
         ))
         #expect(!FeedNoveltyConsultationPolicy.shouldConsult(
             isTabActive: false,
             isSceneActive: true,
+            isPlayerObscuringFeed: false,
             visibleVideoIDs: visibleIDs
         ))
         #expect(!FeedNoveltyConsultationPolicy.shouldConsult(
             isTabActive: true,
             isSceneActive: false,
+            isPlayerObscuringFeed: false,
             visibleVideoIDs: visibleIDs
         ))
         #expect(!FeedNoveltyConsultationPolicy.shouldConsult(
             isTabActive: true,
             isSceneActive: true,
+            isPlayerObscuringFeed: true,
+            visibleVideoIDs: visibleIDs
+        ))
+        #expect(FeedNoveltyConsultationPolicy.shouldConsult(
+            isTabActive: true,
+            isSceneActive: true,
+            isPlayerObscuringFeed: false,
+            visibleVideoIDs: visibleIDs
+        ))
+        #expect(!FeedNoveltyConsultationPolicy.shouldConsult(
+            isTabActive: true,
+            isSceneActive: true,
+            isPlayerObscuringFeed: false,
             visibleVideoIDs: []
         ))
+    }
+
+    @Test("Expanded player preserves novelties until the Feed is exposed again")
+    func playerVisibilityConsultationTransition() async {
+        await withRegistry { registry, scope, _ in
+            await establishBaseline(registry, scope: scope)
+            await registry.ingest(
+                videos: [video("visible", publishedAt: 1_500)],
+                scope: scope,
+                observedAt: refreshDate,
+                isCompleteSnapshot: true,
+                includeShorts: false
+            )
+            let visibleIDs: Set<String> = ["global:youtube:visible"]
+
+            let whileExpanded = FeedNoveltyConsultationPolicy.shouldConsult(
+                isTabActive: true,
+                isSceneActive: true,
+                isPlayerObscuringFeed: true,
+                visibleVideoIDs: visibleIDs
+            )
+            if whileExpanded {
+                await registry.markConsulted(videoIDs: visibleIDs, in: scope)
+            }
+            #expect(await registry.snapshot(for: scope).count == 1)
+
+            let afterClosing = FeedNoveltyConsultationPolicy.shouldConsult(
+                isTabActive: true,
+                isSceneActive: true,
+                isPlayerObscuringFeed: false,
+                visibleVideoIDs: visibleIDs
+            )
+            if afterClosing {
+                await registry.markConsulted(videoIDs: visibleIDs, in: scope)
+            }
+            #expect(await registry.snapshot(for: scope).count == 0)
+        }
     }
 
     @Test("Published badge state follows discovery and exact consultation")
@@ -838,20 +1100,48 @@ struct FeedNoveltyRegistryTests {
 }
 
 #if os(iOS)
-private actor TestAppIconBadgeCenter: AppIconBadgeCenter {
-    let setting: UNNotificationSetting
+private actor TestAppIconBadgeProvider: AppIconBadgeProviding {
+    private var state: AppIconBadgeAuthorizationState
+    private let requestResult: Bool
+    private let failsToApply: Bool
+    private(set) var requestCount = 0
+    private(set) var settingsReadCount = 0
     private(set) var appliedCounts: [Int] = []
 
-    init(setting: UNNotificationSetting) {
-        self.setting = setting
+    init(
+        state: AppIconBadgeAuthorizationState,
+        requestResult: Bool = false,
+        failsToApply: Bool = false
+    ) {
+        self.state = state
+        self.requestResult = requestResult
+        self.failsToApply = failsToApply
     }
 
-    func badgeSetting() async -> UNNotificationSetting {
-        setting
+    func authorizationState() async -> AppIconBadgeAuthorizationState {
+        settingsReadCount += 1
+        return state
+    }
+
+    func requestBadgeAuthorization() async throws -> Bool {
+        requestCount += 1
+        state = requestResult ? .authorized : .denied
+        return requestResult
     }
 
     func setBadgeCount(_ count: Int) async throws {
         appliedCounts.append(count)
+        if failsToApply {
+            throw TestAppIconBadgeProviderError.applicationFailed
+        }
     }
+
+    func setState(_ state: AppIconBadgeAuthorizationState) {
+        self.state = state
+    }
+}
+
+private enum TestAppIconBadgeProviderError: Error {
+    case applicationFailed
 }
 #endif

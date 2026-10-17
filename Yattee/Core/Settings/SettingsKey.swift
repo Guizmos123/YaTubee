@@ -12,6 +12,7 @@ import Foundation
 enum SettingsKey: String, CaseIterable {
     // General
     case appLanguage
+    case videoMetadataLanguage
     case theme
     case accentColor
     case customAccentColor
@@ -147,6 +148,7 @@ enum SettingsKey: String, CaseIterable {
     case videoTabBadgeEnabled
     case appIconBadgeEnabled
     case badgesIncludeShorts
+    case defaultBadgesForNewChannels
 
     /// Whether this key should have platform-specific prefixes.
     /// Platform-specific keys are stored under a `iOS.` / `macOS.` / `tvOS.` prefix
@@ -185,12 +187,12 @@ enum SettingsKey: String, CaseIterable {
     /// Used for device-specific settings like custom device name for remote control.
     var isLocalOnly: Bool {
         switch self {
-        case .appLanguage,
+        case .appLanguage, .videoMetadataLanguage,
              .remoteControlCustomDeviceName, .remoteControlHideWhenBackgrounded,
              .activeControlsPresetID,  // Per-device preset selection
              .onboardingCompleted,  // Per-device onboarding state
              .notificationsIncludeShorts, .videoTabBadgeEnabled,
-             .appIconBadgeEnabled, .badgesIncludeShorts:
+             .appIconBadgeEnabled, .badgesIncludeShorts, .defaultBadgesForNewChannels:
             return true
         default:
             return false

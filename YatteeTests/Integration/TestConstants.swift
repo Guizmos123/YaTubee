@@ -6,7 +6,7 @@
 //
 
 import Foundation
-@testable import Yattee
+@testable import YaTubee
 
 /// Constants for integration testing against a real Invidious instance.
 enum IntegrationTestConstants {

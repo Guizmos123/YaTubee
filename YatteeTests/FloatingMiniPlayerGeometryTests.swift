@@ -8,7 +8,7 @@
 import Foundation
 import CoreGraphics
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Floating Mini Player Geometry Tests")
 struct FloatingMiniPlayerGeometryTests {

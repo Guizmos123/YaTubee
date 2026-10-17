@@ -82,6 +82,7 @@ final class SearchViewModel {
     private var searchTask: Task<Void, Never>?
     private var suggestionsTask: Task<Void, Never>?
     private var lastQuery: String = ""
+    private var activeVideoMetadataLanguage: String?
     
     /// Incremented each time filters change to detect stale results.
     private var filterVersion: Int = 0
@@ -106,6 +107,9 @@ final class SearchViewModel {
         self.deArrowProvider = deArrowProvider
         self.dataManager = dataManager
         self.settingsManager = settingsManager
+        self.activeVideoMetadataLanguage = instance.type == .yatteeServer
+            ? settingsManager?.resolvedVideoMetadataLanguage ?? "original"
+            : nil
     }
 
     // MARK: - Search Methods
@@ -114,7 +118,7 @@ final class SearchViewModel {
     /// - Parameters:
     ///   - query: The search query
     ///   - resetResults: Whether to reset pagination and clear existing results
-    func search(query: String, resetResults: Bool = true) async {
+    func search(query: String, resetResults: Bool = true, recordHistory: Bool = true) async {
         let trimmedQuery = query.trimmingCharacters(in: .whitespaces)
         guard !trimmedQuery.isEmpty else { return }
         
@@ -125,9 +129,12 @@ final class SearchViewModel {
         filterVersion += 1
         let versionAtStart = filterVersion
         let filtersAtStart = filters
+        let languageAtStart = currentVideoMetadataLanguage
+        activeVideoMetadataLanguage = languageAtStart
         
         // Save to history if not in incognito mode and recent searches are enabled
-        if settingsManager?.incognitoModeEnabled != true,
+        if recordHistory,
+           settingsManager?.incognitoModeEnabled != true,
            settingsManager?.saveRecentSearches != false {
             dataManager?.addSearchQuery(trimmedQuery)
         }
@@ -140,6 +147,7 @@ final class SearchViewModel {
             channels = []
             playlists = []
         }
+        let pageAtStart = page
 
         lastQuery = trimmedQuery
         hasSearched = true
@@ -152,12 +160,13 @@ final class SearchViewModel {
                 let result = try await contentService.search(
                     query: trimmedQuery,
                     instance: instance,
-                    page: page,
+                    page: pageAtStart,
                     filters: filtersAtStart
                 )
                 
                 // Check if filters changed while we were waiting - discard stale results
-                guard versionAtStart == filterVersion else { return }
+                guard versionAtStart == filterVersion,
+                      languageAtStart == currentVideoMetadataLanguage else { return }
 
                 if resetResults {
                     // Fresh results
@@ -224,7 +233,8 @@ final class SearchViewModel {
                 prefetchBranding(for: result.videos)
             } catch {
                 // Check if filters changed - don't show error for stale request
-                guard versionAtStart == filterVersion else { return }
+                guard versionAtStart == filterVersion,
+                      languageAtStart == currentVideoMetadataLanguage else { return }
                 // Don't report cancellation errors
                 if !Task.isCancelled {
                     errorMessage = error.localizedDescription
@@ -241,9 +251,41 @@ final class SearchViewModel {
     /// Loads more search results for the current query.
     func loadMore() async {
         guard hasMoreResults, !isLoadingMore, !isSearching, !lastQuery.isEmpty else { return }
+        guard activeVideoMetadataLanguage == currentVideoMetadataLanguage else {
+            await videoMetadataLanguageDidChange()
+            return
+        }
         isLoadingMore = true
         page += 1
         await search(query: lastQuery, resetResults: false)
+    }
+
+    /// Invalidates localized results and reloads the first page when the resolved
+    /// metadata language changes. Non-Yattee sources are intentionally unaffected.
+    func videoMetadataLanguageDidChange() async {
+        guard instance.type == .yatteeServer else { return }
+        let newLanguage = currentVideoMetadataLanguage
+        guard newLanguage != activeVideoMetadataLanguage else { return }
+
+        searchTask?.cancel()
+        filterVersion += 1
+        let queryToReload = lastQuery
+        let shouldReload = hasSearched && !queryToReload.isEmpty
+
+        activeVideoMetadataLanguage = newLanguage
+        resultItems = []
+        videos = []
+        channels = []
+        playlists = []
+        errorMessage = nil
+        page = 1
+        hasMoreResults = true
+        isSearching = false
+        isLoadingMore = false
+
+        if shouldReload {
+            await search(query: queryToReload, recordHistory: false)
+        }
     }
 
     /// Clears all search results and resets state.
@@ -321,6 +363,11 @@ final class SearchViewModel {
     }
 
     // MARK: - Private
+
+    private var currentVideoMetadataLanguage: String? {
+        guard instance.type == .yatteeServer else { return nil }
+        return settingsManager?.resolvedVideoMetadataLanguage ?? "original"
+    }
 
     private func prefetchBranding(for videos: [Video]) {
         guard let deArrowProvider else { return }

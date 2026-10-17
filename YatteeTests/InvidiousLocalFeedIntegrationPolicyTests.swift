@@ -7,7 +7,7 @@
 
 import Foundation
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Invidious Local Feed Integration Policy Tests")
 struct InvidiousLocalFeedIntegrationPolicyTests {

@@ -240,6 +240,10 @@ struct SearchView: View {
         .onChange(of: hideWatched) { _, newValue in
             searchViewModel?.hideWatchedVideos = newValue
         }
+        .onChange(of: appEnvironment?.settingsManager.resolvedVideoMetadataLanguage) { oldValue, newValue in
+            guard oldValue != newValue else { return }
+            Task { await searchViewModel?.videoMetadataLanguageDidChange() }
+        }
         .onChange(of: saveRecentSearches) { _, _ in
             loadSearchHistory()
         }

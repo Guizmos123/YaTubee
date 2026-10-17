@@ -7,7 +7,7 @@
 
 import Foundation
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @MainActor
 @Suite("Feed Refresh Single Flight Tests")
@@ -123,8 +123,8 @@ struct FeedRefreshSingleFlightTests {
         #expect(!operationFinished)
 
         await gate.open()
-        await first.value
-        await joiningCaller.value
+        _ = await first.value
+        _ = await joiningCaller.value
 
         #expect(operationCount == 1)
         #expect(operationFinished)

@@ -7,7 +7,7 @@
 
 import Testing
 import Foundation
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("DescriptionText Timestamp Parsing")
 struct DescriptionTextTimestampTests {

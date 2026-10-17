@@ -22,23 +22,16 @@ struct NotificationSettingsView: View {
                 EnableSection(
                     settings: settings,
                     notificationManager: notificationManager,
-                    appEnvironment: appEnvironment
+                    appEnvironment: appEnvironment,
+                    authorizationChecked: authorizationChecked
                 )
 
-                // Permission status section
-                if authorizationChecked {
-                    PermissionSection(notificationManager: notificationManager)
-                }
+                DefaultsSection(settings: settings)
+                ManageChannelsSection()
 
-                // Default for new subscriptions
-                if settings.backgroundNotificationsEnabled {
-                    DefaultsSection(settings: settings)
-
-                    // Manage channels section
-                    ManageChannelsSection()
-                }
-
-                BadgesSection(settings: settings)
+                BadgeDisplaySection(settings: settings, appEnvironment: appEnvironment)
+                BadgeDefaultsSection(settings: settings)
+                ManageBadgeChannelsSection()
 
                 #if DEBUG
                 BadgeDiagnosticSection(appEnvironment: appEnvironment)
@@ -207,9 +200,10 @@ private struct EnableSection: View {
     @Bindable var settings: SettingsManager
     let notificationManager: NotificationManager
     let appEnvironment: AppEnvironment?
+    let authorizationChecked: Bool
 
     var body: some View {
-        SettingsFormSection(footer: "settings.notifications.footer") {
+        SettingsFormSection("settings.notifications.title", footer: "settings.notifications.footer") {
             Toggle(
                 AppLocalization.string("settings.notifications.enable"),
                 isOn: Binding(
@@ -223,6 +217,23 @@ private struct EnableSection: View {
                     }
                 )
             )
+            if authorizationChecked {
+                HStack {
+                    Text(AppLocalization.string("settings.notifications.permission"))
+                    Spacer()
+                    if notificationManager.isAuthorized {
+                        HStack(spacing: 4) {
+                            Text(AppLocalization.string("settings.notifications.permission.granted"))
+                            Image(systemName: "checkmark.circle.fill")
+                        }
+                        .foregroundStyle(.green)
+                    } else {
+                        Button(AppLocalization.string("settings.notifications.openSettings")) {
+                            notificationManager.openNotificationSettings()
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -239,32 +250,6 @@ private struct EnableSection: View {
     private func disableNotifications() {
         settings.backgroundNotificationsEnabled = false
         appEnvironment?.backgroundRefreshManager.handleNotificationsEnabledChanged(false)
-    }
-}
-
-// MARK: - Permission Section
-
-private struct PermissionSection: View {
-    let notificationManager: NotificationManager
-
-    var body: some View {
-        SettingsFormSection {
-            HStack {
-                Text(AppLocalization.string("settings.notifications.permission"))
-                Spacer()
-                if notificationManager.isAuthorized {
-                    HStack(spacing: 4) {
-                        Text(AppLocalization.string("settings.notifications.permission.granted"))
-                        Image(systemName: "checkmark.circle.fill")
-                    }
-                    .foregroundStyle(.green)
-                } else {
-                    Button(AppLocalization.string("settings.notifications.openSettings")) {
-                        notificationManager.openNotificationSettings()
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -287,10 +272,27 @@ private struct DefaultsSection: View {
     }
 }
 
-// MARK: - Badges Section
+// MARK: - Badge Display Section
 
-private struct BadgesSection: View {
+private struct BadgeDisplaySection: View {
     @Bindable var settings: SettingsManager
+    let appEnvironment: AppEnvironment?
+    #if os(iOS)
+    @State private var badgeManager = AppIconBadgeManager.shared
+    @State private var isChangingAppIconBadge = false
+    #endif
+
+    private var activeScope: FeedNoveltyScope? {
+        FeedNoveltyScope.active(in: appEnvironment)
+    }
+
+    private var currentBadgeCount: Int {
+        FeedNoveltyBadgeState.shared.count(
+            for: activeScope,
+            excluding: ChannelBadgePreferences.shared.excludedChannelIDs(in: activeScope),
+            includeShorts: settings.badgesIncludeShorts
+        )
+    }
 
     var body: some View {
         SettingsFormSection(
@@ -301,14 +303,93 @@ private struct BadgesSection: View {
                 AppLocalization.string("settings.badges.videoTab"),
                 isOn: $settings.videoTabBadgeEnabled
             )
+            #if os(iOS)
+            Toggle(
+                AppLocalization.string("settings.badges.appIcon"),
+                isOn: Binding(
+                    get: { settings.appIconBadgeEnabled },
+                    set: { updateAppIconBadge($0) }
+                )
+            )
+            .disabled(isChangingAppIconBadge)
+
+            if badgeManager.authorizationState == .denied {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(AppLocalization.string("settings.badges.appIcon.permissionDenied"))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button(AppLocalization.string("settings.notifications.openSettings")) {
+                        appEnvironment?.notificationManager.openNotificationSettings()
+                    }
+                }
+                .accessibilityElement(children: .contain)
+            }
+            #else
             Toggle(
                 AppLocalization.string("settings.badges.appIcon"),
                 isOn: $settings.appIconBadgeEnabled
+            )
+            #endif
+        }
+        #if os(iOS)
+        .task {
+            _ = await badgeManager.refreshAuthorizationState()
+        }
+        #endif
+    }
+
+    #if os(iOS)
+    private func updateAppIconBadge(_ enabled: Bool) {
+        guard !isChangingAppIconBadge else { return }
+        if !enabled {
+            settings.appIconBadgeEnabled = false
+            appEnvironment?.backgroundRefreshManager.handleAppIconBadgeEnabledChanged(false)
+            Task {
+                await badgeManager.apply(count: 0, enabled: false)
+            }
+            return
+        }
+
+        isChangingAppIconBadge = true
+        Task {
+            let isAvailable = await badgeManager.enable(count: currentBadgeCount)
+            settings.appIconBadgeEnabled = isAvailable
+            appEnvironment?.backgroundRefreshManager.handleAppIconBadgeEnabledChanged(isAvailable)
+            isChangingAppIconBadge = false
+        }
+    }
+    #endif
+}
+
+// MARK: - Badge Defaults Section
+
+private struct BadgeDefaultsSection: View {
+    @Bindable var settings: SettingsManager
+
+    var body: some View {
+        SettingsFormSection(
+            "settings.notifications.defaults.header",
+            footer: "settings.badges.defaultForNew.footer"
+        ) {
+            Toggle(
+                AppLocalization.string("settings.badges.defaultForNew"),
+                isOn: $settings.defaultBadgesForNewChannels
             )
             Toggle(
                 AppLocalization.string("settings.badges.includeShorts"),
                 isOn: $settings.badgesIncludeShorts
             )
+        }
+    }
+}
+
+// MARK: - Manage Badge Channels Section
+
+private struct ManageBadgeChannelsSection: View {
+    var body: some View {
+        SettingsFormSection {
             SettingsNavigationRow("settings.badges.manageChannels", systemImage: "person.2") {
                 ManageChannelBadgesView()
             }

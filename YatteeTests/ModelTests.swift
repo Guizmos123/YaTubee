@@ -8,7 +8,7 @@
 import Foundation
 import Nuke
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 // MARK: - Channel Avatar Request Tests
 

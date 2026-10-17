@@ -7,7 +7,7 @@
 
 import Testing
 import Foundation
-@testable import Yattee
+@testable import YaTubee
 
 @MainActor
 @Suite("Data Layer Tests")

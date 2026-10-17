@@ -31,11 +31,13 @@ struct SubscriptionsView: View {
     #if DEBUG
     @State private var noveltyBadgeDiagnostic = FeedNoveltyBadgeDiagnosticState.shared
     #endif
+    #if os(iOS)
     @State private var visibleVideoIDs: Set<String> = []
     @State private var pendingConsultedVideoIDs: Set<String> = []
     @State private var feedSyncCapsuleState: FeedSyncCapsuleState?
     @State private var feedSyncCapsuleDismissTask: Task<Void, Never>?
     @State private var hasObservedFeedSynchronization = false
+    #endif
     let isTabActive: Bool
     #if os(macOS)
     @State private var showSubscriptionsData = false
@@ -85,8 +87,22 @@ struct SubscriptionsView: View {
             return noveltyBadgeDiagnostic.remainingCount
         }
         #endif
-        return noveltyBadgeState.count(for: activeNoveltyScope)
+        return noveltyBadgeState.count(
+            for: activeNoveltyScope,
+            excluding: ChannelBadgePreferences.shared.excludedChannelIDs(in: activeNoveltyScope),
+            includeShorts: appEnvironment?.settingsManager.badgesIncludeShorts == true
+        )
     }
+
+    #if os(iOS)
+    private var isPlayerObscuringFeed: Bool {
+        guard let navigationCoordinator = appEnvironment?.navigationCoordinator else { return false }
+        return navigationCoordinator.isPlayerExpanded
+            || navigationCoordinator.isPlayerWindowVisible
+            || navigationCoordinator.isPlayerExpanding
+            || navigationCoordinator.isPlayerCollapsing
+    }
+    #endif
 
     // Grid layout configuration
     @State private var viewWidth: CGFloat = 0
@@ -533,28 +549,33 @@ struct SubscriptionsView: View {
                         #if DEBUG
                         noveltyBadgeDiagnostic.finish()
                         #endif
+                        #if os(iOS)
                         visibleVideoIDs.removeAll()
                         pendingConsultedVideoIDs.removeAll()
+                        #endif
                         // The main feed always uses local subscriptions. A remote
                         // account change must not replace its list or cache.
                         loadSubscriptions()
                     }
+                    #if os(iOS)
                     .onChange(of: isTabActive) { _, isActive in
                         consultVisibleNoveltiesIfEligible()
-                        #if os(iOS)
                         if isActive {
                             updateFeedSyncCapsule(for: feedSyncObservation)
                         } else {
                             resetFeedSyncCapsulePresentation()
                         }
-                        #endif
                     }
                     .onChange(of: scenePhase) { _, _ in
+                        consultVisibleNoveltiesIfEligible()
+                    }
+                    .onChange(of: isPlayerObscuringFeed) { _, _ in
                         consultVisibleNoveltiesIfEligible()
                     }
                     .onChange(of: activeNoveltyCount) { _, _ in
                         consultVisibleNoveltiesIfEligible()
                     }
+                    #endif
                     #if DEBUG
                     .onChange(of: Set(feedCache.videos.map { $0.id.id })) { _, availableIDs in
                         noveltyBadgeDiagnostic.finishIfContextChanged(
@@ -1543,6 +1564,7 @@ struct SubscriptionsView: View {
         guard FeedNoveltyConsultationPolicy.shouldConsult(
             isTabActive: isTabActive,
             isSceneActive: scenePhase == .active,
+            isPlayerObscuringFeed: isPlayerObscuringFeed,
             visibleVideoIDs: candidates
         ), let scope = activeNoveltyScope else { return }
 

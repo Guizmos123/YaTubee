@@ -7,7 +7,7 @@
 
 import Testing
 import Foundation
-@testable import Yattee
+@testable import YaTubee
 
 // MARK: - SponsorBlock Category Extended Tests
 

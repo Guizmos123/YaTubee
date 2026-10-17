@@ -370,6 +370,9 @@
         }
       }
     },
+    "Auto" : {
+
+    },
     "Balanced" : {
 
     },
@@ -2151,6 +2154,9 @@
           }
         }
       }
+    },
+    "Control Bar" : {
+
     },
     "Control playback with gestures when player controls are hidden." : {
 
@@ -5680,6 +5686,9 @@
           }
         }
       }
+    },
+    "Glass Background" : {
+
     },
     "High" : {
 
@@ -14835,10 +14844,16 @@
     "Seconds" : {
 
     },
+    "Sections" : {
+
+    },
     "Seek Backward" : {
 
     },
     "Seek Duration" : {
+
+    },
+    "Seek Durations" : {
 
     },
     "Seek Forward" : {
@@ -17287,6 +17302,57 @@
         }
       }
     },
+    "settings.badges.appIcon.permissionDenied" : {
+      "comment" : "Explanation shown when iOS badge permission was denied or disabled",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App icon badges are disabled in iOS Settings. Allow badges there to enable this option."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les badges de l’icône sont désactivés dans les réglages iOS. Autorisez-les pour activer cette option."
+          }
+        }
+      }
+    },
+    "settings.badges.defaultForNew" : {
+      "comment" : "Toggle controlling badge inclusion for newly followed channels",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Badges for New Subscriptions"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Badges pour les nouveaux abonnements"
+          }
+        }
+      }
+    },
+    "settings.badges.defaultForNew.footer" : {
+      "comment" : "Description for the default badge inclusion setting",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose whether newly followed channels contribute to badge counts by default. Existing channel choices are preserved."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez si les nouvelles chaînes suivies participent par défaut aux compteurs. Les choix existants sont conservés."
+          }
+        }
+      }
+    },
     "settings.badges.diagnostic.finish" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -17395,13 +17461,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose where counts for new videos will appear. Counters will be enabled in a future update."
+            "value" : "Choose where counts for unviewed new videos appear."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choisissez où apparaîtront les compteurs de nouvelles vidéos. Les compteurs seront activés dans une prochaine mise à jour."
+            "value" : "Choisissez où apparaissent les compteurs de nouvelles vidéos non consultées."
           }
         }
       }
@@ -19852,6 +19918,22 @@
         }
       }
     },
+    "settings.language.application.section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Application"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Application"
+          }
+        }
+      }
+    },
     "settings.language.english" : {
       "localizations" : {
         "en" : {
@@ -19912,6 +19994,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Langue"
+          }
+        }
+      }
+    },
+    "settings.language.video.application" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as Application"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identique à l’application"
+          }
+        }
+      }
+    },
+    "settings.language.video.original" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Originale"
+          }
+        }
+      }
+    },
+    "settings.language.video.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video Language"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Langue des vidéos"
+          }
+        }
+      }
+    },
+    "settings.language.youtubeContent.section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube Content"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contenu YouTube"
           }
         }
       }
@@ -20794,7 +20940,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gérer les notifications de chaîne"
+            "value" : "Gérer les notifications par chaîne"
           }
         }
       }
@@ -28515,6 +28661,74 @@
         }
       }
     },
+    "startup.storage.message" : {
+      "comment" : "Explanation shown when the persistent SwiftData store cannot be opened",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YaTubee could not open its local data. To prevent any data loss, the app cannot start normally."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YaTubee n'a pas pu ouvrir ses données locales. Pour éviter toute perte, l'application ne peut pas démarrer normalement."
+          }
+        }
+      }
+    },
+    "startup.storage.preservation" : {
+      "comment" : "Reassurance that startup recovery never changes the existing store",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data is deleted or reset automatically."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune donnée n'est supprimée ou réinitialisée automatiquement."
+          }
+        }
+      }
+    },
+    "startup.storage.retrying" : {
+      "comment" : "Accessibility label for the persistent storage retry progress indicator",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retrying access to local data"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle tentative d'accès aux données locales"
+          }
+        }
+      }
+    },
+    "startup.storage.title" : {
+      "comment" : "Title shown when the persistent SwiftData store cannot be opened",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Access Data"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'accéder aux données"
+          }
+        }
+      }
+    },
     "stream.adaptive" : {
       "localizations" : {
         "en" : {
@@ -28879,74 +29093,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échec de l’opération : %@"
-          }
-        }
-      }
-    },
-    "startup.storage.message" : {
-      "comment" : "Explanation shown when the persistent SwiftData store cannot be opened",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YaTubee could not open its local data. To prevent any data loss, the app cannot start normally."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YaTubee n'a pas pu ouvrir ses données locales. Pour éviter toute perte, l'application ne peut pas démarrer normalement."
-          }
-        }
-      }
-    },
-    "startup.storage.preservation" : {
-      "comment" : "Reassurance that startup recovery never changes the existing store",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No data is deleted or reset automatically."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune donnée n'est supprimée ou réinitialisée automatiquement."
-          }
-        }
-      }
-    },
-    "startup.storage.retrying" : {
-      "comment" : "Accessibility label for the persistent storage retry progress indicator",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retrying access to local data"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nouvelle tentative d'accès aux données locales"
-          }
-        }
-      }
-    },
-    "startup.storage.title" : {
-      "comment" : "Title shown when the persistent SwiftData store cannot be opened",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to Access Data"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible d'accéder aux données"
           }
         }
       }
@@ -30843,6 +30989,9 @@
 
     },
     "Top / Bottom" : {
+
+    },
+    "Top Shelf" : {
 
     },
     "Top-Left" : {

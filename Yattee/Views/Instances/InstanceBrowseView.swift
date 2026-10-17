@@ -451,6 +451,10 @@ struct InstanceBrowseView: View {
             errorMessage = nil
             Task { await startContentLoad() }
         }
+        .onChange(of: appEnvironment?.settingsManager.resolvedVideoMetadataLanguage) { oldValue, newValue in
+            guard oldValue != newValue else { return }
+            Task { await searchViewModel?.videoMetadataLanguageDidChange() }
+        }
         #if os(iOS)
         .searchable(
             text: $searchText,

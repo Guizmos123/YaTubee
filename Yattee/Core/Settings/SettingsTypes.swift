@@ -31,6 +31,31 @@ enum AppLanguage: String, CaseIterable, Codable, Sendable {
     }
 }
 
+enum VideoMetadataLanguage: String, CaseIterable, Codable, Sendable {
+    case original
+    case application
+    case french
+    case english
+
+    var displayName: LocalizedStringKey {
+        switch self {
+        case .original: "settings.language.video.original"
+        case .application: "settings.language.video.application"
+        case .french: "settings.language.french"
+        case .english: "settings.language.english"
+        }
+    }
+
+    func resolvedValue(appLanguage: AppLanguage) -> String {
+        switch self {
+        case .original: "original"
+        case .application: appLanguage.rawValue
+        case .french: AppLanguage.french.rawValue
+        case .english: AppLanguage.english.rawValue
+        }
+    }
+}
+
 // MARK: - Theme & Appearance
 
 enum AppTheme: String, CaseIterable, Codable {

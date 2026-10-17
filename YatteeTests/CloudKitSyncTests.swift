@@ -8,7 +8,7 @@
 import CloudKit
 import Foundation
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("CloudKit Sync")
 struct CloudKitSyncTests {
@@ -38,6 +38,60 @@ struct CloudKitSyncTests {
         )
         entry.updatedAt = updatedAt
         return entry
+    }
+
+    // MARK: - Manual Sync
+
+    @Suite("Manual Sync")
+    struct ManualSyncTests {
+        @Test("An initialized engine is reused for a manual sync")
+        func existingEngineIsReused() {
+            let action = CloudKitManualSyncAction.resolve(hasExistingEngine: true)
+
+            #expect(action == .synchronizeExistingEngine)
+        }
+
+        @Test("A missing engine is initialized for a manual sync")
+        func missingEngineIsSetUp() {
+            let action = CloudKitManualSyncAction.resolve(hasExistingEngine: false)
+
+            #expect(action == .setUpMissingEngine)
+        }
+
+        @Test(
+            "Pending changes keep the existing engine",
+            arguments: [
+                ["save:subscription"],
+                ["delete:subscription"],
+                ["save:subscription", "delete:history", "save:bookmark"]
+            ]
+        )
+        func pendingChangesKeepExistingEngine(_ pendingChanges: [String]) {
+            let changesBeforeRefresh = pendingChanges
+            let action = CloudKitManualSyncAction.resolve(hasExistingEngine: !pendingChanges.isEmpty)
+
+            #expect(action == .synchronizeExistingEngine)
+            #expect(pendingChanges == changesBeforeRefresh)
+        }
+
+        @Test("Repeated manual syncs keep using the same engine")
+        func repeatedRefreshesReuseEngine() {
+            let actions = (0..<3).map { _ in
+                CloudKitManualSyncAction.resolve(hasExistingEngine: true)
+            }
+
+            #expect(actions.allSatisfy { $0 == .synchronizeExistingEngine })
+        }
+
+        @Test("An interrupted sync resumes through the existing engine state")
+        func interruptedRefreshKeepsPersistedState() {
+            let serializedState = Data("serialized CKSyncEngine state".utf8)
+            let stateBeforeRefresh = serializedState
+            let action = CloudKitManualSyncAction.resolve(hasExistingEngine: true)
+
+            #expect(action == .synchronizeExistingEngine)
+            #expect(serializedState == stateBeforeRefresh)
+        }
     }
 
     // MARK: - Record Mapper

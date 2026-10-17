@@ -7,6 +7,41 @@
 
 import Foundation
 
+struct BackgroundFeedAcquisition: Sendable {
+    let videos: [Video]
+    let scope: FeedNoveltyScope
+    let observedAt: Date
+    let isCompleteSnapshot: Bool
+}
+
+enum BackgroundFeedAcquisitionError: Error, Sendable {
+    case unavailableSource
+    case failed
+}
+
+enum BackgroundRefreshPolicy {
+    static func isEnabled(notificationsEnabled: Bool, appIconBadgeEnabled: Bool) -> Bool {
+        notificationsEnabled || appIconBadgeEnabled
+    }
+
+    static func canConsume(acquiredScope: FeedNoveltyScope, activeScope: FeedNoveltyScope?) -> Bool {
+        acquiredScope == activeScope
+    }
+
+    static func canProcessNotifications(isCompleteSnapshot: Bool, hasBaseline: Bool) -> Bool {
+        isCompleteSnapshot || hasBaseline
+    }
+
+    static func shouldSubmit(
+        pendingIdentifiers: Set<String>,
+        identifier: String,
+        isEnabled: Bool,
+        isAvailable: Bool
+    ) -> Bool {
+        isEnabled && isAvailable && !pendingIdentifiers.contains(identifier)
+    }
+}
+
 struct NotificationRefreshCandidate: Equatable, Sendable {
     let deduplicationKey: String
     let legacyVideoID: String

@@ -15,7 +15,6 @@ import SwiftUI
 struct UnifiedTabView: View {
     @Environment(\.appEnvironment) private var appEnvironment
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.scenePhase) private var scenePhase
 
     @Binding var selectedTab: AppTab
 
@@ -91,16 +90,8 @@ struct UnifiedTabView: View {
     private var realNoveltyCount: Int {
         noveltyBadgeState.count(
             for: activeNoveltyScope,
-            excluding: channelBadgePreferences.excludedChannelIDs(in: activeNoveltyScope)
-        )
-    }
-
-    private var appIconBadgeSynchronizationID: AppIconBadgeSynchronizationKey {
-        AppIconBadgeSynchronizationKey(
-            scopeRawValue: activeNoveltyScope?.rawValue,
-            realNoveltyCount: realNoveltyCount,
-            isEnabled: settingsManager?.appIconBadgeEnabled == true,
-            isSceneActive: scenePhase == .active
+            excluding: channelBadgePreferences.excludedChannelIDs(in: activeNoveltyScope),
+            includeShorts: settingsManager?.badgesIncludeShorts == true
         )
     }
 
@@ -141,12 +132,6 @@ struct UnifiedTabView: View {
         .task(id: activeNoveltyScope?.rawValue) {
             guard let activeNoveltyScope else { return }
             await FeedNoveltyRegistry.shared.synchronizeBadgeState(for: activeNoveltyScope)
-        }
-        .task(id: appIconBadgeSynchronizationID) {
-            await AppIconBadgeManager.shared.synchronize(
-                realNoveltyCount: realNoveltyCount,
-                isEnabled: settingsManager?.appIconBadgeEnabled == true
-            )
         }
     }
 

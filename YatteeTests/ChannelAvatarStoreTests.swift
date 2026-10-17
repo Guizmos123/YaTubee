@@ -7,7 +7,7 @@
 
 import Foundation
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Channel Avatar Store Tests")
 struct ChannelAvatarStoreTests {

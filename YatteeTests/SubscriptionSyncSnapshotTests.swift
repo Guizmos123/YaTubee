@@ -7,7 +7,7 @@
 
 import Foundation
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Subscription Sync Snapshot Tests")
 struct SubscriptionSyncSnapshotTests {

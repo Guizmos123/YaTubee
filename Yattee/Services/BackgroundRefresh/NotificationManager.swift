@@ -22,6 +22,7 @@ final class NotificationManager: NSObject {
 
     private static let notificationCategoryIdentifier = "NEW_VIDEO"
     private static let watchActionIdentifier = "WATCH_ACTION"
+    static let notificationAuthorizationOptions: UNAuthorizationOptions = [.alert, .sound]
 
     // MARK: - State
 
@@ -59,7 +60,7 @@ final class NotificationManager: NSObject {
     func requestAuthorization() async -> Bool {
         do {
             let granted = try await UNUserNotificationCenter.current().requestAuthorization(
-                options: [.alert, .sound, .badge]
+                options: Self.notificationAuthorizationOptions
             )
             await refreshAuthorizationStatus()
             LoggingService.shared.info("Notification authorization: \(granted ? "granted" : "denied")", category: .notifications)
@@ -96,6 +97,7 @@ final class NotificationManager: NSObject {
     @discardableResult
     func sendNotification(
         for videos: [(video: Video, channelName: String)],
+        appIconBadgeCount: Int?,
         diagnosticRunID: UUID? = nil
     ) async -> Bool {
         await refreshAuthorizationStatus()
@@ -112,9 +114,51 @@ final class NotificationManager: NSObject {
 
         guard !videos.isEmpty else { return false }
 
+        let content = Self.notificationContent(
+            for: videos,
+            appIconBadgeCount: appIconBadgeCount
+        )
+
+        let request = UNNotificationRequest(
+            identifier: "feed-update-\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: nil // Deliver immediately
+        )
+
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+            let uniqueChannels = Set(videos.map { $0.channelName }).count
+            LoggingService.shared.info("Sent notification for \(videos.count) videos from \(uniqueChannels) channels", category: .notifications)
+            #if DEBUG
+            if let diagnosticRunID {
+                NotificationPipelineDiagnostic.shared.recordSubmission("accepted", runID: diagnosticRunID)
+            }
+            #endif
+            return true
+        } catch {
+            LoggingService.shared.logNotificationError("Failed to schedule notification", error: error)
+            #if DEBUG
+            if let diagnosticRunID {
+                NotificationPipelineDiagnostic.shared.recordSubmission(
+                    "error:\(String(describing: type(of: error)))",
+                    runID: diagnosticRunID
+                )
+            }
+            #endif
+            return false
+        }
+    }
+
+    static func notificationContent(
+        for videos: [(video: Video, channelName: String)],
+        appIconBadgeCount: Int?
+    ) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.sound = .default
-        content.categoryIdentifier = Self.notificationCategoryIdentifier
+        content.categoryIdentifier = notificationCategoryIdentifier
+        if let appIconBadgeCount {
+            content.badge = NSNumber(value: max(0, appIconBadgeCount))
+        }
 
         let totalCount = videos.count
 
@@ -174,34 +218,7 @@ final class NotificationManager: NSObject {
             }
         }
 
-        let request = UNNotificationRequest(
-            identifier: "feed-update-\(Date().timeIntervalSince1970)",
-            content: content,
-            trigger: nil // Deliver immediately
-        )
-
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            let uniqueChannels = Set(videos.map { $0.channelName }).count
-            LoggingService.shared.info("Sent notification for \(videos.count) videos from \(uniqueChannels) channels", category: .notifications)
-            #if DEBUG
-            if let diagnosticRunID {
-                NotificationPipelineDiagnostic.shared.recordSubmission("accepted", runID: diagnosticRunID)
-            }
-            #endif
-            return true
-        } catch {
-            LoggingService.shared.logNotificationError("Failed to schedule notification", error: error)
-            #if DEBUG
-            if let diagnosticRunID {
-                NotificationPipelineDiagnostic.shared.recordSubmission(
-                    "error:\(String(describing: type(of: error)))",
-                    runID: diagnosticRunID
-                )
-            }
-            #endif
-            return false
-        }
+        return content
     }
 
     // MARK: - Debug / Testing
@@ -217,7 +234,7 @@ final class NotificationManager: NSObject {
 
         let content = UNMutableNotificationContent()
         content.title = "Test Channel"
-        content.body = localizedFormat("notification.singleVideo %@", "Test Video Title")
+        content.body = Self.localizedFormat("notification.singleVideo %@", "Test Video Title")
         content.sound = .default
         content.categoryIdentifier = Self.notificationCategoryIdentifier
 
@@ -265,7 +282,7 @@ final class NotificationManager: NSObject {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
-    private func localizedFormat(
+    private static func localizedFormat(
         _ key: String.LocalizationValue,
         _ arguments: CVarArg...
     ) -> String {

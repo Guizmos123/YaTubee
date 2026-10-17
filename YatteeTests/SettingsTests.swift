@@ -8,7 +8,7 @@
 import Testing
 import Foundation
 import SwiftUI
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Playback Thumbnail Status Tests")
 struct PlaybackThumbnailStatusTests {
@@ -123,15 +123,24 @@ struct NotificationAndBadgePreferenceTests {
         .videoTabBadgeEnabled,
         .appIconBadgeEnabled,
         .badgesIncludeShorts,
+        .defaultBadgesForNewChannels,
     ]
 
     private func withCleanDefaults(_ body: (SettingsManager) throws -> Void) rethrows {
+        let legacyNotificationDefaultKey = "defaultNotificationsForNewChannels"
+        let previousNotificationDefault = UserDefaults.standard.object(forKey: legacyNotificationDefaultKey)
         for key in Self.keys {
             UserDefaults.standard.removeObject(forKey: key.rawValue)
         }
+        UserDefaults.standard.removeObject(forKey: legacyNotificationDefaultKey)
         defer {
             for key in Self.keys {
                 UserDefaults.standard.removeObject(forKey: key.rawValue)
+            }
+            if let previousNotificationDefault {
+                UserDefaults.standard.set(previousNotificationDefault, forKey: legacyNotificationDefaultKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: legacyNotificationDefaultKey)
             }
         }
         try body(SettingsManager())
@@ -144,6 +153,7 @@ struct NotificationAndBadgePreferenceTests {
             #expect(settings.videoTabBadgeEnabled == true)
             #expect(settings.appIconBadgeEnabled == false)
             #expect(settings.badgesIncludeShorts == false)
+            #expect(settings.defaultBadgesForNewChannels == true)
         }
     }
 
@@ -168,6 +178,42 @@ struct NotificationAndBadgePreferenceTests {
             settings.appIconBadgeEnabled = true
             #expect(settings.videoTabBadgeEnabled == false)
             #expect(settings.appIconBadgeEnabled == true)
+        }
+    }
+
+    @Test("New-subscription badge default is independent from notifications")
+    func badgeSubscriptionDefaultIsIndependent() {
+        withCleanDefaults { settings in
+            settings.defaultNotificationsForNewChannels = false
+            settings.defaultBadgesForNewChannels = false
+            #expect(!settings.defaultNotificationsForNewChannels)
+            #expect(!settings.defaultBadgesForNewChannels)
+
+            settings.defaultNotificationsForNewChannels = true
+            #expect(settings.defaultNotificationsForNewChannels)
+            #expect(!settings.defaultBadgesForNewChannels)
+        }
+    }
+
+    @Test("App icon badge preference does not change local notification preferences")
+    func appIconBadgeDoesNotChangeNotifications() {
+        let notificationKey = "backgroundNotificationsEnabled"
+        let previousValue = UserDefaults.standard.object(forKey: notificationKey)
+        defer {
+            if let previousValue {
+                UserDefaults.standard.set(previousValue, forKey: notificationKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: notificationKey)
+            }
+        }
+
+        withCleanDefaults { settings in
+            settings.backgroundNotificationsEnabled = true
+            settings.appIconBadgeEnabled = true
+            #expect(settings.backgroundNotificationsEnabled)
+
+            settings.appIconBadgeEnabled = false
+            #expect(settings.backgroundNotificationsEnabled)
         }
     }
 }

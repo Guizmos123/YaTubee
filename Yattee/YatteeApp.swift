@@ -82,6 +82,19 @@ struct YatteeApp: App {
                 ContentView()
                 .appEnvironment(appEnvironment)
                 .environment(\.locale, appEnvironment.settingsManager.appLanguage.locale)
+                .onReceive(NotificationCenter.default.publisher(for: .subscriptionsDidChange)) { notification in
+                    guard let change = notification.userInfo?[SubscriptionChange.userInfoKey] as? SubscriptionChange,
+                          !change.addedSubscriptions.isEmpty,
+                          let scope = FeedNoveltyScope.active(in: appEnvironment) else { return }
+                    ChannelBadgePreferences.shared.applyDefault(
+                        includeByDefault: appEnvironment.settingsManager.defaultBadgesForNewChannels,
+                        channelIDs: Set(change.addedSubscriptions.map(\.channelID)),
+                        in: scope
+                    )
+                }
+                #if os(iOS)
+                .synchronizeAppIconBadge()
+                #endif
                 #if !os(tvOS)
                 .tint(appEnvironment.settingsManager.resolvedAccentColor)
                 #endif
@@ -404,7 +417,10 @@ struct YatteeApp: App {
                     }
                 }
 
-                if appEnvironment.settingsManager.backgroundNotificationsEnabled {
+                if BackgroundRefreshPolicy.isEnabled(
+                    notificationsEnabled: appEnvironment.settingsManager.backgroundNotificationsEnabled,
+                    appIconBadgeEnabled: appEnvironment.settingsManager.appIconBadgeEnabled
+                ) {
                     appEnvironment.backgroundRefreshManager.scheduleIOSBackgroundRefresh()
                 }
                 #else
@@ -449,9 +465,12 @@ struct YatteeApp: App {
         guard !backgroundTasksRegistered else { return }
         backgroundTasksRegistered = true
 
-        // If notifications are enabled, schedule the first refresh
+        // Notifications and the icon badge share the same silent Feed acquisition.
         #if os(iOS)
-        if appEnvironment.settingsManager.backgroundNotificationsEnabled {
+        if BackgroundRefreshPolicy.isEnabled(
+            notificationsEnabled: appEnvironment.settingsManager.backgroundNotificationsEnabled,
+            appIconBadgeEnabled: appEnvironment.settingsManager.appIconBadgeEnabled
+        ) {
             appEnvironment.backgroundRefreshManager.scheduleIOSBackgroundRefresh()
         }
         #endif

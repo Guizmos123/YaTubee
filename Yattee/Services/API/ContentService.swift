@@ -43,27 +43,44 @@ actor ContentService: ContentServiceProtocol {
 
     /// Credentials manager for fetching basic auth headers on demand.
     private let basicAuthCredentialsManager: BasicAuthCredentialsManager?
+    private let videoMetadataLanguageProvider: @Sendable () async -> String
 
-    init(httpClient: HTTPClient, basicAuthCredentialsManager: BasicAuthCredentialsManager? = nil) {
+    init(
+        httpClient: HTTPClient,
+        basicAuthCredentialsManager: BasicAuthCredentialsManager? = nil,
+        videoMetadataLanguageProvider: @escaping @Sendable () async -> String = { "original" }
+    ) {
         // Legacy init - create factory internally
         self.httpClientFactory = HTTPClientFactory()
         self.defaultHTTPClient = httpClient
         self.defaultInvidiousAPI = InvidiousAPI(httpClient: httpClient)
         self.defaultPipedAPI = PipedAPI(httpClient: httpClient)
         self.defaultPeerTubeAPI = PeerTubeAPI(httpClient: httpClient)
-        self.defaultYatteeServerAPI = YatteeServerAPI(httpClient: httpClient)
+        self.defaultYatteeServerAPI = YatteeServerAPI(
+            httpClient: httpClient,
+            videoMetadataLanguageProvider: videoMetadataLanguageProvider
+        )
         self.basicAuthCredentialsManager = basicAuthCredentialsManager
+        self.videoMetadataLanguageProvider = videoMetadataLanguageProvider
     }
 
-    init(httpClientFactory: HTTPClientFactory, basicAuthCredentialsManager: BasicAuthCredentialsManager? = nil) {
+    init(
+        httpClientFactory: HTTPClientFactory,
+        basicAuthCredentialsManager: BasicAuthCredentialsManager? = nil,
+        videoMetadataLanguageProvider: @escaping @Sendable () async -> String = { "original" }
+    ) {
         self.httpClientFactory = httpClientFactory
         // Create default client for instances that don't need insecure SSL
         self.defaultHTTPClient = httpClientFactory.createClient(allowInvalidCertificates: false)
         self.defaultInvidiousAPI = InvidiousAPI(httpClient: defaultHTTPClient)
         self.defaultPipedAPI = PipedAPI(httpClient: defaultHTTPClient)
         self.defaultPeerTubeAPI = PeerTubeAPI(httpClient: defaultHTTPClient)
-        self.defaultYatteeServerAPI = YatteeServerAPI(httpClient: defaultHTTPClient)
+        self.defaultYatteeServerAPI = YatteeServerAPI(
+            httpClient: defaultHTTPClient,
+            videoMetadataLanguageProvider: videoMetadataLanguageProvider
+        )
         self.basicAuthCredentialsManager = basicAuthCredentialsManager
+        self.videoMetadataLanguageProvider = videoMetadataLanguageProvider
     }
 
     // MARK: - Routing
@@ -97,13 +114,19 @@ actor ContentService: ContentServiceProtocol {
     /// Returns a YatteeServerAPI configured for the instance's SSL and auth requirements.
     private func yatteeServerAPI(for instance: Instance) async -> YatteeServerAPI {
         if let authClient = await httpClientWithBasicAuth(for: instance) {
-            return YatteeServerAPI(httpClient: authClient)
+            return YatteeServerAPI(
+                httpClient: authClient,
+                videoMetadataLanguageProvider: videoMetadataLanguageProvider
+            )
         }
         if !instance.allowInvalidCertificates {
             return defaultYatteeServerAPI
         }
         let insecureClient = httpClientFactory.createClient(for: instance)
-        return YatteeServerAPI(httpClient: insecureClient)
+        return YatteeServerAPI(
+            httpClient: insecureClient,
+            videoMetadataLanguageProvider: videoMetadataLanguageProvider
+        )
     }
 
     /// Returns an InvidiousAPI configured for the instance's SSL and auth requirements.

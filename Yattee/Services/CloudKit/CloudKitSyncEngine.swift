@@ -53,6 +53,19 @@ private enum ApplyRecordResult {
     case failed
 }
 
+// MARK: - Manual Sync
+
+/// Chooses how a manual sync is performed without replacing an active
+/// `CKSyncEngine`, whose state owns the durable pending save/delete queue.
+enum CloudKitManualSyncAction: Equatable, Sendable {
+    case synchronizeExistingEngine
+    case setUpMissingEngine
+
+    static func resolve(hasExistingEngine: Bool) -> Self {
+        hasExistingEngine ? .synchronizeExistingEngine : .setUpMissingEngine
+    }
+}
+
 /// Main CloudKit sync engine that manages bidirectional sync between local SwiftData and iCloud.
 @MainActor
 @Observable
@@ -1414,34 +1427,26 @@ final class CloudKitSyncEngine: @unchecked Sendable {
         }
     }
 
-    /// Refreshes sync by clearing local sync state (tokens) without deleting the CloudKit zone.
-    /// This forces CKSyncEngine to re-fetch all changes from scratch on next sync.
-    /// Unlike `resetSync()`, this preserves all CloudKit records.
+    /// Immediately fetches remote changes and sends local pending changes.
+    ///
+    /// An existing engine must be reused: its state owns pending saves/deletes
+    /// and the serialized tokens needed to resume safely after an interruption.
     func refreshSync() async {
         guard isSyncEnabled else {
             LoggingService.shared.logCloudKit("Refresh sync skipped: sync disabled")
             return
         }
 
-        LoggingService.shared.logCloudKit("Refreshing sync state (clearing local tokens)...")
+        LoggingService.shared.logCloudKit("Starting manual CloudKit sync...")
 
-        // Clear local sync state so CKSyncEngine fetches everything fresh
-        UserDefaults.standard.removeObject(forKey: syncStateKey)
+        switch CloudKitManualSyncAction.resolve(hasExistingEngine: syncEngine != nil) {
+        case .synchronizeExistingEngine:
+            await sync()
+        case .setUpMissingEngine:
+            await setupSyncEngine()
+        }
 
-        // Tear down existing engine
-        debounceTimer?.invalidate()
-        debounceTimer = nil
-        pendingChangesBuffer.removeAll()
-        conflictResolvedRecords.removeAll()
-        retryCount.removeAll()
-        syncEngine = nil
-        updatePendingCount()
-
-        // Reinitialize - with the persisted state cleared above, setup starts
-        // from nil state serialization (forces full fetch)
-        await setupSyncEngine()
-
-        LoggingService.shared.logCloudKit("Refresh sync completed")
+        LoggingService.shared.logCloudKit("Manual CloudKit sync completed")
     }
 
     /// Clear all sync state and reset. For testing/debugging only.

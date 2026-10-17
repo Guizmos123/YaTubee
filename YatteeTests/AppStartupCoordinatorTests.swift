@@ -8,7 +8,7 @@
 import Foundation
 import SwiftData
 import Testing
-@testable import Yattee
+@testable import YaTubee
 
 @MainActor
 @Suite("App Startup Coordinator")

@@ -13,9 +13,20 @@
 /// Uses Invidious-compatible JSON format for responses.
 actor YatteeServerAPI: InstanceAPI {
     private let httpClient: HTTPClient
+    private let videoMetadataLanguageProvider: @Sendable () async -> String
 
-    init(httpClient: HTTPClient) {
+    init(
+        httpClient: HTTPClient,
+        videoMetadataLanguageProvider: @escaping @Sendable () async -> String = { "original" }
+    ) {
         self.httpClient = httpClient
+        self.videoMetadataLanguageProvider = videoMetadataLanguageProvider
+    }
+
+    private func languageQuery(_ additionalParameters: [String: String] = [:]) async -> [String: String] {
+        var query = additionalParameters
+        query["lang"] = await videoMetadataLanguageProvider()
+        return query
     }
 
     // MARK: - InstanceAPI
@@ -51,7 +62,7 @@ actor YatteeServerAPI: InstanceAPI {
             queryParams["duration"] = filters.duration.rawValue
         }
 
-        let endpoint = GenericEndpoint.get("/api/v1/search", query: queryParams)
+        let endpoint = GenericEndpoint.get("/api/v1/search", query: await languageQuery(queryParams))
         let response: [YatteeSearchItem] = try await httpClient.fetch(endpoint, baseURL: instance.url)
 
         // Helper to detect playlist IDs that may be returned as "video" type
@@ -116,7 +127,7 @@ actor YatteeServerAPI: InstanceAPI {
     }
 
     func video(id: String, instance: Instance) async throws -> Video {
-        let endpoint = GenericEndpoint.get("/api/v1/videos/\(id)")
+        let endpoint = GenericEndpoint.get("/api/v1/videos/\(id)", query: await languageQuery())
         let response: YatteeVideoDetails = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return response.toVideo()
     }
@@ -132,7 +143,7 @@ actor YatteeServerAPI: InstanceAPI {
         if let continuation {
             query["continuation"] = continuation
         }
-        let endpoint = GenericEndpoint.get("/api/v1/channels/\(id)/videos", query: query)
+        let endpoint = GenericEndpoint.get("/api/v1/channels/\(id)/videos", query: await languageQuery(query))
         let response: YatteeChannelVideosWithContinuation = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return ChannelVideosPage(
             videos: response.videos.map { $0.toVideo() },
@@ -158,7 +169,7 @@ actor YatteeServerAPI: InstanceAPI {
         if let continuation {
             query["continuation"] = continuation
         }
-        let endpoint = GenericEndpoint.get("/api/v1/channels/\(id)/shorts", query: query)
+        let endpoint = GenericEndpoint.get("/api/v1/channels/\(id)/shorts", query: await languageQuery(query))
         let response: YatteeChannelVideosWithContinuation = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return ChannelVideosPage(
             videos: response.videos.map { $0.toVideo() },
@@ -207,22 +218,22 @@ actor YatteeServerAPI: InstanceAPI {
     }
 
     func streams(videoID: String, instance: Instance) async throws -> [Stream] {
-        let endpoint = GenericEndpoint.get("/api/v1/videos/\(videoID)")
+        let endpoint = GenericEndpoint.get("/api/v1/videos/\(videoID)", query: await languageQuery())
         let response: YatteeVideoDetails = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return response.toStreams()
     }
 
     func captions(videoID: String, instance: Instance) async throws -> [Caption] {
-        let endpoint = GenericEndpoint.get("/api/v1/videos/\(videoID)")
+        let endpoint = GenericEndpoint.get("/api/v1/videos/\(videoID)", query: await languageQuery())
         let response: YatteeVideoDetails = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return response.toCaptions(baseURL: instance.url)
     }
 
     func channelSearch(id: String, query: String, instance: Instance, page: Int) async throws -> ChannelSearchPage {
-        let endpoint = GenericEndpoint.get("/api/v1/channels/\(id)/search", query: [
+        let endpoint = GenericEndpoint.get("/api/v1/channels/\(id)/search", query: await languageQuery([
             "q": query,
             "page": String(page)
-        ])
+        ]))
         // Yattee Server returns {"videos": [...]} wrapper, not a plain array
         let response: YatteeChannelSearchResponse = try await httpClient.fetch(endpoint, baseURL: instance.url)
 
@@ -244,7 +255,7 @@ actor YatteeServerAPI: InstanceAPI {
     }
 
     func videoWithStreamsAndCaptionsAndStoryboards(id: String, instance: Instance) async throws -> (video: Video, streams: [Stream], captions: [Caption], storyboards: [Storyboard]) {
-        let endpoint = GenericEndpoint.get("/api/v1/videos/\(id)")
+        let endpoint = GenericEndpoint.get("/api/v1/videos/\(id)", query: await languageQuery())
         let response: YatteeVideoDetails = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return (
             video: response.toVideo(),
@@ -272,7 +283,7 @@ actor YatteeServerAPI: InstanceAPI {
     func proxyStreams(videoID: String, instance: Instance, mode: ProxyMode) async throws -> [Stream] {
         let endpoint = GenericEndpoint.get(
             "/api/v1/videos/\(videoID)",
-            query: ["proxy": "true", "proxy_mode": mode.rawValue]
+            query: await languageQuery(["proxy": "true", "proxy_mode": mode.rawValue])
         )
         let response: YatteeVideoDetails = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return response.toStreams()
@@ -282,7 +293,7 @@ actor YatteeServerAPI: InstanceAPI {
     func videoWithProxyStreamsAndCaptionsAndStoryboards(id: String, instance: Instance, mode: ProxyMode) async throws -> (video: Video, streams: [Stream], captions: [Caption], storyboards: [Storyboard]) {
         let endpoint = GenericEndpoint.get(
             "/api/v1/videos/\(id)",
-            query: ["proxy": "true", "proxy_mode": mode.rawValue]
+            query: await languageQuery(["proxy": "true", "proxy_mode": mode.rawValue])
         )
         let response: YatteeVideoDetails = try await httpClient.fetch(endpoint, baseURL: instance.url)
         return (
@@ -359,7 +370,7 @@ actor YatteeServerAPI: InstanceAPI {
         var responses: [StatelessFeedResponse] = []
         for chunk in channels.chunked(into: Self.maxChannelsPerFeedRequest) {
             let body = StatelessFeedRequest(channels: chunk, limit: limit, offset: offset)
-            let endpoint = GenericEndpoint.post("/api/v1/feed", body: body)
+            let endpoint = GenericEndpoint.post("/api/v1/feed", query: await languageQuery(), body: body)
             responses.append(try await httpClient.fetch(endpoint, baseURL: instance.url))
         }
         return StatelessFeedResponse.merged(responses, limit: limit)

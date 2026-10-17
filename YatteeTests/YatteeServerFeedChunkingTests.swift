@@ -8,7 +8,7 @@
 
 import Testing
 import Foundation
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Yattee Server Feed Chunking Tests")
 struct YatteeServerFeedChunkingTests {

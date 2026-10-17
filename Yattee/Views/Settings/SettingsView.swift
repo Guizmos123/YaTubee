@@ -439,9 +439,19 @@ private struct LanguageSettingsView: View {
     var body: some View {
         SettingsFormContainer {
             if let settings = appEnvironment?.settingsManager {
-                SettingsFormSection(footer: "settings.language.footer") {
+                SettingsFormSection("settings.language.application.section", footer: "settings.language.footer") {
                     Picker("settings.language.title", selection: Bindable(settings).appLanguage) {
                         ForEach(AppLanguage.allCases, id: \.self) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+
+                SettingsFormSection("settings.language.youtubeContent.section") {
+                    Picker("settings.language.video.title", selection: Bindable(settings).videoMetadataLanguage) {
+                        ForEach(VideoMetadataLanguage.allCases, id: \.self) { language in
                             Text(language.displayName).tag(language)
                         }
                     }

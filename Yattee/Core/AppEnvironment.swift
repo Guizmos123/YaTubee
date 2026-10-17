@@ -109,7 +109,13 @@ final class AppEnvironment {
         basicAuthCreds.settingsManager = settings
         self.basicAuthCredentialsManager = basicAuthCreds
 
-        let contentSvc = ContentService(httpClient: client, basicAuthCredentialsManager: basicAuthCreds)
+        let contentSvc = ContentService(
+            httpClient: client,
+            basicAuthCredentialsManager: basicAuthCreds,
+            videoMetadataLanguageProvider: { @MainActor [weak settings] in
+                settings?.resolvedVideoMetadataLanguage ?? "original"
+            }
+        )
         self.contentService = contentSvc
         self.instanceDetector = InstanceDetector(httpClient: client)
         self.navigationCoordinator = navigationCoordinator ?? NavigationCoordinator()

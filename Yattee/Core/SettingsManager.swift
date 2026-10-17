@@ -27,6 +27,7 @@ final class SettingsManager {
 
     // Theme
     var _appLanguage: AppLanguage?
+    var _videoMetadataLanguage: VideoMetadataLanguage?
     var _theme: AppTheme?
     var _accentColor: AccentColor?
     var _customAccentColor: String?
@@ -189,6 +190,7 @@ final class SettingsManager {
     var _videoTabBadgeEnabled: Bool?
     var _appIconBadgeEnabled: Bool?
     var _badgesIncludeShorts: Bool?
+    var _defaultBadgesForNewChannels: Bool?
     var _lastBackgroundCheck: Date?
     var _clipboardURLDetectionEnabled: Bool?
     var _incognitoModeEnabled: Bool?
@@ -428,6 +430,7 @@ final class SettingsManager {
     /// Clears cached values to force re-read from storage
     func clearCache() {
         _appLanguage = nil
+        _videoMetadataLanguage = nil
         _theme = nil
         _accentColor = nil
         _customAccentColor = nil
@@ -541,6 +544,7 @@ final class SettingsManager {
         _videoTabBadgeEnabled = nil
         _appIconBadgeEnabled = nil
         _badgesIncludeShorts = nil
+        _defaultBadgesForNewChannels = nil
         _lastBackgroundCheck = nil
         _clipboardURLDetectionEnabled = nil
         _incognitoModeEnabled = nil

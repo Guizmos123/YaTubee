@@ -8,7 +8,7 @@
 import Foundation
 import Testing
 
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Chapter Integration")
 struct ChapterIntegrationTests {

@@ -118,9 +118,15 @@ struct GenericEndpoint: Endpoint, Sendable {
     }
 
     /// Creates a POST endpoint with an encodable body.
-    nonisolated static func post<T: Encodable>(_ path: String, body: T, encoder: JSONEncoder = JSONEncoder()) -> GenericEndpoint {
+    nonisolated static func post<T: Encodable>(
+        _ path: String,
+        query: [String: String] = [:],
+        body: T,
+        encoder: JSONEncoder = JSONEncoder()
+    ) -> GenericEndpoint {
         let bodyData = try? encoder.encode(body)
-        return GenericEndpoint(path: path, method: .post, body: bodyData)
+        let queryItems = query.isEmpty ? nil : query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        return GenericEndpoint(path: path, method: .post, queryItems: queryItems, body: bodyData)
     }
 
     /// Creates a POST endpoint without a body (e.g., for subscription endpoints).

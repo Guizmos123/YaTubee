@@ -7,7 +7,7 @@
 
 import Testing
 import Foundation
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("MPVTrack sample-rate formatting")
 struct MPVTrackFormatTests {

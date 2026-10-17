@@ -13,6 +13,33 @@ import UIKit
 import AppKit
 #endif
 
+private nonisolated final class FeedRefreshWaiter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+    private var result: Bool?
+
+    func install(_ continuation: CheckedContinuation<Bool, Never>) {
+        lock.lock()
+        if let result {
+            lock.unlock()
+            continuation.resume(returning: result)
+        } else {
+            self.continuation = continuation
+            lock.unlock()
+        }
+    }
+
+    func finish(_ result: Bool) {
+        lock.lock()
+        guard self.result == nil else { lock.unlock(); return }
+        self.result = result
+        let continuation = self.continuation
+        self.continuation = nil
+        lock.unlock()
+        continuation?.resume(returning: result)
+    }
+}
+
 /// State of feed loading.
 enum FeedLoadState: Equatable {
     case idle
@@ -87,28 +114,67 @@ enum YatteeServerFeedSnapshot {
 final class FeedRefreshSingleFlight {
     private var activeTask: Task<Void, Never>?
     private var activeGeneration = 0
+    private var activeStartedInBackground = false
+    private var activeHasForegroundParticipant = false
 
-    func run(_ operation: @escaping @MainActor @Sendable () async -> Void) async {
+    @discardableResult
+    func run(
+        foregroundParticipant: Bool = true,
+        _ operation: @escaping @MainActor @Sendable () async -> Void
+    ) async -> Bool {
         if let activeTask {
-            await activeTask.value
-            return
+            if foregroundParticipant { activeHasForegroundParticipant = true }
+            return await wait(for: activeTask, generation: activeGeneration, foregroundParticipant: foregroundParticipant)
         }
 
         activeGeneration += 1
         let generation = activeGeneration
+        activeStartedInBackground = !foregroundParticipant
+        activeHasForegroundParticipant = foregroundParticipant
         let task = Task { @MainActor [weak self] in
             await operation()
             self?.finish(generation: generation)
         }
         activeTask = task
+        return await wait(for: task, generation: generation, foregroundParticipant: foregroundParticipant)
+    }
 
-        await task.value
+    private func wait(
+        for task: Task<Void, Never>,
+        generation: Int,
+        foregroundParticipant: Bool
+    ) async -> Bool {
+        let waiter = FeedRefreshWaiter()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                waiter.install(continuation)
+                Task {
+                    await task.value
+                    waiter.finish(true)
+                }
+            }
+        } onCancel: {
+            waiter.finish(false)
+            guard !foregroundParticipant else { return }
+            Task { @MainActor [weak self] in
+                self?.cancelBackgroundRefreshIfExclusivelyOwned(generation: generation)
+            }
+        }
     }
 
     private func finish(generation: Int) {
         if activeGeneration == generation {
             activeTask = nil
+            activeStartedInBackground = false
+            activeHasForegroundParticipant = false
         }
+    }
+
+    private func cancelBackgroundRefreshIfExclusivelyOwned(generation: Int) {
+        guard generation == activeGeneration,
+              activeStartedInBackground,
+              !activeHasForegroundParticipant else { return }
+        activeTask?.cancel()
     }
 }
 
@@ -372,10 +438,55 @@ final class SubscriptionFeedCache {
     // MARK: - Refresh
 
     /// Refreshes the feed from network.
-    /// Concurrent callers await the same unstructured task. Cancelling one
-    /// caller therefore does not cancel the shared network operation.
+    /// Concurrent callers await the same unstructured task. Foreground callers
+    /// never cancel shared work when their own waiter is cancelled.
     func refresh(using appEnvironment: AppEnvironment) async {
-        await refreshSingleFlight.run { [self] in
+        _ = await performRefresh(using: appEnvironment, foregroundParticipant: true)
+    }
+
+    /// Reuses the foreground Feed pipeline without presenting refresh UI.
+    /// A foreground caller joining the same cycle keeps ownership if the
+    /// background task expires.
+    func synchronizeSilently(using appEnvironment: AppEnvironment) async throws -> BackgroundFeedAcquisition {
+        let observedAt = Date()
+        let completed = await performRefresh(using: appEnvironment, foregroundParticipant: false)
+        guard completed else {
+            cancelPolling()
+            throw CancellationError()
+        }
+        try Task.checkCancellation()
+
+        let source = LocalFeedSource.resolve(
+            from: appEnvironment.instancesManager.instances,
+            preference: appEnvironment.settingsManager.localFeedSourcePreference
+        )
+        guard let scope = FeedNoveltyScope.localFeed(source: source) else {
+            throw BackgroundFeedAcquisitionError.unavailableSource
+        }
+        let isComplete: Bool
+        switch feedLoadState {
+        case .ready:
+            isComplete = true
+        case .partiallyLoaded:
+            isComplete = false
+        case .error:
+            throw BackgroundFeedAcquisitionError.failed
+        case .idle, .loading, .loadingMore:
+            throw BackgroundFeedAcquisitionError.failed
+        }
+        return BackgroundFeedAcquisition(
+            videos: videos,
+            scope: scope,
+            observedAt: observedAt,
+            isCompleteSnapshot: isComplete
+        )
+    }
+
+    private func performRefresh(
+        using appEnvironment: AppEnvironment,
+        foregroundParticipant: Bool
+    ) async -> Bool {
+        await refreshSingleFlight.run(foregroundParticipant: foregroundParticipant) { [self] in
             repeat {
                 let requestedScope = cacheScope(using: appEnvironment)
                 LoggingService.shared.debug("Starting feed refresh from local subscriptions", category: .general)
@@ -397,7 +508,7 @@ final class SubscriptionFeedCache {
             preference: appEnvironment.settingsManager.localFeedSourcePreference
         ) {
         case .yatteeServer(let serverInstance):
-            await activateCacheScope("local:yatteeServer:\(serverInstance.id.uuidString)")
+            await activateCacheScope(cacheScope(using: appEnvironment))
             LoggingService.shared.info("Refreshing feed using Yattee Server: \(serverInstance.url.absoluteString)", category: .general)
             await refreshFromStatelessServer(instance: serverInstance, using: appEnvironment)
 
@@ -803,7 +914,12 @@ final class SubscriptionFeedCache {
             if let authHeader = appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: instance) {
                 await httpClient.setDefaultHeaders(["Authorization": authHeader])
             }
-            let yatteeServerAPI = YatteeServerAPI(httpClient: httpClient)
+            let yatteeServerAPI = YatteeServerAPI(
+                httpClient: httpClient,
+                videoMetadataLanguageProvider: { @MainActor [weak settings = appEnvironment.settingsManager] in
+                    settings?.resolvedVideoMetadataLanguage ?? "original"
+                }
+            )
             LoggingService.shared.debug("refreshFromStatelessServer: Calling postFeed for \(channelRequests.count) channels", category: .general)
             let response = try await yatteeServerAPI.postFeed(
                 channels: channelRequests,
@@ -896,7 +1012,12 @@ final class SubscriptionFeedCache {
         if let authHeader = appEnvironment.basicAuthCredentialsManager.basicAuthHeader(for: instance) {
             await httpClient.setDefaultHeaders(["Authorization": authHeader])
         }
-        let yatteeServerAPI = YatteeServerAPI(httpClient: httpClient)
+        let yatteeServerAPI = YatteeServerAPI(
+            httpClient: httpClient,
+            videoMetadataLanguageProvider: { @MainActor [weak settings = appEnvironment.settingsManager] in
+                settings?.resolvedVideoMetadataLanguage ?? "original"
+            }
+        )
 
         let maxRetries = 5
         var retryCount = 0
@@ -1209,7 +1330,8 @@ final class SubscriptionFeedCache {
             preference: appEnvironment.settingsManager.localFeedSourcePreference
         ) {
             case .yatteeServer(let instance):
-                return "local:yatteeServer:\(instance.id.uuidString)"
+                let language = appEnvironment.settingsManager.resolvedVideoMetadataLanguage
+                return "local:yatteeServer:\(instance.id.uuidString):lang:\(language)"
             case .invidious(let instance):
                 return "local:invidious:\(instance.id.uuidString)"
             case .unavailable:
@@ -1218,7 +1340,7 @@ final class SubscriptionFeedCache {
     }
 
     private func canAdoptLegacyCache(for scope: String) -> Bool {
-        !scope.hasPrefix("local:invidious:")
+        !scope.hasPrefix("local:invidious:") && !scope.contains(":lang:")
     }
 
     private func videosForActiveSubscriptions(

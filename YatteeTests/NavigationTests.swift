@@ -8,7 +8,7 @@
 import Testing
 import Foundation
 import SwiftUI
-@testable import Yattee
+@testable import YaTubee
 
 // MARK: - URLRouter Tests
 

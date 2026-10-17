@@ -108,6 +108,8 @@ struct ChannelView: View {
     @State private var hasSearched = false  // True after user submits a search query
     @State private var searchResults: ChannelSearchPage = .empty
     @State private var isSearchLoading = false
+    @State private var metadataLanguageGeneration = 0
+    @State private var activeVideoMetadataLanguage: String?
 
     // External channel state (page-based pagination for extracted channels)
     @State private var externalCurrentPage = 1
@@ -224,6 +226,10 @@ struct ChannelView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .watchHistoryDidChange)) { _ in
             loadWatchEntries()
+        }
+        .onChange(of: appEnvironment?.settingsManager.resolvedVideoMetadataLanguage) { oldValue, newValue in
+            guard oldValue != newValue else { return }
+            handleVideoMetadataLanguageChange()
         }
     }
 
@@ -1978,6 +1984,7 @@ struct ChannelView: View {
               let instance = instanceForSource() else {
             return
         }
+        let generationAtStart = metadataLanguageGeneration
 
         isSearchLoading = true
         hasSearched = true
@@ -1989,11 +1996,13 @@ struct ChannelView: View {
                 instance: instance,
                 page: 1
             )
+            guard isCurrentMetadataRequest(generationAtStart) else { return }
             // Deduplicate items (API may return duplicates)
             var seenIDs = Set<String>()
             let uniqueItems = results.items.filter { seenIDs.insert($0.id).inserted }
             searchResults = ChannelSearchPage(items: uniqueItems, nextPage: results.nextPage)
         } catch {
+            guard isCurrentMetadataRequest(generationAtStart) else { return }
             // On error, show empty results
             searchResults = .empty
         }
@@ -2008,6 +2017,7 @@ struct ChannelView: View {
               !isSearchLoading else {
             return
         }
+        let generationAtStart = metadataLanguageGeneration
 
         isSearchLoading = true
 
@@ -2018,6 +2028,7 @@ struct ChannelView: View {
                 instance: instance,
                 page: nextPage
             )
+            guard isCurrentMetadataRequest(generationAtStart) else { return }
 
             // Append new items, avoiding duplicates
             let existingIDs = Set(searchResults.items.map(\.id))
@@ -2028,6 +2039,7 @@ struct ChannelView: View {
                 nextPage: newItems.isEmpty ? nil : moreResults.nextPage
             )
         } catch {
+            guard isCurrentMetadataRequest(generationAtStart) else { return }
             // On error, stop loading more
         }
 
@@ -2070,9 +2082,46 @@ struct ChannelView: View {
         appEnvironment?.instancesManager.instance(for: source)
     }
 
+    private var currentVideoMetadataLanguage: String? {
+        guard !isExternalChannel, instanceForSource()?.type == .yatteeServer else { return nil }
+        return appEnvironment?.settingsManager.resolvedVideoMetadataLanguage ?? "original"
+    }
+
+    private func isCurrentMetadataRequest(_ generation: Int) -> Bool {
+        generation == metadataLanguageGeneration
+            && activeVideoMetadataLanguage == currentVideoMetadataLanguage
+    }
+
     // MARK: - Data Loading
 
+    private func handleVideoMetadataLanguageChange() {
+        let newLanguage = currentVideoMetadataLanguage
+        guard newLanguage != activeVideoMetadataLanguage else { return }
+
+        activeVideoMetadataLanguage = newLanguage
+        metadataLanguageGeneration += 1
+        isLoadingMore = false
+        isSearchLoading = false
+
+        videos = []
+        videosContinuation = nil
+        videosLoaded = false
+        shorts = []
+        shortsContinuation = nil
+        shortsLoaded = false
+        searchResults = .empty
+
+        Task {
+            if isSearchActive && hasSearched && !searchText.isEmpty {
+                await performSearch()
+            } else {
+                await loadTabContentIfNeeded(selectedTab)
+            }
+        }
+    }
+
     private func loadChannel() async {
+        activeVideoMetadataLanguage = currentVideoMetadataLanguage
         if isExternalChannel {
             await loadExternalChannel()
         } else {
@@ -2090,6 +2139,7 @@ struct ChannelView: View {
 
         isLoading = true
         errorMessage = nil
+        let generationAtStart = metadataLanguageGeneration
 
         // Load subscription state: optimistic from the local store, then
         // corrected by the active provider (server accounts differ from local)
@@ -2155,15 +2205,17 @@ struct ChannelView: View {
             }
 
             // Handle videos result
-            switch videosResult {
-            case .success(let videosPage):
-                videos = videosPage.videos
-                videosContinuation = videosPage.continuation
-                videosLoaded = true
+            if isCurrentMetadataRequest(generationAtStart) {
+                switch videosResult {
+                case .success(let videosPage):
+                    videos = videosPage.videos
+                    videosContinuation = videosPage.continuation
+                    videosLoaded = true
 
-            case .failure(let error):
-                videosAPIFailed = true
-                LoggingService.shared.error("[ChannelView] Videos API failed", category: .api, details: error.localizedDescription)
+                case .failure(let error):
+                    videosAPIFailed = true
+                    LoggingService.shared.error("[ChannelView] Videos API failed", category: .api, details: error.localizedDescription)
+                }
             }
 
             // Only show error if both APIs failed and we have no cached data
@@ -2270,6 +2322,7 @@ struct ChannelView: View {
               !isLoadingMore else {
             return
         }
+        let generationAtStart = metadataLanguageGeneration
 
         isLoadingMore = true
 
@@ -2281,6 +2334,7 @@ struct ChannelView: View {
             )
 
             await MainActor.run {
+                guard isCurrentMetadataRequest(generationAtStart) else { return }
                 // Filter out duplicates before appending
                 let existingIDs = Set(videos.map(\.id))
                 let newVideos = result.videos.filter { !existingIDs.contains($0.id) }
@@ -2292,6 +2346,7 @@ struct ChannelView: View {
             }
         } catch {
             await MainActor.run {
+                guard isCurrentMetadataRequest(generationAtStart) else { return }
                 isLoadingMore = false
             }
         }
@@ -2337,12 +2392,14 @@ struct ChannelView: View {
               let continuation = videosContinuation else {
             throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No continuation available"])
         }
+        let generationAtStart = metadataLanguageGeneration
         
         let result = try await appEnvironment.contentService.channelVideos(
             id: channelID,
             instance: instance,
             continuation: continuation
         )
+        guard isCurrentMetadataRequest(generationAtStart) else { throw CancellationError() }
         
         return (result.videos, result.continuation)
     }
@@ -2355,12 +2412,14 @@ struct ChannelView: View {
               let continuation = shortsContinuation else {
             throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No continuation available"])
         }
+        let generationAtStart = metadataLanguageGeneration
         
         let result = try await appEnvironment.contentService.channelShorts(
             id: channelID,
             instance: instance,
             continuation: continuation
         )
+        guard isCurrentMetadataRequest(generationAtStart) else { throw CancellationError() }
         
         return (result.videos, result.continuation)
     }
@@ -2391,8 +2450,9 @@ struct ChannelView: View {
             // No loading needed - description is already available
             break
         case .videos:
-            // Already loaded on initial load
-            break
+            if !videosLoaded {
+                await loadVideos()
+            }
         case .playlists:
             if !playlistsLoaded {
                 await loadPlaylists()
@@ -2405,6 +2465,30 @@ struct ChannelView: View {
             if !streamsLoaded {
                 await loadStreams()
             }
+        }
+    }
+
+    private func loadVideos() async {
+        guard let appEnvironment,
+              let instance = instanceForSource() else {
+            return
+        }
+        let generationAtStart = metadataLanguageGeneration
+
+        do {
+            let result = try await appEnvironment.contentService.channelVideos(
+                id: channelID,
+                instance: instance,
+                continuation: nil
+            )
+            guard isCurrentMetadataRequest(generationAtStart) else { return }
+
+            videos = result.videos
+            videosContinuation = result.continuation
+            videosLoaded = true
+        } catch {
+            guard isCurrentMetadataRequest(generationAtStart) else { return }
+            videosLoaded = true
         }
     }
 
@@ -2471,6 +2555,7 @@ struct ChannelView: View {
               let instance = instanceForSource() else {
             return
         }
+        let generationAtStart = metadataLanguageGeneration
 
         do {
             let result = try await appEnvironment.contentService.channelShorts(
@@ -2480,12 +2565,14 @@ struct ChannelView: View {
             )
 
             await MainActor.run {
+                guard isCurrentMetadataRequest(generationAtStart) else { return }
                 shorts = result.videos
                 shortsContinuation = result.continuation
                 shortsLoaded = true
             }
         } catch {
             await MainActor.run {
+                guard isCurrentMetadataRequest(generationAtStart) else { return }
                 shortsLoaded = true
             }
         }
@@ -2498,6 +2585,7 @@ struct ChannelView: View {
               !isLoadingMore else {
             return
         }
+        let generationAtStart = metadataLanguageGeneration
 
         isLoadingMore = true
 
@@ -2509,6 +2597,7 @@ struct ChannelView: View {
             )
 
             await MainActor.run {
+                guard isCurrentMetadataRequest(generationAtStart) else { return }
                 // Filter out duplicates before appending
                 let existingIDs = Set(shorts.map(\.id))
                 let newShorts = result.videos.filter { !existingIDs.contains($0.id) }
@@ -2519,6 +2608,7 @@ struct ChannelView: View {
             }
         } catch {
             await MainActor.run {
+                guard isCurrentMetadataRequest(generationAtStart) else { return }
                 isLoadingMore = false
             }
         }

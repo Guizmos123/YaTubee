@@ -8,6 +8,7 @@
 import Foundation
 #if os(iOS)
 import BackgroundTasks
+import UIKit
 #endif
 
 /// Manages background refresh scheduling and execution across platforms.
@@ -26,6 +27,9 @@ final class BackgroundRefreshManager {
     private weak var appEnvironment: AppEnvironment?
     private let backgroundRefresher: BackgroundFeedRefresher
     private let notificationManager: NotificationManager
+    #if os(iOS)
+    private var isScheduling = false
+    #endif
 
     // MARK: - Initialization
 
@@ -75,32 +79,54 @@ final class BackgroundRefreshManager {
 
     func scheduleIOSBackgroundRefresh() {
         guard !ProcessInfo.processInfo.isMacCatalystApp else { return }
-        let request = BGAppRefreshTaskRequest(identifier: Self.backgroundTaskIdentifier)
-        // Request to run in ~15 minutes (system decides actual timing)
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
-
-        do {
-            try BGTaskScheduler.shared.submit(request)
+        guard shouldKeepBackgroundRefreshScheduled,
+              UIApplication.shared.backgroundRefreshStatus == .available,
+              !isScheduling else { return }
+        isScheduling = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.isScheduling = false }
+            let identifiers = await Self.pendingTaskIdentifiers()
+            guard BackgroundRefreshPolicy.shouldSubmit(
+                pendingIdentifiers: identifiers,
+                identifier: Self.backgroundTaskIdentifier,
+                isEnabled: self.shouldKeepBackgroundRefreshScheduled,
+                isAvailable: UIApplication.shared.backgroundRefreshStatus == .available
+            ) else { return }
+            let request = BGAppRefreshTaskRequest(identifier: Self.backgroundTaskIdentifier)
+            request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+            do {
+                try BGTaskScheduler.shared.submit(request)
+                LoggingService.shared.info("Scheduled iOS background refresh", category: .notifications)
+            } catch {
+                LoggingService.shared.logNotificationError("Failed to schedule background refresh", error: error)
+            }
             #if DEBUG
-            LoggingService.shared.info(
-                "Scheduled iOS background refresh | identifier: \(request.identifier) | earliestBeginDate: \(String(describing: request.earliestBeginDate))",
-                category: .notifications
-            )
-            #else
-            LoggingService.shared.info("Scheduled iOS background refresh", category: .notifications)
+            self.refreshPendingTaskDiagnostics()
             #endif
-        } catch {
-            LoggingService.shared.logNotificationError("Failed to schedule background refresh", error: error)
         }
-        #if DEBUG
-        refreshPendingTaskDiagnostics()
-        #endif
+    }
+
+    nonisolated private static func pendingTaskIdentifiers() async -> Set<String> {
+        await withCheckedContinuation { continuation in
+            BGTaskScheduler.shared.getPendingTaskRequests { requests in
+                continuation.resume(returning: Set(requests.map(\.identifier)))
+            }
+        }
     }
 
     func cancelIOSBackgroundRefresh() {
         guard !ProcessInfo.processInfo.isMacCatalystApp else { return }
         BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.backgroundTaskIdentifier)
         LoggingService.shared.debug("Cancelled iOS background refresh", category: .notifications)
+    }
+
+    private var shouldKeepBackgroundRefreshScheduled: Bool {
+        guard let settings = appEnvironment?.settingsManager else { return false }
+        return BackgroundRefreshPolicy.isEnabled(
+            notificationsEnabled: settings.backgroundNotificationsEnabled,
+            appIconBadgeEnabled: settings.appIconBadgeEnabled
+        )
     }
 
     private func handleIOSBackgroundTask(_ task: BGAppRefreshTask) {
@@ -217,15 +243,29 @@ final class BackgroundRefreshManager {
 
     // MARK: - Enable/Disable
 
-    func handleNotificationsEnabledChanged(_ enabled: Bool) {
+    func handleNotificationsEnabledChanged(_: Bool) {
+        handleRefreshRequirementChanged()
+    }
+
+    func handleAppIconBadgeEnabledChanged(_: Bool) {
+        handleRefreshRequirementChanged()
+    }
+
+    private func handleRefreshRequirementChanged() {
         #if os(iOS)
         guard !ProcessInfo.processInfo.isMacCatalystApp else { return }
-        if enabled {
+        if shouldKeepBackgroundRefreshScheduled {
             scheduleIOSBackgroundRefresh()
         } else {
             cancelIOSBackgroundRefresh()
         }
         #elseif os(macOS)
+        let enabled = appEnvironment.map {
+            BackgroundRefreshPolicy.isEnabled(
+                notificationsEnabled: $0.settingsManager.backgroundNotificationsEnabled,
+                appIconBadgeEnabled: $0.settingsManager.appIconBadgeEnabled
+            )
+        } ?? false
         if enabled {
             if activityScheduler == nil {
                 registerMacOSBackgroundActivity()

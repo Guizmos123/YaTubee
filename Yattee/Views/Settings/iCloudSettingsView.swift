@@ -586,7 +586,7 @@ struct iCloudSettingsView: View {
     }
 
     private func syncNow() {
-        // Trigger CloudKit refresh sync (clears stale tokens, fetches all changes)
+        // Fetch remote changes and send pending local CloudKit changes now.
         Task {
             await cloudKitSync?.refreshSync()
         }

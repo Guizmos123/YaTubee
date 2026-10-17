@@ -27,6 +27,21 @@ extension SettingsManager {
         }
     }
 
+    var videoMetadataLanguage: VideoMetadataLanguage {
+        get {
+            if let cached = _videoMetadataLanguage { return cached }
+            return VideoMetadataLanguage(rawValue: string(for: .videoMetadataLanguage) ?? "") ?? .original
+        }
+        set {
+            _videoMetadataLanguage = newValue
+            set(newValue.rawValue, for: .videoMetadataLanguage)
+        }
+    }
+
+    var resolvedVideoMetadataLanguage: String {
+        videoMetadataLanguage.resolvedValue(appLanguage: appLanguage)
+    }
+
     // MARK: - Theme Settings
 
     var theme: AppTheme {
@@ -505,6 +520,19 @@ extension SettingsManager {
         set {
             _badgesIncludeShorts = newValue
             set(newValue, for: .badgesIncludeShorts)
+        }
+    }
+
+    /// Whether newly followed channels contribute to badge counts by default.
+    /// Existing per-channel choices are never rewritten. Default is true.
+    var defaultBadgesForNewChannels: Bool {
+        get {
+            if let cached = _defaultBadgesForNewChannels { return cached }
+            return bool(for: .defaultBadgesForNewChannels, default: true)
+        }
+        set {
+            _defaultBadgesForNewChannels = newValue
+            set(newValue, for: .defaultBadgesForNewChannels)
         }
     }
 

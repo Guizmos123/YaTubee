@@ -8,12 +8,106 @@
 import Foundation
 import Testing
 import UserNotifications
-@testable import Yattee
+@testable import YaTubee
 
 @Suite("Notification refresh transaction")
 struct NotificationRefreshTransactionTests {
     private let previousCheck = Date(timeIntervalSince1970: 1_000)
     private let requestStart = Date(timeIntervalSince1970: 2_000)
+
+    @Test("Background refresh remains enabled for either consumer")
+    func refreshConsumerCombinations() {
+        #expect(BackgroundRefreshPolicy.isEnabled(notificationsEnabled: true, appIconBadgeEnabled: false))
+        #expect(BackgroundRefreshPolicy.isEnabled(notificationsEnabled: false, appIconBadgeEnabled: true))
+        #expect(BackgroundRefreshPolicy.isEnabled(notificationsEnabled: true, appIconBadgeEnabled: true))
+        #expect(!BackgroundRefreshPolicy.isEnabled(notificationsEnabled: false, appIconBadgeEnabled: false))
+    }
+
+    @Test("A pending BGTask request is not submitted twice")
+    func duplicateSchedulingIsPrevented() {
+        let identifier = "com.app.yatubee.feedRefresh"
+        #expect(BackgroundRefreshPolicy.shouldSubmit(
+            pendingIdentifiers: [], identifier: identifier, isEnabled: true, isAvailable: true
+        ))
+        #expect(!BackgroundRefreshPolicy.shouldSubmit(
+            pendingIdentifiers: [identifier], identifier: identifier, isEnabled: true, isAvailable: true
+        ))
+        #expect(!BackgroundRefreshPolicy.shouldSubmit(
+            pendingIdentifiers: [], identifier: identifier, isEnabled: false, isAvailable: true
+        ))
+        #expect(!BackgroundRefreshPolicy.shouldSubmit(
+            pendingIdentifiers: [], identifier: identifier, isEnabled: true, isAvailable: false
+        ))
+    }
+
+    @Test("An acquired snapshot is consumed only by its still-active BADGE-01 scope")
+    func sourceChangeRejectsObsoleteAcquisition() {
+        let server = FeedNoveltyScope(rawValue: "local-feed:yattee-server:server")
+        let invidious = FeedNoveltyScope(rawValue: "local-feed:invidious:instance")
+        #expect(BackgroundRefreshPolicy.canConsume(acquiredScope: server, activeScope: server))
+        #expect(!BackgroundRefreshPolicy.canConsume(acquiredScope: server, activeScope: invidious))
+        #expect(!BackgroundRefreshPolicy.canConsume(acquiredScope: server, activeScope: nil))
+    }
+
+    @Test("A partial snapshot cannot establish the notification baseline")
+    func partialSnapshotBaselinePolicy() {
+        #expect(!BackgroundRefreshPolicy.canProcessNotifications(
+            isCompleteSnapshot: false, hasBaseline: false
+        ))
+        #expect(BackgroundRefreshPolicy.canProcessNotifications(
+            isCompleteSnapshot: true, hasBaseline: false
+        ))
+        #expect(BackgroundRefreshPolicy.canProcessNotifications(
+            isCompleteSnapshot: false, hasBaseline: true
+        ))
+    }
+
+    @Test("Foreground and background callers share one Feed acquisition")
+    @MainActor
+    func feedRefreshSingleFlightSharesAcquisition() async {
+        let gate = BackgroundRefreshTestGate()
+        let singleFlight = FeedRefreshSingleFlight()
+        var acquisitionCount = 0
+
+        let background = Task { @MainActor in
+            await singleFlight.run(foregroundParticipant: false) {
+                acquisitionCount += 1
+                await gate.wait()
+            }
+        }
+        while acquisitionCount == 0 { await Task.yield() }
+        let foreground = Task { @MainActor in
+            await singleFlight.run(foregroundParticipant: true) {
+                acquisitionCount += 1
+            }
+        }
+        await Task.yield()
+
+        background.cancel()
+        #expect(await background.value == false)
+        await gate.open()
+        #expect(await foreground.value)
+        #expect(acquisitionCount == 1)
+    }
+
+    @Test("Expiration releases an exclusively background Feed waiter")
+    @MainActor
+    func exclusiveBackgroundRefreshCancellation() async {
+        let gate = BackgroundRefreshTestGate()
+        let singleFlight = FeedRefreshSingleFlight()
+        var started = false
+        let background = Task { @MainActor in
+            await singleFlight.run(foregroundParticipant: false) {
+                started = true
+                await gate.wait()
+            }
+        }
+        while !started { await Task.yield() }
+
+        background.cancel()
+        #expect(await background.value == false)
+        await gate.open()
+    }
 
     #if DEBUG
     @Test("Notification diagnostic history remains bounded and Codable")
@@ -350,10 +444,75 @@ struct NotificationRefreshTransactionTests {
     func authorizationStatuses() {
         #expect(NotificationManager.permitsNotificationSubmission(.authorized))
         #expect(NotificationManager.permitsNotificationSubmission(.provisional))
+        #if os(iOS)
         #expect(NotificationManager.permitsNotificationSubmission(.ephemeral))
+        #endif
         #expect(!NotificationManager.permitsNotificationSubmission(.denied))
         #expect(!NotificationManager.permitsNotificationSubmission(.notDetermined))
     }
+
+    @Test("General notification permission excludes the app icon badge")
+    @MainActor
+    func notificationAuthorizationExcludesBadge() {
+        let options = NotificationManager.notificationAuthorizationOptions
+        #expect(options.contains(.alert))
+        #expect(options.contains(.sound))
+        #expect(!options.contains(.badge))
+    }
+
+    #if !os(tvOS)
+    @Test("Notification payload carries the global badge count when enabled")
+    @MainActor
+    func notificationPayloadCarriesGlobalBadgeCount() {
+        let videos = [(video: video("one"), channelName: "Channel")]
+        let content = NotificationManager.notificationContent(
+            for: videos,
+            appIconBadgeCount: 7
+        )
+
+        #expect(content.badge?.intValue == 7)
+    }
+
+    @Test("Notification payload leaves the badge unchanged when badges are disabled")
+    @MainActor
+    func notificationPayloadOmitsDisabledBadge() {
+        let videos = [(video: video("one"), channelName: "Channel")]
+        let content = NotificationManager.notificationContent(
+            for: videos,
+            appIconBadgeCount: nil
+        )
+
+        #expect(content.badge == nil)
+    }
+
+    @Test("Notification payload explicitly carries a zero global badge count")
+    @MainActor
+    func notificationPayloadCarriesZeroBadge() {
+        let videos = [(video: video("one"), channelName: "Channel")]
+        let content = NotificationManager.notificationContent(
+            for: videos,
+            appIconBadgeCount: 0
+        )
+
+        #expect(content.badge?.intValue == 0)
+    }
+
+    @Test("Notification payload badge is independent from the notified video count")
+    @MainActor
+    func notificationPayloadDoesNotUseNotifiedVideoCount() {
+        let videos = [
+            (video: video("one"), channelName: "Channel"),
+            (video: video("two"), channelName: "Channel")
+        ]
+        let content = NotificationManager.notificationContent(
+            for: videos,
+            appIconBadgeCount: 11
+        )
+
+        #expect(videos.count == 2)
+        #expect(content.badge?.intValue == 11)
+    }
+    #endif
 
     @Test("Identical channel IDs from different content sources have distinct video keys")
     func sourceScopedVideoKeys() {
@@ -432,5 +591,20 @@ struct NotificationRefreshTransactionTests {
             isUpcoming: false,
             scheduledStartTime: nil
         )
+    }
+}
+
+private actor BackgroundRefreshTestGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func open() {
+        continuation?.resume()
+        continuation = nil
     }
 }

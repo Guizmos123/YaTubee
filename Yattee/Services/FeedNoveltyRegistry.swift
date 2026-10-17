@@ -90,16 +90,24 @@ final class FeedNoveltyBadgeState {
     private var snapshots: [FeedNoveltyScope: FeedNoveltySnapshot] = [:]
 
     func count(for scope: FeedNoveltyScope?) -> Int {
-        guard let scope else { return 0 }
-        return snapshots[scope]?.count ?? 0
+        count(for: scope, excluding: [], includeShorts: true)
     }
 
     func count(for scope: FeedNoveltyScope?, excluding channelIDs: Set<String>) -> Int {
+        count(for: scope, excluding: channelIDs, includeShorts: true)
+    }
+
+    func count(
+        for scope: FeedNoveltyScope?,
+        excluding channelIDs: Set<String>,
+        includeShorts: Bool
+    ) -> Int {
         guard let scope, let snapshot = snapshots[scope] else { return 0 }
-        return snapshot.unconsulted.count { entry in
-            guard let channelID = entry.channelID else { return true }
-            return !channelIDs.contains(channelID)
-        }
+        return FeedNoveltyBadgeFilter.count(
+            entries: snapshot.unconsulted,
+            excluding: channelIDs,
+            includeShorts: includeShorts
+        )
     }
 
     func update(_ snapshot: FeedNoveltySnapshot, for scope: FeedNoveltyScope) {
@@ -164,9 +172,24 @@ enum FeedNoveltyConsultationPolicy {
     static func shouldConsult(
         isTabActive: Bool,
         isSceneActive: Bool,
+        isPlayerObscuringFeed: Bool,
         visibleVideoIDs: Set<String>
     ) -> Bool {
-        isTabActive && isSceneActive && !visibleVideoIDs.isEmpty
+        isTabActive && isSceneActive && !isPlayerObscuringFeed && !visibleVideoIDs.isEmpty
+    }
+}
+
+enum FeedNoveltyBadgeFilter {
+    static func count(
+        entries: [FeedNoveltyEntry],
+        excluding channelIDs: Set<String>,
+        includeShorts: Bool
+    ) -> Int {
+        entries.count { entry in
+            if !includeShorts, entry.contentKind == .short { return false }
+            guard let channelID = entry.channelID else { return true }
+            return !channelIDs.contains(channelID)
+        }
     }
 }
 
@@ -212,18 +235,18 @@ actor FeedNoveltyRegistry {
     /// Ingests an existing feed response without performing any network work.
     /// Partial responses can add novelties after initialization, but can neither
     /// initialize a scope nor advance its reference date.
+    /// `includeShorts` remains in the source contract for compatibility; badge
+    /// presentation now applies it non-destructively to the persisted candidates.
     func ingest(
         videos: [Video],
         baselineSupplement: [Video] = [],
         scope: FeedNoveltyScope,
         observedAt: Date,
         isCompleteSnapshot: Bool,
-        includeShorts: Bool
+        includeShorts _: Bool
     ) async {
         migrateLegacyStateIfNeeded(for: scope)
         var state = states[scope.rawValue] ?? FeedNoveltyPersistentState()
-        removeExcludedShorts(from: &state, includeShorts: includeShorts)
-
         if !state.isInitialized {
             guard isCompleteSnapshot else {
                 state.lastUpdatedAt = observedAt
@@ -271,8 +294,6 @@ actor FeedNoveltyRegistry {
             // Late historical discoveries become known without becoming novelties.
             state.knownVideoIDs[key] = observedAt
             guard publishedAt > referenceDate else { continue }
-            guard video.contentKind.isIncluded(whenIncludingShorts: includeShorts) else { continue }
-
             state.unconsulted[key] = FeedNoveltyEntry(
                 videoID: key,
                 channelID: video.author.id.isEmpty ? nil : video.author.id,
@@ -335,14 +356,6 @@ actor FeedNoveltyRegistry {
     private func deduplicated(_ videos: [Video]) -> [Video] {
         var seen = Set<String>()
         return videos.filter { seen.insert($0.id.id).inserted }
-    }
-
-    private func removeExcludedShorts(
-        from state: inout FeedNoveltyPersistentState,
-        includeShorts: Bool
-    ) {
-        guard !includeShorts else { return }
-        state.unconsulted = state.unconsulted.filter { $0.value.contentKind != .short }
     }
 
     private func prune(_ state: inout FeedNoveltyPersistentState) {

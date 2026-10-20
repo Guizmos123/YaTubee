@@ -1605,19 +1605,21 @@ struct HomeView: View {
 
         // Get all visible instance content sections from settings
         let visibleSections = presentationSettings?.visibleSections ?? []
+        var sectionsToRefresh: [(instanceID: UUID, contentType: InstanceContentType)] = []
 
         for section in visibleSections {
             if case .instanceContent(let instanceID, let contentType) = section {
                 // Refresh if cache is stale
                 if !appEnvironment.homeInstanceCache.isCacheValid(for: instanceID, contentType: contentType) {
-                    await appEnvironment.homeInstanceCache.refresh(
-                        instanceID: instanceID,
-                        contentType: contentType,
-                        using: appEnvironment
-                    )
+                    sectionsToRefresh.append((instanceID, contentType))
                 }
             }
         }
+
+        await appEnvironment.homeInstanceCache.refresh(
+            sections: sectionsToRefresh,
+            using: appEnvironment
+        )
     }
 }
 

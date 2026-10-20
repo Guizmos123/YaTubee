@@ -79,7 +79,6 @@ actor HomeInstanceDiskCache {
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
-            encoder.outputFormatting = .prettyPrinted
             let encodedData = try encoder.encode(data)
             let sizeMB = Double(encodedData.count) / (1024 * 1024)
             try encodedData.write(to: cacheFileURL, options: .atomic)

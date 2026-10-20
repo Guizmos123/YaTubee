@@ -24,6 +24,9 @@ final class HomeInstanceCache {
     /// Whether the disk cache has been loaded.
     private var diskCacheLoaded = false
 
+    /// Latest refresh generation by cache key, used to discard superseded responses.
+    private var refreshGenerations: [String: Int] = [:]
+
     private init() {}
 
     // MARK: - Cache Key Management
@@ -104,6 +107,43 @@ final class HomeInstanceCache {
         contentType: InstanceContentType,
         using appEnvironment: AppEnvironment
     ) async {
+        if await refreshCache(
+            instanceID: instanceID,
+            contentType: contentType,
+            using: appEnvironment
+        ) {
+            await saveToDisk()
+        }
+    }
+
+    /// Refreshes multiple sections and persists their combined state once.
+    func refresh(
+        sections: [(instanceID: UUID, contentType: InstanceContentType)],
+        using appEnvironment: AppEnvironment
+    ) async {
+        var cacheChanged = false
+
+        for section in sections {
+            guard !Task.isCancelled else { break }
+            if await refreshCache(
+                instanceID: section.instanceID,
+                contentType: section.contentType,
+                using: appEnvironment
+            ) {
+                cacheChanged = true
+            }
+        }
+
+        if cacheChanged {
+            await saveToDisk()
+        }
+    }
+
+    private func refreshCache(
+        instanceID: UUID,
+        contentType: InstanceContentType,
+        using appEnvironment: AppEnvironment
+    ) async -> Bool {
         // Find the instance
         guard let instance = appEnvironment.instancesManager.instances.first(where: { $0.id == instanceID }),
               instance.isEnabled else {
@@ -111,13 +151,15 @@ final class HomeInstanceCache {
                 "HomeInstanceCache.refresh: Instance \(instanceID) not found or disabled",
                 category: .general
             )
-            return
+            return false
         }
 
         // Do not add a language variant here: yattee-plus does not accept
         // `lang` on Home's popular/trending endpoints, and feed is only used
         // here for Invidious/Piped. This avoids duplicate equivalent entries.
         let key = Self.cacheKey(instanceID: instanceID, contentType: contentType)
+        let generation = refreshGenerations[key, default: 0] + 1
+        refreshGenerations[key] = generation
         
         LoggingService.shared.debug(
             "HomeInstanceCache.refresh: Fetching \(contentType.rawValue) from \(instance.displayName)",
@@ -141,7 +183,7 @@ final class HomeInstanceCache {
                         "HomeInstanceCache.refresh: Feed not supported for \(instance.type)",
                         category: .general
                     )
-                    return
+                    return false
                 }
 
                 // Check if user is logged in
@@ -150,10 +192,14 @@ final class HomeInstanceCache {
                         "HomeInstanceCache.refresh: No credential for \(instance.displayName), skipping feed",
                         category: .general
                     )
-                    return
+                    return false
                 }
                 
                 videos = try await appEnvironment.contentService.feed(for: instance, credential: credential)
+            }
+
+            guard refreshGenerations[key] == generation else {
+                return false
             }
 
             // Update cache
@@ -165,9 +211,6 @@ final class HomeInstanceCache {
                 category: .general
             )
 
-            // Save to disk
-            await saveToDisk()
-
             // Prefetch DeArrow branding for YouTube videos
             let youtubeIDs = videos.compactMap { video -> String? in
                 if case .global = video.id.source { return video.id.videoID }
@@ -176,6 +219,7 @@ final class HomeInstanceCache {
             if !youtubeIDs.isEmpty {
                 appEnvironment.deArrowBrandingProvider.prefetch(videoIDs: youtubeIDs)
             }
+            return true
         } catch {
             LoggingService.shared.error(
                 "HomeInstanceCache.refresh: Failed to fetch \(contentType.rawValue) from \(instance.displayName)",
@@ -183,6 +227,7 @@ final class HomeInstanceCache {
                 details: error.localizedDescription
             )
             // Preserve existing cache on error (show stale data)
+            return false
         }
     }
 
@@ -193,6 +238,7 @@ final class HomeInstanceCache {
         for key in keysToRemove {
             cache.removeValue(forKey: key)
             lastUpdated.removeValue(forKey: key)
+            refreshGenerations[key, default: 0] += 1
         }
         
         LoggingService.shared.debug(
@@ -211,6 +257,10 @@ final class HomeInstanceCache {
         for key in keysToRemove {
             cache.removeValue(forKey: key)
             lastUpdated.removeValue(forKey: key)
+        }
+        let generationKeys = refreshGenerations.keys.filter { $0.hasPrefix(instanceID.uuidString) }
+        for key in generationKeys {
+            refreshGenerations[key, default: 0] += 1
         }
         
         if !keysToRemove.isEmpty {

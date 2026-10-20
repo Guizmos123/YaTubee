@@ -239,15 +239,6 @@ struct ManageChannelsView: View {
                 }
                 #endif
             }
-            #if os(iOS)
-            ToolbarItem(placement: .primaryAction) {
-                NavigationLink(value: NavigationDestination.search("")) {
-                    Image(systemName: "magnifyingglass")
-                }
-                .accessibilityIdentifier("channels.searchButton")
-                .accessibilityLabel(AppLocalization.string("tabs.search"))
-            }
-            #endif
         }
         #endif
         #if os(macOS)

@@ -33,14 +33,20 @@ enum AppLanguage: String, CaseIterable, Codable, Sendable {
 
 enum VideoMetadataLanguage: String, CaseIterable, Codable, Sendable {
     case original
+    /// Legacy persisted value. Kept decodable so existing preferences fall
+    /// back safely without rewriting or migrating their stored representation.
     case application
     case french
     case english
 
+    static var allCases: [VideoMetadataLanguage] {
+        [.original, .french, .english]
+    }
+
     var displayName: LocalizedStringKey {
         switch self {
         case .original: "settings.language.video.original"
-        case .application: "settings.language.video.application"
+        case .application: "settings.language.video.original"
         case .french: "settings.language.french"
         case .english: "settings.language.english"
         }
@@ -49,7 +55,7 @@ enum VideoMetadataLanguage: String, CaseIterable, Codable, Sendable {
     func resolvedValue(appLanguage: AppLanguage) -> String {
         switch self {
         case .original: "original"
-        case .application: appLanguage.rawValue
+        case .application: "original"
         case .french: AppLanguage.french.rawValue
         case .english: AppLanguage.english.rawValue
         }

@@ -116,14 +116,10 @@ private struct AppIconBadgeSynchronizationModifier: ViewModifier {
                 let enabled = appEnvironment.settingsManager.appIconBadgeEnabled
                 appEnvironment.backgroundRefreshManager.handleAppIconBadgeEnabledChanged(enabled)
                 if scenePhase == .active {
-                    let isAvailable = await AppIconBadgeManager.shared.reconcile(
+                    _ = await AppIconBadgeManager.shared.reconcile(
                         count: count,
                         enabled: enabled
                     )
-                    if enabled, !isAvailable {
-                        appEnvironment.settingsManager.appIconBadgeEnabled = false
-                        appEnvironment.backgroundRefreshManager.handleAppIconBadgeEnabledChanged(false)
-                    }
                 } else {
                     await AppIconBadgeManager.shared.apply(count: count, enabled: enabled)
                 }

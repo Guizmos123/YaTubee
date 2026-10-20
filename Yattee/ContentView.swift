@@ -28,6 +28,25 @@ struct ContentView: View {
                 ProgressView(AppLocalization.string("common.loading"))
             }
         }
+        .onChange(of: appEnvironment?.settingsManager.resolvedVideoMetadataLanguage) { oldValue, newValue in
+            guard oldValue != newValue, let appEnvironment, let newValue else { return }
+            Task {
+                if case .yatteeServer = LocalFeedSource.resolve(
+                    from: appEnvironment.instancesManager.instances,
+                    preference: appEnvironment.settingsManager.localFeedSourcePreference
+                ) {
+                    await SubscriptionFeedCache.shared.loadFromDiskIfNeeded(using: appEnvironment)
+                    // The language-scoped cache is the same immediate snapshot shown by
+                    // Feed. Reconcile persisted cards now instead of waiting for the
+                    // grouped network refresh to finish.
+                    appEnvironment.dataManager.updatePersistedMetadata(
+                        from: SubscriptionFeedCache.shared.videos
+                    )
+                    await SubscriptionFeedCache.shared.refresh(using: appEnvironment)
+                }
+                await appEnvironment.playerService.videoMetadataLanguageDidChange(to: newValue)
+            }
+        }
         .toastOverlay()
     }
 
@@ -277,6 +296,7 @@ struct iOS18AdaptiveTabView: View {
                     .presentationDetents([.medium, .large])
             }
         }
+        .modifier(IPhoneOrientationCoordinator(appEnvironment: appEnvironment))
     }
 
     private func presentExpandedPlayer() {
@@ -303,19 +323,8 @@ struct iOS26AdaptiveTabView: View {
     private var miniPlayerPresentation: MiniPlayerPresentation {
         MiniPlayerPresentation.resolve(
             style: appEnvironment.activeMiniPlayerStyle,
-            supportsTabAccessory: true,
-            supportsProminentTab: usesProminentBubbleTab
+            supportsTabAccessory: true
         )
-    }
-
-    /// iOS 27 PoC: the compact tab bar owns Bubble through a native prominent tab.
-    /// Keep the regular-width presentation and pre-iOS 27 fallback unchanged.
-    private var usesProminentBubbleTab: Bool {
-        if #available(iOS 27.0, *) {
-            return (horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone)
-                && appEnvironment.activeMiniPlayerStyle == .bubble
-        }
-        return false
     }
 
     /// Whether to show the black overlay that covers scaled content when player is expanded
@@ -341,8 +350,7 @@ struct iOS26AdaptiveTabView: View {
                 if horizontalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .phone {
                     // Compact: Use CompactTabView with settings-based customization
                     CompactTabView(
-                        usesMiniPlayerAccessory: miniPlayerPresentation == .tabAccessory,
-                        usesProminentBubbleTab: miniPlayerPresentation == .prominentTab
+                        usesMiniPlayerAccessory: miniPlayerPresentation == .tabAccessory
                     )
                         .environment(appEnvironment.settingsManager)
                 } else {
@@ -422,6 +430,7 @@ struct iOS26AdaptiveTabView: View {
                     .presentationDetents([.medium, .large])
             }
         }
+        .modifier(IPhoneOrientationCoordinator(appEnvironment: appEnvironment))
     }
 
     private func presentExpandedPlayer() {
@@ -436,14 +445,255 @@ struct iOS26AdaptiveTabView: View {
             ? "compact"
             : "regular"
         LoggingService.shared.debug(
-            "[ProminentTabPoC] ContentView reason=\(reason) variant=\(variant) " +
+            "[MiniPlayerPresentation] ContentView reason=\(reason) variant=\(variant) " +
                 "style=\(appEnvironment.activeMiniPlayerStyle.rawValue) " +
-                "presentation=\(String(describing: miniPlayerPresentation)) " +
-                "supportsProminent=\(usesProminentBubbleTab)",
+                "presentation=\(String(describing: miniPlayerPresentation))",
             category: .general
         )
     }
     #endif
+}
+
+// MARK: - iPhone Orientation Coordination
+
+/// Coordinates navigation portrait locking and opt-in automatic landscape
+/// rotation while the expanded player is visible.
+private struct IPhoneOrientationCoordinator: ViewModifier {
+    @Environment(\.scenePhase) private var scenePhase
+
+    let appEnvironment: AppEnvironment
+
+    private var settings: SettingsManager { appEnvironment.settingsManager }
+    private var navigation: NavigationCoordinator { appEnvironment.navigationCoordinator }
+    private var playerState: PlayerState { appEnvironment.playerService.state }
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                guard isPhone else { return }
+                UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+                logAutoLandscape("coordinator enabled orientation=\(UIDevice.current.orientation.rawValue)")
+                updateNavigationPolicy(requestPortrait: true)
+            }
+            .onDisappear {
+                guard isPhone else { return }
+                logAutoLandscape("coordinator disabled")
+                UIDevice.current.endGeneratingDeviceOrientationNotifications()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+                handlePhysicalOrientationChange(UIDevice.current.orientation)
+            }
+            .onChange(of: settings.preferPortraitBrowsing) { _, _ in
+                updateNavigationPolicy(requestPortrait: true)
+            }
+            .onChange(of: settings.automaticLandscapeFullscreen) { _, isEnabled in
+                guard !isEnabled else { return }
+                logAutoLandscape("setting disabled; cancelling automatic ownership")
+                navigation.isAutomaticLandscapeFullscreen = false
+            }
+            .onChange(of: navigation.isPlayerExpanded) { _, isExpanded in
+                OrientationManager.shared.updateNavigationPolicy(
+                    prefersPortrait: settings.preferPortraitBrowsing,
+                    playerExpanded: isExpanded
+                )
+
+                if !isExpanded {
+                    navigation.isAutomaticLandscapeFullscreen = false
+                    if settings.preferPortraitBrowsing {
+                        requestInterfaceOrientation(.portrait)
+                    }
+                }
+            }
+            .onChange(of: navigation.isPlayerWindowVisible) { _, isVisible in
+                logAutoLandscape(
+                    "expanded window visibility=\(isVisible) automatic=\(navigation.isAutomaticLandscapeFullscreen)"
+                )
+            }
+    }
+
+    private var isPhone: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone
+    }
+
+    private var hasActiveVideoPlayback: Bool {
+        guard playerState.currentVideo != nil else { return false }
+        switch playerState.playbackState {
+        case .ready, .playing, .paused, .buffering:
+            return true
+        case .idle, .loading, .ended, .failed:
+            return false
+        }
+    }
+
+    private func updateNavigationPolicy(requestPortrait: Bool) {
+        guard isPhone else { return }
+        OrientationManager.shared.updateNavigationPolicy(
+            prefersPortrait: settings.preferPortraitBrowsing,
+            playerExpanded: navigation.isPlayerExpanded
+        )
+        if requestPortrait,
+           settings.preferPortraitBrowsing,
+           !navigation.isPlayerExpanded {
+            requestInterfaceOrientation(.portrait)
+        }
+    }
+
+    private func handlePhysicalOrientationChange(_ orientation: UIDeviceOrientation) {
+        guard isPhone else { return }
+        logAutoLandscape(
+            "physical orientation=\(orientation.rawValue) scene=\(String(describing: scenePhase)) " +
+                "setting=\(settings.automaticLandscapeFullscreen) playback=\(String(describing: playerState.playbackState)) " +
+                "expanded=\(navigation.isPlayerExpanded) visible=\(navigation.isPlayerWindowVisible) " +
+                "locked=\(settings.inAppOrientationLock)"
+        )
+        guard scenePhase == .active else {
+            logAutoLandscape("ignored: scene is not active")
+            return
+        }
+
+        switch orientation {
+        case .landscapeLeft, .landscapeRight:
+            beginAutomaticLandscapeFullscreen(for: orientation)
+        case .portrait:
+            endAutomaticLandscapeFullscreen()
+        case .portraitUpsideDown, .faceUp, .faceDown, .unknown:
+            break
+        @unknown default:
+            break
+        }
+    }
+
+    private func beginAutomaticLandscapeFullscreen(for deviceOrientation: UIDeviceOrientation) {
+        guard settings.automaticLandscapeFullscreen else {
+            logAutoLandscape("ignored landscape: setting is disabled")
+            return
+        }
+        guard hasActiveVideoPlayback else {
+            logAutoLandscape("ignored landscape: no active playable video")
+            return
+        }
+        guard navigation.isPlayerExpanded,
+              navigation.isPlayerWindowVisible else {
+            logAutoLandscape("ignored landscape: expanded player is not visible")
+            return
+        }
+        guard !navigation.isPlayerExpanding,
+              !navigation.isPlayerCollapsing,
+              !navigation.isPlayerSheetAnimating else {
+            logAutoLandscape("ignored landscape: player transition is active")
+            return
+        }
+        guard playerState.pipState != .active else {
+            logAutoLandscape("ignored landscape: PiP is active")
+            return
+        }
+        guard playerState.currentVideo?.contentKind != .short else {
+            logAutoLandscape("ignored landscape: current video is a Short")
+            return
+        }
+        guard !playerState.isVerticalVideo else {
+            logAutoLandscape("ignored landscape: current video is vertical")
+            return
+        }
+        guard !navigation.isAutomaticLandscapeFullscreen else {
+            logAutoLandscape("ignored landscape: automatic transition already owns fullscreen")
+            return
+        }
+        if let interfaceOrientation = foregroundWindowScene?.interfaceOrientation,
+           interfaceOrientation.isLandscape {
+            logAutoLandscape("ignored landscape: expanded player is already landscape")
+            return
+        }
+
+        let interfaceOrientation: UIInterfaceOrientationMask = deviceOrientation == .landscapeLeft
+            ? .landscapeRight
+            : .landscapeLeft
+
+        navigation.isAutomaticLandscapeFullscreen = true
+        logAutoLandscape("using visible expanded player; requesting landscape")
+        requestInterfaceOrientation(interfaceOrientation, cancelAutomaticPresentationOnError: true)
+    }
+
+    private func endAutomaticLandscapeFullscreen() {
+        guard navigation.isAutomaticLandscapeFullscreen else {
+            logAutoLandscape("portrait detected without automatic ownership")
+            return
+        }
+        guard navigation.isPlayerExpanded,
+              !navigation.isPlayerCollapsing else {
+            logAutoLandscape("ignored portrait: player is not expanded or is collapsing")
+            return
+        }
+
+        logAutoLandscape("portrait return detected")
+
+        Task { @MainActor in
+            // A physical portrait event may arrive during the presentation
+            // animation. Defer this single event instead of losing it.
+            await navigation.waitForPlayerSheetAnimation()
+            guard UIDevice.current.orientation == .portrait,
+                  navigation.isAutomaticLandscapeFullscreen,
+                  navigation.isPlayerExpanded,
+                  !navigation.isPlayerCollapsing else { return }
+
+            if settings.inAppOrientationLock {
+                OrientationManager.shared.lock(to: .portrait)
+            }
+            requestInterfaceOrientation(.portrait, cancelAutomaticPresentationOnError: true)
+
+            try? await Task.sleep(for: .milliseconds(350))
+            guard navigation.isAutomaticLandscapeFullscreen else { return }
+            navigation.isAutomaticLandscapeFullscreen = false
+            logAutoLandscape("portrait restored; preserving expanded player")
+        }
+    }
+
+    private func requestInterfaceOrientation(
+        _ orientation: UIInterfaceOrientationMask,
+        cancelAutomaticPresentationOnError: Bool = false
+    ) {
+        guard let windowScene = foregroundWindowScene else {
+            logAutoLandscape("orientation request cancelled: no foreground window scene")
+            if cancelAutomaticPresentationOnError {
+                navigation.isAutomaticLandscapeFullscreen = false
+            }
+            return
+        }
+
+        logAutoLandscape("requestGeometryUpdate orientationMask=\(orientation.rawValue)")
+
+        if settings.inAppOrientationLock {
+            OrientationManager.shared.lock(to: orientation == .portrait ? .portrait : .landscape)
+        }
+
+        for window in windowScene.windows {
+            window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+        }
+
+        windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientation)) { error in
+            LoggingService.shared.warning(
+                "[AutoLandscape] requestGeometryUpdate rejected: \(error.localizedDescription)",
+                category: .player
+            )
+            guard cancelAutomaticPresentationOnError else { return }
+            Task { @MainActor in
+                navigation.isAutomaticLandscapeFullscreen = false
+                if settings.inAppOrientationLock {
+                    OrientationManager.shared.lockToCurrentOrientation()
+                }
+            }
+        }
+    }
+
+    private func logAutoLandscape(_ message: String) {
+        LoggingService.shared.debug("[AutoLandscape] \(message)", category: .player)
+    }
+
+    private var foregroundWindowScene: UIWindowScene? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+    }
 }
 #endif
 

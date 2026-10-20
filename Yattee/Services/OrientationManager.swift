@@ -25,6 +25,18 @@ final class OrientationManager {
     /// Whether orientation is currently locked.
     private(set) var isLocked: Bool = false
 
+    /// Navigation policy supplied by the active iOS root view.
+    private var prefersPortraitBrowsing = false
+    private var isPlayerExpanded = false
+
+    /// Updates the application-wide navigation policy. Player-specific locks
+    /// still take precedence while the expanded player is visible.
+    func updateNavigationPolicy(prefersPortrait: Bool, playerExpanded: Bool) {
+        prefersPortraitBrowsing = prefersPortrait
+        isPlayerExpanded = playerExpanded
+        notifyOrientationChange()
+    }
+
     /// Lock orientation to the current orientation
     func lock() {
         guard !isLocked else { return }
@@ -61,6 +73,12 @@ final class OrientationManager {
     var supportedOrientations: UIInterfaceOrientationMask {
         if isLocked, let locked = lockedOrientation {
             return locked
+        }
+
+        if UIDevice.current.userInterfaceIdiom == .phone,
+           prefersPortraitBrowsing,
+           !isPlayerExpanded {
+            return .portrait
         }
 
         if UIDevice.current.userInterfaceIdiom == .phone {

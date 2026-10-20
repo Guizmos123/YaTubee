@@ -65,14 +65,14 @@ struct FloatingMiniPlayerHost: View {
         if isEnabled && hasActiveVideo && !isPlayerExpanded {
             let restingPosition = geometry.anchor(for: corner)
             let referencePosition = geometry.anchor(for: .bottomTrailing)
-            let displayedPosition = style == .video
-                ? (dragPosition ?? restingPosition)
-                : referencePosition
+            let displayedPosition = style == .bar
+                ? referencePosition
+                : (dragPosition ?? restingPosition)
 
             VStack(spacing: 0) {
                 Spacer()
                 MiniPlayerView(
-                    isFloatingDragEnabled: style == .video,
+                    isFloatingDragEnabled: style != .bar,
                     floatingVideoWidth: miniPlayerSize.width,
                     isFloatingResizeEnabled: style == .video,
                     onFloatingDragChanged: { translation in
@@ -108,7 +108,7 @@ struct FloatingMiniPlayerHost: View {
         translation: CGSize,
         geometry: FloatingMiniPlayerGeometry
     ) {
-        guard style == .video else { return }
+        guard style != .bar else { return }
         let origin = dragOrigin ?? geometry.anchor(for: corner)
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -125,7 +125,7 @@ struct FloatingMiniPlayerHost: View {
         predictedEndTranslation: CGSize,
         geometry: FloatingMiniPlayerGeometry
     ) {
-        guard style == .video else {
+        guard style != .bar else {
             resetDragState()
             return
         }
@@ -200,6 +200,11 @@ struct FloatingMiniPlayerHost: View {
 
     /// Returns the persisted, container-adapted size used by layout and placement.
     private func effectiveMiniPlayerSize(in proxy: GeometryProxy) -> CGSize {
+        if style == .bubble {
+            let diameter = MiniPlayerStyleMetrics.recommendedBubbleDiameter
+            return CGSize(width: diameter, height: diameter)
+        }
+
         let safeAreaInsets = proxy.safeAreaInsets
         let safeWidth = max(
             0,

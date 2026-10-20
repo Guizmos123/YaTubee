@@ -451,13 +451,13 @@ struct NotificationRefreshTransactionTests {
         #expect(!NotificationManager.permitsNotificationSubmission(.notDetermined))
     }
 
-    @Test("General notification permission excludes the app icon badge")
+    @Test("General notification permission includes the app icon badge")
     @MainActor
-    func notificationAuthorizationExcludesBadge() {
+    func notificationAuthorizationIncludesBadge() {
         let options = NotificationManager.notificationAuthorizationOptions
         #expect(options.contains(.alert))
         #expect(options.contains(.sound))
-        #expect(!options.contains(.badge))
+        #expect(options.contains(.badge))
     }
 
     #if !os(tvOS)

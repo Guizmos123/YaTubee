@@ -165,8 +165,10 @@ final class QueueManager {
             // If queue disabled or invalid params, just play the video directly
             if index >= 0, index < videos.count {
                 let video = videos[index]
-                if let provider = streamProvider, let result = provider(video) {
-                    playerService?.openVideo(video, stream: result.stream!, audioStream: result.audioStream)
+                if let provider = streamProvider,
+                   let result = provider(video),
+                   let stream = result.stream {
+                    playerService?.openVideo(video, stream: stream, audioStream: result.audioStream)
                 } else if let startTime {
                     playerService?.openVideo(video, startTime: startTime)
                 } else {
@@ -211,8 +213,10 @@ final class QueueManager {
 
         // 5. Play the video
         let videoToPlay = videos[index]
-        if let provider = streamProvider, let result = provider(videoToPlay) {
-            playerService?.openVideo(videoToPlay, stream: result.stream!, audioStream: result.audioStream)
+        if let provider = streamProvider,
+           let result = provider(videoToPlay),
+           let stream = result.stream {
+            playerService?.openVideo(videoToPlay, stream: stream, audioStream: result.audioStream)
         } else if let startTime {
             playerService?.openVideo(videoToPlay, startTime: startTime)
         } else {

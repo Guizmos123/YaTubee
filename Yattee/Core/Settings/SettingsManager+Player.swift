@@ -40,20 +40,22 @@ extension SettingsManager {
         }
     }
 
-    /// Whether to automatically rotate to landscape when playing widescreen videos.
-    var rotateToMatchAspectRatio: Bool {
+    /// Whether rotating an iPhone to landscape automatically opens the player fullscreen.
+    var automaticLandscapeFullscreen: Bool {
         get {
-            if let cached = _rotateToMatchAspectRatio { return cached }
-            return bool(for: .rotateToMatchAspectRatio, default: true)
+            if let cached = _automaticLandscapeFullscreen { return cached }
+            // Deliberately do not migrate rotateToMatchAspectRatio: that setting
+            // never had an implemented behavior, so enabling this would be surprising.
+            return bool(for: .automaticLandscapeFullscreen, default: false)
         }
         set {
-            _rotateToMatchAspectRatio = newValue
-            set(newValue, for: .rotateToMatchAspectRatio)
+            _automaticLandscapeFullscreen = newValue
+            set(newValue, for: .automaticLandscapeFullscreen)
         }
     }
 
-    /// Whether to automatically rotate to portrait when dismissing the player sheet.
-    /// Only available on iPhone.
+    /// Whether navigation remains locked to portrait while the expanded player is closed.
+    /// Effective only on iPhone.
     var preferPortraitBrowsing: Bool {
         get {
             guard UIDevice.current.userInterfaceIdiom == .phone else { return false }

@@ -53,7 +53,12 @@ struct HomeSettingsView: View {
 
     var body: some View {
         List {
-            #if !os(tvOS)
+            #if os(tvOS)
+            if isHubContext {
+                shortcutsSection
+                availableShortcutsSection
+            }
+            #else
             shortcutsSection
             availableShortcutsSection
             #endif
@@ -95,18 +100,18 @@ struct HomeSettingsView: View {
 
     // MARK: - Sections
 
+    private var isHubContext: Bool {
+        switch customizationContext {
+        case .home: false
+        case .hub: true
+        }
+    }
+
     private var shortcutsSection: some View {
         Section {
-            #if !os(tvOS)
             // Layout picker (List vs Cards)
-            Picker(AppLocalization.string("home.settings.shortcuts.layout"), selection: $shortcutLayout) {
-                ForEach(HomeShortcutLayout.allCases, id: \.self) { layout in
-                    Label(layout.displayName, systemImage: layout.systemImage)
-                        .tag(layout)
-                }
-            }
-            .pickerStyle(.segmented)
-
+            shortcutLayoutPicker
+            #if !os(tvOS)
             // Card style (Compact / Regular) — navigates to a page with a
             // selector and a live preview. Only for cards layout.
             if shortcutLayout == .cards {
@@ -149,9 +154,10 @@ struct HomeSettingsView: View {
             ForEach(Array(shortcutOrder.enumerated()), id: \.element.id) { index, card in
                 if card != .downloads {
                     TVHomeItemRow(
-                        icon: card.icon,
-                        title: card.localizedTitle,
+                        icon: shortcutIcon(for: card),
+                        title: shortcutTitle(for: card),
                         isVisible: shortcutBinding(for: card),
+                        isDisabled: shortcutIsDisabled(card),
                         canMoveUp: index > 0 && shortcutOrder[index - 1] != .downloads,
                         canMoveDown: index < shortcutOrder.count - 1,
                         onMoveUp: { moveShortcut(at: index, direction: -1) },
@@ -172,6 +178,18 @@ struct HomeSettingsView: View {
         } header: {
             Text(AppLocalization.string("home.settings.shortcuts.header"))
         }
+    }
+
+    private var shortcutLayoutPicker: some View {
+        Picker(AppLocalization.string("home.settings.shortcuts.layout"), selection: $shortcutLayout) {
+            ForEach(HomeShortcutLayout.allCases, id: \.self) { layout in
+                Label(layout.displayName, systemImage: layout.systemImage)
+                    .tag(layout)
+            }
+        }
+        #if !os(tvOS)
+        .pickerStyle(.segmented)
+        #endif
     }
     
     private var availableShortcutsSection: some View {
@@ -601,7 +619,11 @@ struct HomeSettingsView: View {
                         .foregroundStyle(.green)
                         .imageScale(.large)
                 }
+                #if os(tvOS)
+                .buttonStyle(TVSettingsButtonStyle())
+                #else
                 .buttonStyle(.plain)
+                #endif
                 .disabled(isDisabled)
             }
             #if !os(tvOS)
@@ -632,7 +654,11 @@ struct HomeSettingsView: View {
                         .foregroundStyle(.green)
                         .imageScale(.large)
                 }
+                #if os(tvOS)
+                .buttonStyle(TVSettingsButtonStyle())
+                #else
                 .buttonStyle(.plain)
+                #endif
                 .disabled(isDisabled)
             }
             #if !os(tvOS)
@@ -682,12 +708,54 @@ struct HomeSettingsView: View {
                         .foregroundStyle(.green)
                         .imageScale(.large)
                 }
+                #if os(tvOS)
+                .buttonStyle(TVSettingsButtonStyle())
+                #else
                 .buttonStyle(.plain)
+                #endif
                 .disabled(isDisabled)
             }
             #if !os(tvOS)
             .help(isDisabled ? AppLocalization.string("home.settings.sourceDisabled") : "")
             #endif
+        }
+    }
+
+    private func shortcutTitle(for shortcut: HomeShortcutItem) -> String {
+        switch shortcut {
+        case .instanceContent(let instanceID, let contentType):
+            guard let instance = instanceFromID(instanceID) else { return contentType.localizedTitle }
+            return "\(instance.displayName) - \(contentType.localizedTitle)"
+        case .mediaSource(let sourceID):
+            guard let source = appEnvironment?.mediaSourcesManager.sources.first(where: { $0.id == sourceID }) else {
+                return AppLocalization.string("settings.icloud.category.mediaSources")
+            }
+            return "\(source.name) (\(source.type.displayName))"
+        default:
+            return shortcut.localizedTitle
+        }
+    }
+
+    private func shortcutIcon(for shortcut: HomeShortcutItem) -> String {
+        if case .mediaSource(let sourceID) = shortcut,
+           let source = appEnvironment?.mediaSourcesManager.sources.first(where: { $0.id == sourceID }) {
+            return source.type.systemImage
+        }
+        return shortcut.icon
+    }
+
+    private func shortcutIsDisabled(_ shortcut: HomeShortcutItem) -> Bool {
+        switch shortcut {
+        case .instanceContent(let instanceID, let contentType):
+            guard let instance = instanceFromID(instanceID) else { return true }
+            return !instance.isEnabled || (contentType == .feed && !isLoggedIn(instance))
+        case .mediaSource(let sourceID):
+            guard let source = appEnvironment?.mediaSourcesManager.sources.first(where: { $0.id == sourceID }) else {
+                return true
+            }
+            return !source.isEnabled
+        default:
+            return false
         }
     }
 }
@@ -699,6 +767,7 @@ private struct TVHomeItemRow: View {
     let icon: String
     let title: String
     @Binding var isVisible: Bool
+    var isDisabled: Bool = false
     let canMoveUp: Bool
     let canMoveDown: Bool
     let onMoveUp: () -> Void
@@ -742,9 +811,9 @@ private struct TVHomeItemRow: View {
                 HStack {
                     Image(systemName: icon)
                         .frame(width: 24)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isDisabled ? .tertiary : .secondary)
                     Text(title)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(isDisabled ? .tertiary : .primary)
                     Spacer()
                     Image(systemName: isVisible ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isVisible ? .green : .secondary)
@@ -753,6 +822,7 @@ private struct TVHomeItemRow: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(TVFormRowButtonStyle())
+            .disabled(isDisabled)
             
             // Delete button (only for instance content)
             if canDelete {

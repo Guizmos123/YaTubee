@@ -63,7 +63,9 @@ final class BackgroundRefreshManager {
             using: nil
         ) { [weak self] task in
             guard let task = task as? BGAppRefreshTask else { return }
-            self?.handleIOSBackgroundTask(task)
+            Task { @MainActor [weak self] in
+                self?.handleIOSBackgroundTask(task)
+            }
         }
         #if DEBUG
         NotificationPipelineDiagnostic.shared.recordRegistration(registered)

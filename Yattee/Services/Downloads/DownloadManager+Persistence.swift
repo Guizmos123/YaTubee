@@ -9,6 +9,57 @@ import Foundation
 
 #if !os(tvOS)
 
+private struct DownloadPersistenceSnapshot: Codable, Sendable {
+    static let currentVersion = 1
+
+    let version: Int
+    let activeDownloads: [Download]
+    let completedDownloads: [Download]
+
+    init(activeDownloads: [Download], completedDownloads: [Download]) {
+        self.version = Self.currentVersion
+        self.activeDownloads = activeDownloads
+        self.completedDownloads = completedDownloads
+    }
+}
+
+private enum DownloadPersistenceStore {
+    static let activeDownloadsLegacyKey = "activeDownloads"
+    static let completedDownloadsLegacyKey = "completedDownloads"
+
+    static var snapshotURL: URL? {
+        guard let applicationSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else { return nil }
+        return applicationSupport
+            .appendingPathComponent("Yattee", isDirectory: true)
+            .appendingPathComponent("Downloads", isDirectory: true)
+            .appendingPathComponent("downloads.json")
+    }
+
+    static func loadSnapshot() throws -> DownloadPersistenceSnapshot {
+        guard let snapshotURL else { throw CocoaError(.fileNoSuchFile) }
+        let data = try Data(contentsOf: snapshotURL)
+        let snapshot = try JSONDecoder().decode(DownloadPersistenceSnapshot.self, from: data)
+        guard snapshot.version == DownloadPersistenceSnapshot.currentVersion else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return snapshot
+    }
+
+    static func saveSnapshot(_ snapshot: DownloadPersistenceSnapshot) throws {
+        guard let snapshotURL else { throw CocoaError(.fileNoSuchFile) }
+        let directory = snapshotURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        let data = try JSONEncoder().encode(snapshot)
+        try data.write(to: snapshotURL, options: .atomic)
+    }
+}
+
 extension DownloadManager {
     // MARK: - Persistence
 
@@ -27,22 +78,17 @@ extension DownloadManager {
             try? await Task.sleep(for: .seconds(1))
             guard !Task.isCancelled else { return }
 
-            // Perform JSON encoding on background thread
+            let snapshot = DownloadPersistenceSnapshot(
+                activeDownloads: activeData,
+                completedDownloads: completedData
+            )
+
+            // Perform JSON encoding and atomic disk write on a background thread
             await Task.detached {
-                let encoder = JSONEncoder()
-
                 do {
-                    let active = try encoder.encode(activeData)
-                    UserDefaults.standard.set(active, forKey: "activeDownloads")
+                    try DownloadPersistenceStore.saveSnapshot(snapshot)
                 } catch {
-                    LoggingService.shared.logDownloadError("Failed to save active downloads", error: error)
-                }
-
-                do {
-                    let completed = try encoder.encode(completedData)
-                    UserDefaults.standard.set(completed, forKey: "completedDownloads")
-                } catch {
-                    LoggingService.shared.logDownloadError("Failed to save completed downloads", error: error)
+                    LoggingService.shared.logDownloadError("Failed to save downloads snapshot", error: error)
                 }
             }.value
         }
@@ -52,28 +98,69 @@ extension DownloadManager {
     func saveDownloadsImmediately() {
         saveTask?.cancel()
 
-        let encoder = JSONEncoder()
-
+        let snapshot = DownloadPersistenceSnapshot(
+            activeDownloads: activeDownloads,
+            completedDownloads: completedDownloads
+        )
         do {
-            let activeData = try encoder.encode(activeDownloads)
-            UserDefaults.standard.set(activeData, forKey: "activeDownloads")
+            try DownloadPersistenceStore.saveSnapshot(snapshot)
         } catch {
-            LoggingService.shared.logDownloadError("Failed to save active downloads", error: error)
-        }
-
-        do {
-            let completedData = try encoder.encode(completedDownloads)
-            UserDefaults.standard.set(completedData, forKey: "completedDownloads")
-        } catch {
-            LoggingService.shared.logDownloadError("Failed to save completed downloads", error: error)
+            LoggingService.shared.logDownloadError("Failed to save downloads snapshot", error: error)
         }
     }
 
     func loadDownloads() {
-        let decoder = JSONDecoder()
+        if let snapshotURL = DownloadPersistenceStore.snapshotURL,
+           fileManager.fileExists(atPath: snapshotURL.path) {
+            do {
+                let snapshot = try DownloadPersistenceStore.loadSnapshot()
+                activeDownloads = snapshot.activeDownloads
+                completedDownloads = snapshot.completedDownloads
+                LoggingService.shared.logDownload(
+                    "[DOWNLOADS DIAGNOSTIC] ✅ Loaded downloads snapshot",
+                    details: "Version: \(snapshot.version), active: \(activeDownloads.count), completed: \(completedDownloads.count)"
+                )
+            } catch {
+                LoggingService.shared.logDownloadError(
+                    "[DOWNLOADS DIAGNOSTIC] ❌ Failed to load downloads snapshot",
+                    error: error
+                )
+                loadLegacyDownloads()
+            }
+        } else {
+            loadLegacyDownloads()
+        }
 
-        // ==== ACTIVE DOWNLOADS ====
-        if let activeData = UserDefaults.standard.data(forKey: "activeDownloads") {
+        validateCompletedDownloads()
+
+        // ==== POST-LOAD DIAGNOSTICS ====
+        Task {
+            await calculateStorageUsed()
+            await diagnoseOrphanedFiles()
+        }
+
+        // Rebuild cached Sets for O(1) lookup
+        downloadingVideoIDs = Set(activeDownloads.map { $0.videoID })
+        downloadedVideoIDs = Set(completedDownloads.map { $0.videoID })
+
+        // Initialize per-video progress dictionary for active downloads
+        for download in activeDownloads {
+            downloadProgressByVideo[download.videoID] = DownloadProgressInfo(
+                progress: download.progress,
+                isIndeterminate: download.hasIndeterminateProgress
+            )
+        }
+    }
+
+    private func loadLegacyDownloads() {
+        let decoder = JSONDecoder()
+        let defaults = UserDefaults.standard
+        let activeData = defaults.data(forKey: DownloadPersistenceStore.activeDownloadsLegacyKey)
+        let completedData = defaults.data(forKey: DownloadPersistenceStore.completedDownloadsLegacyKey)
+        var activeDecodedSuccessfully = activeData == nil
+        var completedDecodedSuccessfully = completedData == nil
+
+        if let activeData {
             LoggingService.shared.logDownload(
                 "[DOWNLOADS DIAGNOSTIC] Loading active downloads",
                 details: "Size: \(activeData.count) bytes"
@@ -89,6 +176,7 @@ extension DownloadManager {
             
             do {
                 activeDownloads = try decoder.decode([Download].self, from: activeData)
+                activeDecodedSuccessfully = true
                 LoggingService.shared.logDownload(
                     "[DOWNLOADS DIAGNOSTIC] ✅ Loaded active downloads: \(activeDownloads.count)"
                 )
@@ -116,7 +204,7 @@ extension DownloadManager {
         }
         
         // ==== COMPLETED DOWNLOADS ====
-        if let completedData = UserDefaults.standard.data(forKey: "completedDownloads") {
+        if let completedData {
             LoggingService.shared.logDownload(
                 "[DOWNLOADS DIAGNOSTIC] Loading completed downloads",
                 details: "Size: \(completedData.count) bytes"
@@ -132,28 +220,10 @@ extension DownloadManager {
             
             do {
                 completedDownloads = try decoder.decode([Download].self, from: completedData)
+                completedDecodedSuccessfully = true
                 LoggingService.shared.logDownload(
                     "[DOWNLOADS DIAGNOSTIC] ✅ Loaded completed downloads: \(completedDownloads.count)"
                 )
-
-                // Validate completed downloads have files on disk
-                let beforeCount = completedDownloads.count
-                completedDownloads.removeAll { download in
-                    guard let fileURL = resolveLocalURL(for: download),
-                          fileManager.fileExists(atPath: fileURL.path) else {
-                        LoggingService.shared.warning(
-                            "[Downloads] Removing orphaned record: \(download.videoID) — file missing at \(download.localVideoPath ?? "nil")",
-                            category: .downloads
-                        )
-                        return true
-                    }
-                    return false
-                }
-                let removed = beforeCount - completedDownloads.count
-                if removed > 0 {
-                    LoggingService.shared.warning("[Downloads] Removed \(removed) orphaned download record(s)", category: .downloads)
-                    saveDownloadsImmediately()
-                }
             } catch let decodingError as DecodingError {
                 let diagnostics = diagnoseDecodingError(decodingError, dataSize: completedData.count)
                 LoggingService.shared.logDownloadError(
@@ -176,23 +246,49 @@ extension DownloadManager {
                 "[DOWNLOADS DIAGNOSTIC] No completed downloads in UserDefaults"
             )
         }
-        
-        // ==== POST-LOAD DIAGNOSTICS ====
-        Task {
-            await calculateStorageUsed()
-            await diagnoseOrphanedFiles()
-        }
-        
-        // Rebuild cached Sets for O(1) lookup
-        downloadingVideoIDs = Set(activeDownloads.map { $0.videoID })
-        downloadedVideoIDs = Set(completedDownloads.map { $0.videoID })
 
-        // Initialize per-video progress dictionary for active downloads
-        for download in activeDownloads {
-            downloadProgressByVideo[download.videoID] = DownloadProgressInfo(
-                progress: download.progress,
-                isIndeterminate: download.hasIndeterminateProgress
+        let hasLegacyData = activeData != nil || completedData != nil
+        guard hasLegacyData, activeDecodedSuccessfully, completedDecodedSuccessfully else { return }
+
+        let snapshot = DownloadPersistenceSnapshot(
+            activeDownloads: activeDownloads,
+            completedDownloads: completedDownloads
+        )
+        do {
+            try DownloadPersistenceStore.saveSnapshot(snapshot)
+            defaults.removeObject(forKey: DownloadPersistenceStore.activeDownloadsLegacyKey)
+            defaults.removeObject(forKey: DownloadPersistenceStore.completedDownloadsLegacyKey)
+            LoggingService.shared.logDownload(
+                "[DOWNLOADS DIAGNOSTIC] ✅ Migrated legacy downloads to snapshot"
             )
+        } catch {
+            LoggingService.shared.logDownloadError(
+                "[DOWNLOADS DIAGNOSTIC] ❌ Failed to migrate legacy downloads",
+                error: error
+            )
+        }
+    }
+
+    private func validateCompletedDownloads() {
+        let beforeCount = completedDownloads.count
+        completedDownloads.removeAll { download in
+            guard let fileURL = resolveLocalURL(for: download),
+                  fileManager.fileExists(atPath: fileURL.path) else {
+                LoggingService.shared.warning(
+                    "[Downloads] Removing orphaned record: \(download.videoID) — file missing at \(download.localVideoPath ?? "nil")",
+                    category: .downloads
+                )
+                return true
+            }
+            return false
+        }
+        let removed = beforeCount - completedDownloads.count
+        if removed > 0 {
+            LoggingService.shared.warning(
+                "[Downloads] Removed \(removed) orphaned download record(s)",
+                category: .downloads
+            )
+            saveDownloadsImmediately()
         }
     }
 

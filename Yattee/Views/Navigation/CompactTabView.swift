@@ -15,12 +15,10 @@ struct CompactTabView: View {
     /// Whether this hierarchy owns the mini player through the native tab accessory.
     var usesMiniPlayerAccessory = true
 
-    /// iOS 27 PoC: display the active video as a native prominent tab for Bubble style.
-    var usesProminentBubbleTab = false
-
     // Navigation paths for fixed tabs
     @State private var homePath = NavigationPath()
-    @State private var morePath = NavigationPath()
+    @State private var searchPath = NavigationPath()
+    @State private var hubPath = NavigationPath()
 
     // Navigation paths for dynamic tabs
     @State private var subscriptionsPath = NavigationPath()
@@ -36,7 +34,6 @@ struct CompactTabView: View {
     // Tab selection - using String to support both fixed and dynamic tabs
     // Initial value is a placeholder; actual startup tab is applied in onAppear
     @State private var selectedTab: String = "home"
-    @State private var lastContentTab: String = "home"
     @State private var hasAppliedStartupTab = false
     @State private var noveltyBadgeState = FeedNoveltyBadgeState.shared
     @State private var channelBadgePreferences = ChannelBadgePreferences.shared
@@ -101,44 +98,10 @@ struct CompactTabView: View {
         )
     }
 
-    private static let prominentMiniPlayerTabValue = "prominentMiniPlayer"
-    private static let moreTabValue = "more"
-
-    private var prominentMiniPlayerIcon: String {
-        appEnvironment?.playerService.state.playbackState == .playing
-            ? "pause.fill"
-            : "play.fill"
-    }
-
-    private var shouldIncludeProminentBubbleTab: Bool {
-        if #available(iOS 27.0, *) {
-            return usesProminentBubbleTab
-                && appEnvironment?.playerService.state.currentVideo != nil
-                && appEnvironment?.playerService.state.isClosingVideo == false
-        }
-        return false
-    }
-
-    /// A prominent tab is still a real tab destination. Keep its selection transient,
-    /// then restore the previous content tab before the expanded player disappears.
-    private var tabSelection: Binding<String> {
-        Binding(
-            get: { selectedTab },
-            set: { newValue in
-                if newValue == Self.prominentMiniPlayerTabValue {
-                    guard selectedTab != Self.prominentMiniPlayerTabValue else { return }
-                    lastContentTab = selectedTab
-                    navigationCoordinator?.expandPlayer()
-                    selectedTab = newValue
-                } else {
-                    selectedTab = newValue
-                }
-            }
-        )
-    }
+    private static let hubTabValue = TabBarItem.hub.rawValue
 
     var body: some View {
-        TabView(selection: tabSelection) {
+        TabView(selection: $selectedTab) {
             // Fixed: Home (first)
             Tab(value: "home") {
                 NavigationStack(path: $homePath) {
@@ -160,70 +123,43 @@ struct CompactTabView: View {
                 .badge(item == .subscriptions ? subscriptionBadgeCount : 0)
             }
 
-            if #available(iOS 27.0, *), shouldIncludeProminentBubbleTab {
-                Tab(value: Self.prominentMiniPlayerTabValue, role: .prominent) {
-                    EmptyView()
-                } label: {
-                    Label("player.prominentTab", systemImage: prominentMiniPlayerIcon)
-                        .tint(settingsManager?.resolvedAccentColor ?? .accentColor)
+            // Fixed: Search (last) - with role: .search
+            Tab(value: "search", role: .search) {
+                NavigationStack(path: $searchPath) {
+                    SearchView()
+                        .withNavigationDestinations()
                 }
+            } label: {
+                Label("tabs.search", systemImage: "magnifyingglass")
             }
+            .accessibilityIdentifier("tab.search")
 
         }
+        .iOS27SearchTabActivation()
         .environment(\.locale, localizationLocale)
         .zoomTransitionNamespace(zoomTransition)
         .zoomTransitionsEnabled(zoomTransitionsEnabled)
         .iOS26TabFeatures(
-            shouldShowAccessory: shouldShowAccessory,
-            allowsMiniPlayerAccessory: usesMiniPlayerAccessory,
+            shouldShowAccessory: shouldShowAccessory && usesMiniPlayerAccessory,
             settingsManager: settingsManager
         )
         .onChange(of: navigationCoordinator?.pendingNavigation) { _, newValue in
             handlePendingNavigation(newValue)
         }
         .onChange(of: selectedTab) { _, newTab in
-            if newTab != Self.prominentMiniPlayerTabValue {
-                lastContentTab = newTab
-            }
             updateHandoffForTab(newTab)
             syncTabToCoordinator(newTab)
         }
         .onChange(of: visibleTabItems) { _, visibleItems in
-            guard selectedTab == Self.moreTabValue, !visibleItems.contains(.more) else { return }
+            guard selectedTab == Self.hubTabValue, !visibleItems.contains(.hub) else { return }
             selectedTab = "home"
-        }
-        .onChange(of: navigationCoordinator?.isPlayerExpanded) { _, isExpanded in
-            if isExpanded == false {
-                restoreContentTabIfNeeded()
-            }
-        }
-        .onChange(of: navigationCoordinator?.isPlayerWindowVisible) { _, isVisible in
-            if isVisible == true {
-                restoreContentTabIfNeeded()
-            }
-        }
-        .onChange(of: shouldIncludeProminentBubbleTab) { _, isIncluded in
-            if !isIncluded {
-                restoreContentTabIfNeeded()
-            }
         }
         .onChange(of: navigationCoordinator?.selectedTab) { _, newTab in
             syncTabFromCoordinator(newTab)
         }
         .onAppear {
             applyStartupTabIfNeeded()
-            #if DEBUG
-            logProminentTabState(reason: "appear")
-            #endif
         }
-        #if DEBUG
-        .onChange(of: usesProminentBubbleTab) { _, _ in
-            logProminentTabState(reason: "presentationChanged")
-        }
-        .onChange(of: appEnvironment?.playerService.state.currentVideo?.id) { _, _ in
-            logProminentTabState(reason: "videoChanged")
-        }
-        #endif
         .task(id: activeNoveltyScope?.rawValue) {
             guard let activeNoveltyScope else { return }
             await FeedNoveltyRegistry.shared.synchronizeBadgeState(for: activeNoveltyScope)
@@ -232,23 +168,13 @@ struct CompactTabView: View {
 
     // MARK: - Startup Tab
 
-    private func restoreContentTabIfNeeded() {
-        guard selectedTab == Self.prominentMiniPlayerTabValue else { return }
-        selectedTab = lastContentTab
-    }
-
     /// Applies the configured startup tab on first appearance.
     private func applyStartupTabIfNeeded() {
         guard !hasAppliedStartupTab else { return }
         hasAppliedStartupTab = true
 
         let startupTab = settingsManager?.effectiveStartupTabForTabBar() ?? .home
-        if startupTab == .search {
-            selectedTab = "home"
-            homePath.append(NavigationDestination.search(""))
-        } else {
-            selectedTab = startupTab.compactTabValue
-        }
+        selectedTab = startupTab.compactTabValue
     }
 
     // MARK: - Handoff
@@ -261,7 +187,7 @@ struct CompactTabView: View {
         case "home":
             // Home tab - use playlists as default (matches HomeView's primary content)
             destination = .playlists
-        case Self.moreTabValue:
+        case Self.hubTabValue:
             destination = .playlists
         case TabBarItem.subscriptions.rawValue:
             destination = .subscriptionsFeed
@@ -312,7 +238,7 @@ struct CompactTabView: View {
                 pushSubscriptionsOnCurrentStack()
             }
         case .search:
-            pushSearchOnCurrentStack()
+            selectedTab = "search"
         #if os(tvOS)
         case .settings:
             break
@@ -331,6 +257,8 @@ struct CompactTabView: View {
             appTab = .home
         case TabBarItem.subscriptions.rawValue:
             appTab = .subscriptions
+        case "search":
+            appTab = .search
         default:
             // Other tabs (channels, bookmarks, downloads, etc.) don't have AppTab equivalents
             // Don't update coordinator - just return to avoid feedback loop
@@ -349,39 +277,10 @@ struct CompactTabView: View {
         switch selectedTab {
         case "home":
             homePath.append(destination)
-        case Self.moreTabValue:
-            morePath.append(destination)
-        case TabBarItem.channels.rawValue:
-            channelsPath.append(destination)
-        case TabBarItem.bookmarks.rawValue:
-            bookmarksPath.append(destination)
-        case TabBarItem.playlists.rawValue:
-            playlistsPath.append(destination)
-        case TabBarItem.history.rawValue:
-            historyPath.append(destination)
-        case TabBarItem.downloads.rawValue:
-            downloadsPath.append(destination)
-        case TabBarItem.sources.rawValue:
-            sourcesPath.append(destination)
-        case TabBarItem.settings.rawValue:
-            settingsPath.append(destination)
-        case TabBarItem.continueWatching.rawValue:
-            continueWatchingPath.append(destination)
-        default:
-            homePath.append(destination)
-        }
-    }
-
-    /// Pushes Search onto the selected tab while preserving its navigation state.
-    private func pushSearchOnCurrentStack() {
-        let destination = NavigationDestination.search("")
-        switch selectedTab {
-        case "home":
-            homePath.append(destination)
-        case Self.moreTabValue:
-            morePath.append(destination)
-        case TabBarItem.subscriptions.rawValue:
-            subscriptionsPath.append(destination)
+        case "search":
+            searchPath.append(destination)
+        case Self.hubTabValue:
+            hubPath.append(destination)
         case TabBarItem.channels.rawValue:
             channelsPath.append(destination)
         case TabBarItem.bookmarks.rawValue:
@@ -420,9 +319,9 @@ struct CompactTabView: View {
                 ManageChannelsView()
                     .withNavigationDestinations()
             }
-        case .more:
-            NavigationStack(path: $morePath) {
-                HomeView(customizationContext: .more)
+        case .hub:
+            NavigationStack(path: $hubPath) {
+                HomeView(customizationContext: .hub)
                     .withNavigationDestinations()
             }
         case .bookmarks:
@@ -472,8 +371,10 @@ struct CompactTabView: View {
         switch selectedTab {
         case "home":
             homePath.append(destination)
-        case Self.moreTabValue:
-            morePath.append(destination)
+        case "search":
+            searchPath.append(destination)
+        case Self.hubTabValue:
+            hubPath.append(destination)
         case TabBarItem.subscriptions.rawValue:
             subscriptionsPath.append(destination)
         case TabBarItem.channels.rawValue:
@@ -500,17 +401,17 @@ struct CompactTabView: View {
         navigationCoordinator?.clearPendingNavigation()
     }
 
-    #if DEBUG
-    private func logProminentTabState(reason: String) {
-        let state = appEnvironment?.playerService.state
-        LoggingService.shared.debug(
-            "[ProminentTabPoC] CompactTabView reason=\(reason) " +
-                "prominent=\(usesProminentBubbleTab) accessory=\(usesMiniPlayerAccessory) " +
-                "hasVideo=\(state?.currentVideo != nil) closing=\(state?.isClosingVideo ?? false)",
-            category: .general
-        )
+}
+
+private extension View {
+    @ViewBuilder
+    func iOS27SearchTabActivation() -> some View {
+        if #available(iOS 27.0, *) {
+            tabViewSearchActivation(.searchTabSelection)
+        } else {
+            self
+        }
     }
-    #endif
 }
 
 // MARK: - Preview

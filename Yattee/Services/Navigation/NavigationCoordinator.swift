@@ -63,6 +63,12 @@ final class NavigationCoordinator {
     /// Whether the mini player is expanded to full screen.
     var isPlayerExpanded = false
 
+    #if os(iOS)
+    /// True only while the visible expanded player is in landscape because of a
+    /// physical rotation. Manual fullscreen actions clear it.
+    var isAutomaticLandscapeFullscreen = false
+    #endif
+
     /// Whether the mini player queue sheet is showing.
     var isMiniPlayerQueueSheetPresented = false
 

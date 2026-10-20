@@ -16,7 +16,7 @@ actor PlayerControlsLayoutService {
 
     /// CloudKit sync engine for syncing presets across devices.
     /// Set this after initialization to enable CloudKit sync.
-    nonisolated(unsafe) weak var cloudKitSync: CloudKitSyncEngine?
+    weak var cloudKitSync: CloudKitSyncEngine?
 
     // MARK: - Storage
 

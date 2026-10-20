@@ -9,7 +9,7 @@ import Foundation
 
 enum HomeCustomizationContext: Sendable {
     case home
-    case more
+    case hub
 }
 
 struct HomePresentationSettings: Codable, Equatable, Sendable {
@@ -39,7 +39,7 @@ extension SettingsManager {
         switch context {
         case .home:
             return currentHomePresentationSettings
-        case .more:
+        case .hub:
             if let cached = _moreHomePresentation { return cached }
             if let data = data(for: .moreHomePresentation),
                let saved = try? JSONDecoder().decode(HomePresentationSettings.self, from: data) {
@@ -48,9 +48,9 @@ extension SettingsManager {
             }
 
             // First use only: clone the existing Home presentation, then persist
-            // an independent snapshot for the More tab.
+            // an independent snapshot for the Hub tab.
             let initial = currentHomePresentationSettings
-            setPresentationSettings(initial, for: .more)
+            setPresentationSettings(initial, for: .hub)
             return initial
         }
     }
@@ -69,7 +69,7 @@ extension SettingsManager {
             homeSectionVisibility = presentation.sectionVisibility
             homeSectionItemsLimit = presentation.sectionItemsLimit
             homeSectionLayout = presentation.sectionLayout
-        case .more:
+        case .hub:
             _moreHomePresentation = presentation
             if let data = try? JSONEncoder().encode(presentation) {
                 set(data, for: .moreHomePresentation)
@@ -814,6 +814,12 @@ extension SettingsManager {
                     }
                 }
             }
+            if String(data: data, encoding: .utf8)?.contains("\"more\"") == true {
+                _tabBarItemOrder = mergedOrder
+                if let migratedData = try? JSONEncoder().encode(mergedOrder) {
+                    set(migratedData, for: .tabBarItemOrder)
+                }
+            }
             return mergedOrder
         }
         set {
@@ -838,6 +844,12 @@ extension SettingsManager {
             for (item, defaultValue) in TabBarItem.defaultVisibility {
                 if mergedVisibility[item] == nil {
                     mergedVisibility[item] = defaultValue
+                }
+            }
+            if String(data: data, encoding: .utf8)?.contains("\"more\"") == true {
+                _tabBarItemVisibility = mergedVisibility
+                if let migratedData = try? JSONEncoder().encode(mergedVisibility) {
+                    set(migratedData, for: .tabBarItemVisibility)
                 }
             }
             return mergedVisibility
@@ -1095,6 +1107,11 @@ extension SettingsManager {
             if let cached = _tabBarStartupTab { return cached }
             guard let rawValue = string(for: .tabBarStartupTab) else {
                 return .home
+            }
+            if rawValue == "more" {
+                _tabBarStartupTab = .hub
+                set(SidebarMainItem.hub.rawValue, for: .tabBarStartupTab)
+                return .hub
             }
             return SidebarMainItem(rawValue: rawValue) ?? .home
         }

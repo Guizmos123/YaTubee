@@ -67,7 +67,7 @@ enum SettingsKey: String, CaseIterable {
     case hapticFeedbackEnabled
     case hapticFeedbackIntensity
     case inAppOrientationLock
-    case rotateToMatchAspectRatio
+    case automaticLandscapeFullscreen
     case preferPortraitBrowsing
 
     // Home

@@ -8,6 +8,27 @@
 import Foundation
 import SwiftData
 
+/// Observable state of a count read from the local SwiftData store.
+enum LocalCountState: Equatable, Sendable {
+    case notLoaded
+    case value(Int)
+    case error
+
+    var value: Int? {
+        guard case .value(let count) = self else { return nil }
+        return count
+    }
+}
+
+/// Counts shared by every Home and Hub presentation.
+struct LocalDataStatistics: Equatable, Sendable {
+    var playlists: LocalCountState = .notLoaded
+    var bookmarks: LocalCountState = .notLoaded
+    var continueWatching: LocalCountState = .notLoaded
+    var history: LocalCountState = .notLoaded
+    var subscriptions: LocalCountState = .notLoaded
+}
+
 /// Manages all local data persistence using SwiftData with CloudKit sync.
 @MainActor
 @Observable
@@ -29,6 +50,11 @@ final class DataManager {
     /// Cached set of bookmarked video IDs for fast O(1) lookup.
     /// Updated when bookmarks are added/removed locally or via CloudKit sync.
     var cachedBookmarkedVideoIDs: Set<String> = []
+
+    /// Local counts consumed by Home and Hub. These are never persisted separately.
+    private(set) var localStatistics = LocalDataStatistics()
+
+    @ObservationIgnored private var statisticsObservers: [NSObjectProtocol] = []
 
     /// Shared schema for all data models.
     static let schema = Schema([
@@ -90,9 +116,13 @@ final class DataManager {
         
         // Initialize bookmark cache
         refreshBookmarkCache()
+
+        // Local statistics are available as soon as the SwiftData store is open;
+        // they do not depend on the optional CloudKit synchronization pass.
+        refreshLocalStatistics()
         
         // Listen for bookmark changes from CloudKit sync to refresh cache
-        NotificationCenter.default.addObserver(
+        let bookmarkObserver = NotificationCenter.default.addObserver(
             forName: .bookmarksDidChange,
             object: nil,
             queue: .main
@@ -101,6 +131,31 @@ final class DataManager {
             Task { @MainActor [weak self] in
                 self?.refreshBookmarkCache()
             }
+        }
+        statisticsObservers.append(bookmarkObserver)
+
+        for name in [
+            Notification.Name.bookmarksDidChange,
+            .watchHistoryDidChange,
+            .playlistsDidChange,
+            .subscriptionsDidChange
+        ] {
+            let observer = NotificationCenter.default.addObserver(
+                forName: name,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.refreshLocalStatistics()
+                }
+            }
+            statisticsObservers.append(observer)
+        }
+    }
+
+    deinit {
+        for observer in statisticsObservers {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
     
@@ -114,6 +169,35 @@ final class DataManager {
         } catch {
             cachedBookmarkedVideoIDs = []
             LoggingService.shared.logCloudKitError("Failed to refresh bookmark cache", error: error)
+        }
+    }
+
+    /// Recomputes local counts with SQL-backed count queries. A failed read stays
+    /// distinguishable from a genuine zero and is logged for diagnosis.
+    func refreshLocalStatistics() {
+        localStatistics = LocalDataStatistics(
+            playlists: fetchCount(FetchDescriptor<LocalPlaylist>(), label: "playlists"),
+            bookmarks: fetchCount(FetchDescriptor<Bookmark>(), label: "bookmarks"),
+            continueWatching: fetchCount(
+                FetchDescriptor<WatchEntry>(
+                    predicate: #Predicate { !$0.isFinished && !$0.isLive && $0.watchedSeconds > 10 }
+                ),
+                label: "continue watching"
+            ),
+            history: fetchCount(FetchDescriptor<WatchEntry>(), label: "watch history"),
+            subscriptions: fetchCount(FetchDescriptor<Subscription>(), label: "subscriptions")
+        )
+    }
+
+    private func fetchCount<Model: PersistentModel>(
+        _ descriptor: FetchDescriptor<Model>,
+        label: String
+    ) -> LocalCountState {
+        do {
+            return .value(try modelContext.fetchCount(descriptor))
+        } catch {
+            LoggingService.shared.logCloudKitError("Failed to count local \(label)", error: error)
+            return .error
         }
     }
 

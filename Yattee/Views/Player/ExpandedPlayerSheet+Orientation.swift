@@ -38,6 +38,10 @@ extension ExpandedPlayerSheet {
     /// When orientation lock is enabled, locks to the target orientation before rotating
     /// (keeps orientation restricted the entire time, just changes which orientation is allowed).
     func toggleFullscreen() {
+        // A manual fullscreen action hands control back to the user. A later
+        // portrait rotation must not automatically dismiss this presentation.
+        appEnvironment?.navigationCoordinator.isAutomaticLandscapeFullscreen = false
+
         guard let windowScene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .first(where: { $0.activationState == .foregroundActive }) else { return }

@@ -11,6 +11,55 @@ import SwiftData
 extension DataManager {
     // MARK: - Watch History
 
+    /// Reconciles cached library titles with fresh server metadata without a
+    /// schema migration. DeArrow remains a presentation-time override and is
+    /// deliberately never persisted here.
+    func updatePersistedMetadata(from video: Video) {
+        updatePersistedMetadata(from: [video])
+    }
+
+    /// Batch variant used by localized feeds to avoid repeated fetches/saves.
+    func updatePersistedMetadata(from videos: [Video]) {
+        let youtubeTitles = videos.reduce(into: [String: String]()) { titles, video in
+            guard case .global(let provider) = video.id.source,
+                  provider == ContentSource.youtubeProvider else { return }
+            titles[video.id.videoID] = video.title
+        }
+        guard !youtubeTitles.isEmpty else { return }
+
+        let watchDescriptor = FetchDescriptor<WatchEntry>()
+        let bookmarkDescriptor = FetchDescriptor<Bookmark>()
+
+        do {
+            var changedWatchEntries: [WatchEntry] = []
+            for entry in try modelContext.fetch(watchDescriptor)
+            where entry.sourceRawValue == "global"
+                && (entry.globalProvider ?? ContentSource.youtubeProvider) == ContentSource.youtubeProvider {
+                guard let title = youtubeTitles[entry.videoID], entry.title != title else { continue }
+                entry.title = title
+                changedWatchEntries.append(entry)
+            }
+
+            var changedBookmarks: [Bookmark] = []
+            for bookmark in try modelContext.fetch(bookmarkDescriptor)
+            where bookmark.sourceRawValue == "global"
+                && (bookmark.globalProvider ?? ContentSource.youtubeProvider) == ContentSource.youtubeProvider {
+                guard let title = youtubeTitles[bookmark.videoID], bookmark.title != title else { continue }
+                bookmark.title = title
+                changedBookmarks.append(bookmark)
+            }
+
+            guard !changedWatchEntries.isEmpty || !changedBookmarks.isEmpty else { return }
+            save()
+            changedWatchEntries.forEach { cloudKitSync?.queueWatchEntrySave($0) }
+            changedBookmarks.forEach { cloudKitSync?.queueBookmarkSave($0) }
+            NotificationCenter.default.post(name: .watchHistoryDidChange, object: nil)
+            NotificationCenter.default.post(name: .bookmarksDidChange, object: nil)
+        } catch {
+            LoggingService.shared.logCloudKitError("Failed to refresh persisted video metadata", error: error)
+        }
+    }
+
     /// Records or updates watch progress locally without triggering iCloud sync.
     /// Use this for frequent updates during playback to avoid unnecessary sync overhead.
     ///
@@ -98,6 +147,9 @@ extension DataManager {
             // Queue for CloudKit sync
             cloudKitSync?.queueWatchEntrySave(entry)
             TopShelfSnapshotWriter.writeContinueWatching(dataManager: self)
+            // This final (non-high-frequency) update can move an entry into or
+            // out of Continue Watching, so refresh the shared counters here.
+            NotificationCenter.default.post(name: .watchHistoryDidChange, object: nil)
         } catch {
             LoggingService.shared.logCloudKitError("Failed to update watch progress", error: error)
         }
@@ -145,6 +197,7 @@ extension DataManager {
         do {
             return try modelContext.fetchCount(descriptor)
         } catch {
+            LoggingService.shared.logCloudKitError("Failed to count watch history", error: error)
             return 0
         }
     }

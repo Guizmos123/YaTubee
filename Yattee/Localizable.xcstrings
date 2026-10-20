@@ -2604,7 +2604,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Entretoise"
+            "value" : "Espace"
           }
         }
       }
@@ -4311,6 +4311,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce feed n’est pas pris en charge par la source sélectionnée."
+          }
+        }
+      }
+    },
+    "feed.noveltyBadge.accessibilityLabel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New video"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle vidéo"
           }
         }
       }
@@ -8310,7 +8326,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Canalisé"
+            "value" : "Piped"
           }
         }
       }
@@ -12331,23 +12347,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Précédent"
-          }
-        }
-      }
-    },
-    "player.prominentTab" : {
-      "comment" : "Accessibility label for the prominent mini-player tab",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Player"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lecture"
           }
         }
       }
@@ -17231,7 +17230,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lumière"
+            "value" : "Claire"
           }
         }
       }
@@ -19999,6 +19998,7 @@
       }
     },
     "settings.language.video.application" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -20010,6 +20010,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Identique à l’application"
+          }
+        }
+      }
+    },
+    "settings.language.video.changeConfirmation.action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Language"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer la langue"
+          }
+        }
+      }
+    },
+    "settings.language.video.changeConfirmation.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To display all titles and descriptions in the new language, you’ll need to fully close YaTubee and reopen it."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour afficher tous les titres et descriptions dans la nouvelle langue, vous devrez fermer complètement YaTubee puis le rouvrir."
+          }
+        }
+      }
+    },
+    "settings.language.video.changeConfirmation.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Content Language?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer la langue du contenu ?"
           }
         }
       }
@@ -21213,6 +21261,40 @@
         }
       }
     },
+    "settings.playback.orientation.automaticLandscapeFullscreen" : {
+      "comment" : "Toggle for opening the player fullscreen when an iPhone is physically rotated to landscape",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic Fullscreen in Landscape"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plein écran automatique en paysage"
+          }
+        }
+      }
+    },
+    "settings.playback.orientation.automaticLandscapeFullscreen.footer" : {
+      "comment" : "Explanation of automatic landscape fullscreen on iPhone",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While a video is playing, rotating your iPhone to landscape opens the player fullscreen. Returning to portrait closes only a player opened automatically."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pendant la lecture d’une vidéo, tourner l’iPhone en paysage ouvre le lecteur en plein écran. Le retour en portrait ferme uniquement un lecteur ouvert automatiquement."
+          }
+        }
+      }
+    },
     "settings.playback.orientation.header" : {
       "comment" : "Header for orientation settings section",
       "localizations" : {
@@ -21243,23 +21325,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Préférer le portrait lors de la navigation"
-          }
-        }
-      }
-    },
-    "settings.playback.orientation.rotateToMatchAspectRatio" : {
-      "comment" : "Toggle for auto rotating to landscape for widescreen videos",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rotate to match aspect ratio"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faire pivoter pour correspondre au rapport hauteur/largeur"
           }
         }
       }
@@ -21589,7 +21654,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Boutons de saut"
+            "value" : "Bouton passer"
           }
         }
       }
@@ -21605,7 +21670,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chercher"
+            "value" : "Avancer"
           }
         }
       }
@@ -28697,6 +28762,7 @@
     },
     "startup.storage.retrying" : {
       "comment" : "Accessibility label for the persistent storage retry progress indicator",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -30689,19 +30755,19 @@
         }
       }
     },
-    "tabs.more" : {
-      "comment" : "More tab title",
+    "tabs.hub" : {
+      "comment" : "Hub tab title",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "More"
+            "value" : "Hub"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autres"
+            "value" : "Hub"
           }
         }
       }
@@ -31462,6 +31528,23 @@
         }
       }
     },
+    "video.playlist" : {
+      "comment" : "Short label for the video playlist action",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist"
+          }
+        }
+      }
+    },
     "video.removeBookmark" : {
       "comment" : "Remove bookmark button label",
       "localizations" : {
@@ -32152,7 +32235,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tranche de console"
+            "value" : "Bulle des chaînes"
           }
         }
       }
@@ -32281,6 +32364,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plaine"
+          }
+        }
+      }
+    },
+    "viewOptions.noveltyBadge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Video Badge"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Badge de nouveautés"
           }
         }
       }
@@ -32448,6 +32547,9 @@
           }
         }
       }
+    },
+    "YaTubee" : {
+
     },
     "Zone Actions" : {
 

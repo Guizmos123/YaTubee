@@ -31,6 +31,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "372D1A262EDB163800F58F7A"
                BuildableName = "YaTubee.app"
+               BlueprintName = "Yattee"
                ReferencedContainer = "container:Yattee.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -62,6 +63,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "372D1A262EDB163800F58F7A"
             BuildableName = "YaTubee.app"
+            BlueprintName = "Yattee"
             ReferencedContainer = "container:Yattee.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -80,6 +82,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "372D1A262EDB163800F58F7A"
             BuildableName = "YaTubee.app"
+            BlueprintName = "Yattee"
             ReferencedContainer = "container:Yattee.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -108,6 +108,20 @@ enum YatteeServerFeedSnapshot {
     }
 }
 
+/// Identifies the language-specific cache scope owned by one Feed request.
+struct YatteeServerFeedRequestContext: Equatable, Sendable {
+    let scope: String
+    let language: String
+
+    static func scope(instanceID: UUID, language: String) -> String {
+        "local:yatteeServer:\(instanceID.uuidString):lang:\(language)"
+    }
+
+    func matches(scope currentScope: String?, language currentLanguage: String) -> Bool {
+        scope == currentScope && language == currentLanguage
+    }
+}
+
 /// Runs at most one feed refresh operation at a time. Concurrent callers join
 /// the active task without owning or cancelling it.
 @MainActor
@@ -503,10 +517,11 @@ final class SubscriptionFeedCache {
 
     /// Refreshes the local subscription feed using the selected aggregation backend.
     private func refreshLocalAccount(using appEnvironment: AppEnvironment) async {
-        switch LocalFeedSource.resolve(
+        let source = LocalFeedSource.resolve(
             from: appEnvironment.instancesManager.instances,
             preference: appEnvironment.settingsManager.localFeedSourcePreference
-        ) {
+        )
+        switch source {
         case .yatteeServer(let serverInstance):
             await activateCacheScope(cacheScope(using: appEnvironment))
             LoggingService.shared.info("Refreshing feed using Yattee Server: \(serverInstance.url.absoluteString)", category: .general)
@@ -867,6 +882,10 @@ final class SubscriptionFeedCache {
     private func refreshFromStatelessServer(instance: Instance, using appEnvironment: AppEnvironment) async {
         let subscriptions = appEnvironment.dataManager.subscriptions()
         let requestStartedAt = Date()
+        let requestContext = YatteeServerFeedRequestContext(
+            scope: cacheScope(using: appEnvironment),
+            language: appEnvironment.settingsManager.resolvedVideoMetadataLanguage
+        )
         LoggingService.shared.debug("refreshFromStatelessServer: Found \(subscriptions.count) subscriptions", category: .general)
         guard !subscriptions.isEmpty else {
             await registerNovelties(
@@ -916,9 +935,7 @@ final class SubscriptionFeedCache {
             }
             let yatteeServerAPI = YatteeServerAPI(
                 httpClient: httpClient,
-                videoMetadataLanguageProvider: { @MainActor [weak settings = appEnvironment.settingsManager] in
-                    settings?.resolvedVideoMetadataLanguage ?? "original"
-                }
+                videoMetadataLanguageProvider: { requestContext.language }
             )
             LoggingService.shared.debug("refreshFromStatelessServer: Calling postFeed for \(channelRequests.count) channels", category: .general)
             let response = try await yatteeServerAPI.postFeed(
@@ -933,15 +950,16 @@ final class SubscriptionFeedCache {
                 "refreshFromStatelessServer: Received \(serverVideos.count) videos from server, status: \(response.status), ready: \(response.isReady)",
                 category: .general
             )
-            let isComplete = await applyYatteeServerResponse(
+            guard let isComplete = await applyYatteeServerResponse(
                 response,
                 cachedVideos: cachedVideos,
                 baselineSupplement: cachedVideos,
                 expectedChannelCount: channelRequests.count,
                 requestStartedAt: requestStartedAt,
+                requestContext: requestContext,
                 instance: instance,
                 appEnvironment: appEnvironment
-            )
+            ) else { return }
 
             if isComplete {
                 isLoading = false
@@ -964,6 +982,7 @@ final class SubscriptionFeedCache {
                         instance: instance,
                         baselineSupplement: cachedVideos,
                         requestStartedAt: requestStartedAt,
+                        requestContext: requestContext,
                         appEnvironment: appEnvironment
                     )
                 }
@@ -971,6 +990,7 @@ final class SubscriptionFeedCache {
                 pollingTask = nil
             }
 
+            guard isCurrent(requestContext, using: appEnvironment) else { return }
             await captureYatteeServerSyncSnapshot(
                 api: yatteeServerAPI,
                 instance: instance,
@@ -978,6 +998,7 @@ final class SubscriptionFeedCache {
                 refreshStartedAt: requestStartedAt
             )
         } catch {
+            guard isCurrent(requestContext, using: appEnvironment) else { return }
             LoggingService.shared.error(
                 "Yattee Server feed failed: \(error.localizedDescription)",
                 category: .general
@@ -1003,6 +1024,7 @@ final class SubscriptionFeedCache {
         instance: Instance,
         baselineSupplement: [Video],
         requestStartedAt: Date,
+        requestContext: YatteeServerFeedRequestContext,
         appEnvironment: AppEnvironment
     ) async {
         let statusChannels = channels.map {
@@ -1014,9 +1036,7 @@ final class SubscriptionFeedCache {
         }
         let yatteeServerAPI = YatteeServerAPI(
             httpClient: httpClient,
-            videoMetadataLanguageProvider: { @MainActor [weak settings = appEnvironment.settingsManager] in
-                settings?.resolvedVideoMetadataLanguage ?? "original"
-            }
+            videoMetadataLanguageProvider: { requestContext.language }
         )
 
         let maxRetries = 5
@@ -1044,6 +1064,7 @@ final class SubscriptionFeedCache {
                 LoggingService.shared.debug("Feed status polling cancelled during sleep", category: .general)
                 break
             }
+            guard isCurrent(requestContext, using: appEnvironment) else { return }
 
             retryCount += 1
 
@@ -1052,6 +1073,7 @@ final class SubscriptionFeedCache {
                     channels: statusChannels,
                     instance: instance
                 )
+                guard isCurrent(requestContext, using: appEnvironment) else { return }
                 consecutiveErrors = 0 // Reset on success
 
                 if status.isReady {
@@ -1063,22 +1085,25 @@ final class SubscriptionFeedCache {
                             offset: 0,
                             instance: instance
                         )
-                        _ = await applyYatteeServerResponse(
+                        guard await applyYatteeServerResponse(
                             response,
                             cachedVideos: videos,
                             baselineSupplement: baselineSupplement,
                             expectedChannelCount: channels.count,
                             requestStartedAt: requestStartedAt,
+                            requestContext: requestContext,
                             instance: instance,
                             appEnvironment: appEnvironment
-                        )
+                        ) != nil else { return }
                     } catch {
+                        guard isCurrent(requestContext, using: appEnvironment) else { return }
                         LoggingService.shared.error(
                             "Yattee Server final feed fetch failed: \(error.localizedDescription)",
                             category: .general
                         )
                         feedLoadState = .error(.networkError(error.localizedDescription))
                     }
+                    guard isCurrent(requestContext, using: appEnvironment) else { return }
                     isLoading = false
                     return
                 }
@@ -1090,6 +1115,7 @@ final class SubscriptionFeedCache {
                     errorCount: status.errorCount
                 )
             } catch {
+                guard isCurrent(requestContext, using: appEnvironment) else { return }
                 consecutiveErrors += 1
                 LoggingService.shared.debug(
                     "Feed status poll error (\(consecutiveErrors)/\(maxConsecutiveErrors)): \(error.localizedDescription)",
@@ -1331,12 +1357,22 @@ final class SubscriptionFeedCache {
         ) {
             case .yatteeServer(let instance):
                 let language = appEnvironment.settingsManager.resolvedVideoMetadataLanguage
-                return "local:yatteeServer:\(instance.id.uuidString):lang:\(language)"
+                return YatteeServerFeedRequestContext.scope(instanceID: instance.id, language: language)
             case .invidious(let instance):
                 return "local:invidious:\(instance.id.uuidString)"
             case .unavailable:
                 return "local:unavailable"
             }
+    }
+
+    private func isCurrent(
+        _ requestContext: YatteeServerFeedRequestContext,
+        using appEnvironment: AppEnvironment
+    ) -> Bool {
+        requestContext.matches(
+            scope: cacheScopeKey,
+            language: appEnvironment.settingsManager.resolvedVideoMetadataLanguage
+        ) && requestContext.scope == cacheScope(using: appEnvironment)
     }
 
     private func canAdoptLegacyCache(for scope: String) -> Bool {
@@ -1383,9 +1419,17 @@ final class SubscriptionFeedCache {
         baselineSupplement: [Video],
         expectedChannelCount: Int,
         requestStartedAt: Date,
+        requestContext: YatteeServerFeedRequestContext,
         instance: Instance,
         appEnvironment: AppEnvironment
-    ) async -> Bool {
+    ) async -> Bool? {
+        guard isCurrent(requestContext, using: appEnvironment) else {
+            LoggingService.shared.debug(
+                "Discarding obsolete Yattee Server feed response for \(requestContext.language)",
+                category: .general
+            )
+            return nil
+        }
         let serverVideos = response.toVideos()
         let isComplete = YatteeServerFeedSnapshot.isComplete(
             response,
@@ -1419,6 +1463,7 @@ final class SubscriptionFeedCache {
         }
 
         appEnvironment.dataManager.updateLastVideoPublishedDates(from: serverVideos)
+        appEnvironment.dataManager.updatePersistedMetadata(from: serverVideos)
         prefetchDeArrow(for: serverVideos, using: appEnvironment)
         return isComplete
     }

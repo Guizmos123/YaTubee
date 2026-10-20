@@ -5,8 +5,6 @@
 //  Extension for DeArrow title resolution on Video.
 //
 
-import Foundation
-
 extension Video {
     /// Returns the DeArrow-replaced title if available, otherwise the original title.
     ///

@@ -176,6 +176,7 @@ extension DataManager {
         if addedCount > 0 {
             save()
             SubscriptionFeedCache.shared.invalidate()
+            NotificationCenter.default.post(name: .subscriptionsDidChange, object: nil)
             LoggingService.shared.info("Bulk added \(addedCount) subscriptions", category: .general)
         }
     }
@@ -343,6 +344,7 @@ extension DataManager {
         do {
             return try modelContext.fetchCount(descriptor)
         } catch {
+            LoggingService.shared.logCloudKitError("Failed to count subscriptions", error: error)
             return 0
         }
     }

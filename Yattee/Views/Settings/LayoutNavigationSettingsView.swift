@@ -87,6 +87,15 @@ private struct CustomizationSection: View {
             } label: {
                 Label(AppLocalization.string("settings.appearance.home.customize"), systemImage: SidebarItem.home.systemImage)
             }
+
+            NavigationLink {
+                TVSidebarDetailContainer(
+                    systemImage: SidebarItem.hub.systemImage,
+                    title: AppLocalization.string("tabs.hub")
+                ) { HomeSettingsView(customizationContext: .hub) }
+            } label: {
+                Label(AppLocalization.string("tabs.hub"), systemImage: SidebarItem.hub.systemImage)
+            }
             #else
             SettingsNavigationRow("settings.appearance.home.customize", systemImage: SidebarItem.home.systemImage) {
                 HomeSettingsView()

@@ -262,22 +262,10 @@ struct PlayerControlsActions {
         onToggleFullscreen != nil
     }
     #else
-    /// Fullscreen icon based on current state.
-    /// Uses rotation icons when tapping will cause device rotation,
-    /// otherwise uses standard fullscreen arrows.
+    /// Fullscreen icon based on current state. Its action can still rotate the
+    /// device, but the control consistently uses the standard fullscreen glyph.
     var fullscreenIcon: String {
-        if willRotateOnFullscreenToggle {
-            if isFullscreen {
-                // Currently landscape fullscreen, will rotate to portrait
-                return "rectangle.portrait.rotate"
-            } else {
-                // Currently portrait, will rotate to landscape
-                return "rectangle.landscape.rotate"
-            }
-        } else {
-            // Standard fullscreen icons (iPad or portrait video details toggle)
-            return isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
-        }
+        isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
     }
 
     /// Shared fullscreen-tap decision used by the fullscreen button and tap gestures.

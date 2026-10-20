@@ -11,6 +11,7 @@ import Foundation
 enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
     case search
     case home
+    case hub
     case subscriptions
     case bookmarks
     case history
@@ -27,7 +28,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
 
     /// Default order for sidebar main items.
     static var defaultOrder: [SidebarMainItem] {
-        [.search, .home, .subscriptions, .bookmarks, .history, .channels, .playlists, .sources, .openURL, .remoteControl, .downloads, .continueWatching, .settings]
+        [.search, .home, .hub, .subscriptions, .bookmarks, .history, .channels, .playlists, .sources, .openURL, .remoteControl, .downloads, .continueWatching, .settings]
     }
 
     /// Default visibility (all visible except subscriptions and channels).
@@ -36,6 +37,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         [
             .search: true,
             .home: true,
+            .hub: false,
             .subscriptions: false,
             .bookmarks: false,
             .history: false,
@@ -52,6 +54,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         [
             .search: true,
             .home: true,
+            .hub: true,
             .subscriptions: false,
             .bookmarks: false,
             .history: false,
@@ -72,6 +75,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .search: "magnifyingglass"
         case .home: "house.fill"
+        case .hub: "circle.grid.2x2"
         case .subscriptions: "play.square.stack.fill"
         case .bookmarks: "bookmark.fill"
         case .history: "clock"
@@ -91,6 +95,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .search: AppLocalization.string("sidebar.mainItem.search")
         case .home: AppLocalization.string("sidebar.mainItem.home")
+        case .hub: AppLocalization.string("tabs.hub")
         case .subscriptions: AppLocalization.string("sidebar.mainItem.subscriptions")
         case .bookmarks: AppLocalization.string("sidebar.mainItem.bookmarks")
         case .history: AppLocalization.string("sidebar.mainItem.history")
@@ -143,6 +148,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .search: return "search"
         case .home: return "home"
+        case .hub: return TabBarItem.hub.rawValue
         case .subscriptions: return TabBarItem.subscriptions.rawValue
         case .bookmarks: return TabBarItem.bookmarks.rawValue
         case .history: return TabBarItem.history.rawValue
@@ -162,6 +168,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .search: return .search
         case .home: return .home
+        case .hub: return .hub
         case .subscriptions: return .subscriptionsFeed
         case .bookmarks: return .bookmarks
         case .history: return .history
@@ -181,7 +188,7 @@ enum SidebarMainItem: String, CaseIterable, Codable, Identifiable, Sendable {
         switch tabBarItem {
         case .subscriptions: self = .subscriptions
         case .channels: self = .channels
-        case .more: return nil
+        case .hub: self = .hub
         case .bookmarks: self = .bookmarks
         case .playlists: self = .playlists
         case .history: self = .history

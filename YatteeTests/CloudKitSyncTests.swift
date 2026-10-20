@@ -96,6 +96,43 @@ struct CloudKitSyncTests {
 
     // MARK: - Record Mapper
 
+    @Suite("Record System Fields")
+    struct RecordSystemFieldsTests {
+        @Test("Archived metadata restores the stable record identity")
+        func archiveRoundTrip() throws {
+            let zone = CKRecordZone(zoneName: RecordType.zoneName)
+            let recordID = CKRecord.ID(recordName: "watch-video1@global:youtube", zoneID: zone.zoneID)
+            let record = CKRecord(recordType: RecordType.watchEntry, recordID: recordID)
+
+            let data = try CloudKitRecordSystemFields.encode(record)
+            let decoded = try CloudKitRecordSystemFields.decode(data)
+            let restored = try #require(decoded)
+
+            #expect(restored.recordID == recordID)
+            #expect(restored.recordType == RecordType.watchEntry)
+        }
+
+        @Test("Current local fields replace cached values and remove stale fields")
+        func applyingCurrentFields() {
+            let zone = CKRecordZone(zoneName: RecordType.zoneName)
+            let recordID = CKRecord.ID(recordName: "bookmark-video1@global:youtube", zoneID: zone.zoneID)
+            let cached = CKRecord(recordType: RecordType.bookmark, recordID: recordID)
+            cached["title"] = "Old" as CKRecordValue
+            cached["obsolete"] = "Remove" as CKRecordValue
+
+            let local = CKRecord(recordType: RecordType.bookmark, recordID: recordID)
+            local["title"] = "New" as CKRecordValue
+            local["note"] = "Keep" as CKRecordValue
+
+            let merged = CloudKitRecordSystemFields.applyingFields(from: local, to: cached)
+
+            #expect(merged === cached)
+            #expect(merged["title"] as? String == "New")
+            #expect(merged["note"] as? String == "Keep")
+            #expect(merged["obsolete"] == nil)
+        }
+    }
+
     @Suite("Record Mapper")
     struct RecordMapperTests {
         @Test("isLive survives the record round-trip")

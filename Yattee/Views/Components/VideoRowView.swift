@@ -26,6 +26,8 @@ struct VideoRowView: View {
     var index: Int? = nil
     /// When true, disables internal tap handling so parent view can handle all taps.
     var disableInternalTapHandling: Bool = false
+    /// Whether to display the subscription Feed's unopened-video corner marker.
+    var showsNoveltyBadge: Bool = false
 
     // Platform-specific fonts
     #if os(tvOS)
@@ -103,7 +105,9 @@ struct VideoRowView: View {
             video: video,
             cornerRadius: style == .compact ? 4 : style == .regular ? 6 : 8,
             watchProgress: watchProgress,
-            duration: style == .compact ? nil : video.formattedDuration
+            duration: style == .compact ? nil : video.formattedDuration,
+            showsNoveltyBadge: showsNoveltyBadge,
+            noveltyBadgeSize: style == .compact ? 14 : style == .regular ? 17 : 20
         )
         .frame(width: style.thumbnailWidth, height: style.thumbnailHeight)
         #if !os(tvOS)

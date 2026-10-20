@@ -222,28 +222,7 @@ struct MiniPlayerStyleTests {
     func presentationPolicy() {
         #expect(MiniPlayerPresentation.resolve(style: .bar, supportsTabAccessory: true) == .tabAccessory)
         #expect(MiniPlayerPresentation.resolve(style: .video, supportsTabAccessory: true) == .rootOverlay)
-        #expect(MiniPlayerPresentation.resolve(style: .bubble, supportsTabAccessory: true) == .tabAccessory)
-        #expect(
-            MiniPlayerPresentation.resolve(
-                style: .bubble,
-                supportsTabAccessory: true,
-                supportsProminentTab: true
-            ) == .prominentTab
-        )
-        #expect(
-            MiniPlayerPresentation.resolve(
-                style: .bar,
-                supportsTabAccessory: true,
-                supportsProminentTab: true
-            ) == .tabAccessory
-        )
-        #expect(
-            MiniPlayerPresentation.resolve(
-                style: .video,
-                supportsTabAccessory: true,
-                supportsProminentTab: true
-            ) == .rootOverlay
-        )
+        #expect(MiniPlayerPresentation.resolve(style: .bubble, supportsTabAccessory: true) == .rootOverlay)
 
         for style in MiniPlayerStyle.allCases {
             #expect(MiniPlayerPresentation.resolve(style: style, supportsTabAccessory: false) == .rootOverlay)

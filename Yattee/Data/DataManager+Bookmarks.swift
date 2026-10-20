@@ -108,6 +108,7 @@ extension DataManager {
         do {
             return try modelContext.fetchCount(descriptor)
         } catch {
+            LoggingService.shared.logCloudKitError("Failed to count bookmarks", error: error)
             return 0
         }
     }

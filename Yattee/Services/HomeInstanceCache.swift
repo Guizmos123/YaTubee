@@ -15,7 +15,7 @@ import Foundation
 final class HomeInstanceCache {
     static let shared = HomeInstanceCache()
 
-    /// Cached videos by cache key (format: "instanceID_contentType").
+    /// Cached videos by cache key (format: "instanceID_contentType[_lang_language]").
     private(set) var cache: [String: [Video]] = [:]
     
     /// Last updated timestamps by cache key.
@@ -28,22 +28,46 @@ final class HomeInstanceCache {
 
     // MARK: - Cache Key Management
 
-    /// Generates cache key in format "instanceID_contentType".
-    private func cacheKey(instanceID: UUID, contentType: InstanceContentType) -> String {
-        "\(instanceID.uuidString)_\(contentType.rawValue)"
+    /// Generates a cache key. Language is optional because the Home endpoints
+    /// currently exposed by yattee-plus (`popular` and `trending`) are not
+    /// localized, while this cache is also used by source-specific content.
+    static func cacheKey(
+        instanceID: UUID,
+        contentType: InstanceContentType,
+        metadataLanguage: String? = nil
+    ) -> String {
+        let base = "\(instanceID.uuidString)_\(contentType.rawValue)"
+        guard let metadataLanguage else { return base }
+        return "\(base)_lang_\(metadataLanguage)"
     }
 
     // MARK: - Public API
 
     /// Returns cached videos for a specific instance and content type.
-    func videos(for instanceID: UUID, contentType: InstanceContentType) -> [Video]? {
-        let key = cacheKey(instanceID: instanceID, contentType: contentType)
+    func videos(
+        for instanceID: UUID,
+        contentType: InstanceContentType,
+        metadataLanguage: String? = nil
+    ) -> [Video]? {
+        let key = Self.cacheKey(
+            instanceID: instanceID,
+            contentType: contentType,
+            metadataLanguage: metadataLanguage
+        )
         return cache[key]
     }
 
     /// Returns true if the cache is valid based on 30-minute validity duration.
-    func isCacheValid(for instanceID: UUID, contentType: InstanceContentType) -> Bool {
-        let key = cacheKey(instanceID: instanceID, contentType: contentType)
+    func isCacheValid(
+        for instanceID: UUID,
+        contentType: InstanceContentType,
+        metadataLanguage: String? = nil
+    ) -> Bool {
+        let key = Self.cacheKey(
+            instanceID: instanceID,
+            contentType: contentType,
+            metadataLanguage: metadataLanguage
+        )
         guard let timestamp = lastUpdated[key], !cache[key, default: []].isEmpty else {
             return false
         }
@@ -90,7 +114,10 @@ final class HomeInstanceCache {
             return
         }
 
-        let key = cacheKey(instanceID: instanceID, contentType: contentType)
+        // Do not add a language variant here: yattee-plus does not accept
+        // `lang` on Home's popular/trending endpoints, and feed is only used
+        // here for Invidious/Piped. This avoids duplicate equivalent entries.
+        let key = Self.cacheKey(instanceID: instanceID, contentType: contentType)
         
         LoggingService.shared.debug(
             "HomeInstanceCache.refresh: Fetching \(contentType.rawValue) from \(instance.displayName)",
@@ -161,12 +188,15 @@ final class HomeInstanceCache {
 
     /// Clears cached content for a specific instance and content type.
     func clear(instanceID: UUID, contentType: InstanceContentType) {
-        let key = cacheKey(instanceID: instanceID, contentType: contentType)
-        cache.removeValue(forKey: key)
-        lastUpdated.removeValue(forKey: key)
+        let keyPrefix = Self.cacheKey(instanceID: instanceID, contentType: contentType)
+        let keysToRemove = cache.keys.filter { $0 == keyPrefix || $0.hasPrefix("\(keyPrefix)_lang_") }
+        for key in keysToRemove {
+            cache.removeValue(forKey: key)
+            lastUpdated.removeValue(forKey: key)
+        }
         
         LoggingService.shared.debug(
-            "HomeInstanceCache.clear: Cleared cache for \(key)",
+            "HomeInstanceCache.clear: Cleared \(keysToRemove.count) cache entries for \(keyPrefix)",
             category: .general
         )
         

@@ -168,21 +168,28 @@ final class SearchViewModel {
                 guard versionAtStart == filterVersion,
                       languageAtStart == currentVideoMetadataLanguage else { return }
 
+                let watchMap = hideWatchedVideos ? dataManager?.watchEntriesMap() : nil
+
                 if resetResults {
                     // Fresh results
-                    videos = filterWatchedVideos(result.videos)
+                    videos = filterWatchedVideos(result.videos, using: watchMap)
                     channels = result.channels
                     playlists = result.playlists
+
+                    var videoIndexByID: [VideoID: Int] = [:]
+                    for (index, video) in videos.enumerated() where videoIndexByID[video.id] == nil {
+                        videoIndexByID[video.id] = index
+                    }
 
                     // Build unified result items from ordered items
                     resultItems = result.orderedItems.enumerated().compactMap { _, item in
                         switch item {
                         case .video(let video):
                             // Skip watched videos if filter is enabled
-                            if hideWatchedVideos && isVideoWatched(video) {
+                            if hideWatchedVideos && isVideoWatched(video, using: watchMap) {
                                 return nil
                             }
-                            if let index = videos.firstIndex(where: { $0.id == video.id }) {
+                            if let index = videoIndexByID[video.id] {
                                 return .video(video, index: index)
                             }
                             return nil
@@ -198,7 +205,7 @@ final class SearchViewModel {
                     let existingChannelIDs = Set(channels.map(\.id))
                     let existingPlaylistIDs = Set(playlists.map(\.id))
 
-                    let filteredNewVideos = filterWatchedVideos(result.videos)
+                    let filteredNewVideos = filterWatchedVideos(result.videos, using: watchMap)
                     let newVideos = filteredNewVideos.filter { !existingVideoIDs.contains($0.id) }
                     let newChannels = result.channels.filter { !existingChannelIDs.contains($0.id) }
                     let newPlaylists = result.playlists.filter { !existingPlaylistIDs.contains($0.id) }
@@ -208,16 +215,21 @@ final class SearchViewModel {
                     channels.append(contentsOf: newChannels)
                     playlists.append(contentsOf: newPlaylists)
 
+                    var videoIndexByID: [VideoID: Int] = [:]
+                    for (index, video) in videos.enumerated() where videoIndexByID[video.id] == nil {
+                        videoIndexByID[video.id] = index
+                    }
+
                     // Append to unified result items
                     for item in result.orderedItems {
                         switch item {
                         case .video(let video):
                             // Skip watched videos if filter is enabled
-                            if hideWatchedVideos && isVideoWatched(video) {
+                            if hideWatchedVideos && isVideoWatched(video, using: watchMap) {
                                 continue
                             }
                             guard !existingVideoIDs.contains(video.id) else { continue }
-                            let videoIndex = videos.firstIndex(where: { $0.id == video.id }) ?? videos.count - 1
+                            let videoIndex = videoIndexByID[video.id] ?? videos.count - 1
                             resultItems.append(.video(video, index: videoIndex))
                         case .channel(let channel):
                             guard !existingChannelIDs.contains(channel.id) else { continue }
@@ -379,12 +391,14 @@ final class SearchViewModel {
     }
     
     /// Filters out watched videos if hideWatchedVideos is enabled.
-    private func filterWatchedVideos(_ videos: [Video]) -> [Video] {
-        guard hideWatchedVideos, let dataManager else {
+    private func filterWatchedVideos(
+        _ videos: [Video],
+        using watchMap: [String: WatchEntry]?
+    ) -> [Video] {
+        guard hideWatchedVideos, let watchMap else {
             return videos
         }
-        
-        let watchMap = dataManager.watchEntriesMap()
+
         return videos.filter { video in
             guard let entry = watchMap[video.id.videoID] else { return true }
             return !entry.isFinished
@@ -392,9 +406,11 @@ final class SearchViewModel {
     }
     
     /// Checks if a video is watched (finished).
-    private func isVideoWatched(_ video: Video) -> Bool {
-        guard let dataManager else { return false }
-        let watchMap = dataManager.watchEntriesMap()
+    private func isVideoWatched(
+        _ video: Video,
+        using watchMap: [String: WatchEntry]?
+    ) -> Bool {
+        guard let watchMap else { return false }
         guard let entry = watchMap[video.id.videoID] else { return false }
         return entry.isFinished
     }

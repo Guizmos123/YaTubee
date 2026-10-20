@@ -22,7 +22,7 @@ final class NotificationManager: NSObject {
 
     private static let notificationCategoryIdentifier = "NEW_VIDEO"
     private static let watchActionIdentifier = "WATCH_ACTION"
-    static let notificationAuthorizationOptions: UNAuthorizationOptions = [.alert, .sound]
+    static let notificationAuthorizationOptions: UNAuthorizationOptions = [.alert, .sound, .badge]
 
     // MARK: - State
 

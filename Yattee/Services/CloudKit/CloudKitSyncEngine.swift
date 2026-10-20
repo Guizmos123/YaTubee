@@ -9,6 +9,36 @@ import CloudKit
 import Foundation
 import SwiftData
 
+/// Archives the CloudKit-managed fields needed to update an existing record
+/// without treating every local save as a fresh insert.
+enum CloudKitRecordSystemFields {
+    static func encode(_ record: CKRecord) throws -> Data {
+        let archiver = NSKeyedArchiver(requiringSecureCoding: true)
+        record.encodeSystemFields(with: archiver)
+        archiver.finishEncoding()
+        return archiver.encodedData
+    }
+
+    static func decode(_ data: Data) throws -> CKRecord? {
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        unarchiver.requiresSecureCoding = true
+        defer { unarchiver.finishDecoding() }
+        return CKRecord(coder: unarchiver)
+    }
+
+    /// Copies current application fields onto a record carrying server metadata.
+    static func applyingFields(from local: CKRecord, to serverMetadata: CKRecord) -> CKRecord {
+        let localKeys = Set(local.allKeys())
+        for key in serverMetadata.allKeys() where !localKeys.contains(key) {
+            serverMetadata[key] = nil
+        }
+        for key in localKeys {
+            serverMetadata[key] = local[key]
+        }
+        return serverMetadata
+    }
+}
+
 // MARK: - Deferred Playlist Item
 
 /// Tracks deferred playlist items with retry counts for persistent recovery.
@@ -110,6 +140,10 @@ final class CloudKitSyncEngine: @unchecked Sendable {
     /// precedence over freshly materialized records at send time.
     private var conflictResolvedRecords: [String: CKRecord] = [:]
 
+    /// Persisted CloudKit system fields (including record change tags), keyed by
+    /// stable record name. Application fields remain sourced from SwiftData.
+    private var recordSystemFields: [String: Data] = [:]
+
     /// The CloudKit zone all records live in (constant name, never changes).
     private let zone = RecordType.createZone()
 
@@ -141,6 +175,9 @@ final class CloudKitSyncEngine: @unchecked Sendable {
     
     /// UserDefaults key for CloudKit sync state.
     private let syncStateKey = "cloudKitSyncState"
+
+    /// UserDefaults key for archived CKRecord system fields.
+    private let recordSystemFieldsKey = "cloudKitRecordSystemFields"
 
     /// UserDefaults key for the record schema version this app last synced with.
     private let lastSchemaVersionKey = "cloudKitLastSchemaVersion"
@@ -270,6 +307,7 @@ final class CloudKitSyncEngine: @unchecked Sendable {
         let tempZone = RecordType.createZone()
         self.recordMapper = CloudKitRecordMapper(zone: tempZone)
         self.conflictResolver = CloudKitConflictResolver()
+        self.recordSystemFields = Self.loadRecordSystemFields(forKey: recordSystemFieldsKey)
         
         // Make this instance accessible for push notification forwarding
         CloudKitSyncEngine.current = self
@@ -479,6 +517,7 @@ final class CloudKitSyncEngine: @unchecked Sendable {
         pendingChangesBuffer.removeAll()
         conflictResolvedRecords.removeAll()
         retryCount.removeAll()
+        clearRecordSystemFields()
 
         // Clear deferred playlist items (they belong to the old account context)
         clearDeferredItems()
@@ -533,6 +572,57 @@ final class CloudKitSyncEngine: @unchecked Sendable {
         } catch {
             LoggingService.shared.logCloudKitError("Failed to save sync state", error: error)
         }
+    }
+
+    private static func loadRecordSystemFields(forKey key: String) -> [String: Data] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let fields = try? PropertyListDecoder().decode([String: Data].self, from: data) else {
+            return [:]
+        }
+        return fields
+    }
+
+    private func persistRecordSystemFields() {
+        guard let data = try? PropertyListEncoder().encode(recordSystemFields) else { return }
+        UserDefaults.standard.set(data, forKey: recordSystemFieldsKey)
+    }
+
+    private func cacheSystemFields(from record: CKRecord, persist: Bool = true) {
+        guard let data = try? CloudKitRecordSystemFields.encode(record) else { return }
+        recordSystemFields[record.recordID.recordName] = data
+        if persist {
+            persistRecordSystemFields()
+        }
+    }
+
+    private func removeSystemFields(for recordID: CKRecord.ID, persist: Bool = true) {
+        guard recordSystemFields.removeValue(forKey: recordID.recordName) != nil else { return }
+        if persist {
+            persistRecordSystemFields()
+        }
+    }
+
+    private func clearRecordSystemFields() {
+        recordSystemFields.removeAll()
+        UserDefaults.standard.removeObject(forKey: recordSystemFieldsKey)
+    }
+
+    private func recordForSaving(_ local: CKRecord) -> CKRecord {
+        let recordName = local.recordID.recordName
+        guard let data = recordSystemFields[recordName],
+              let serverMetadata = try? CloudKitRecordSystemFields.decode(data),
+              serverMetadata.recordID == local.recordID,
+              serverMetadata.recordType == local.recordType else {
+            return local
+        }
+
+        #if DEBUG
+        NSLog(
+            "%@",
+            "[CLOUD-01] prepare operation=update type=\(local.recordType) hasServerMetadata=true"
+        )
+        #endif
+        return CloudKitRecordSystemFields.applyingFields(from: local, to: serverMetadata)
     }
     
     // MARK: - Public API
@@ -1718,7 +1808,15 @@ extension CloudKitSyncEngine: CKSyncEngineDelegate {
         }
 
         if let record = await materializeRecord(named: recordName) {
-            return record
+            #if DEBUG
+            if recordSystemFields[recordName] == nil {
+                NSLog(
+                    "%@",
+                    "[CLOUD-01] prepare operation=create type=\(record.recordType) hasServerMetadata=false"
+                )
+            }
+            #endif
+            return recordForSaving(record)
         }
 
         engine.state.remove(pendingRecordZoneChanges: [.saveRecord(recordID)])
@@ -1850,8 +1948,19 @@ extension CloudKitSyncEngine: CKSyncEngineDelegate {
 
         for record in changes.savedRecords {
             let recordName = record.recordID.recordName
+            cacheSystemFields(from: record, persist: false)
             conflictResolvedRecords.removeValue(forKey: recordName)
             retryCount.removeValue(forKey: recordName)
+            #if DEBUG
+            NSLog("%@", "[CLOUD-01] result=saved type=\(record.recordType) decision=complete")
+            #endif
+        }
+
+        for recordID in changes.deletedRecordIDs {
+            removeSystemFields(for: recordID, persist: false)
+        }
+        if !changes.savedRecords.isEmpty || !changes.deletedRecordIDs.isEmpty {
+            persistRecordSystemFields()
         }
 
         for failedSave in changes.failedRecordSaves {
@@ -1899,14 +2008,23 @@ extension CloudKitSyncEngine: CKSyncEngineDelegate {
             // The resolved record keeps the server change tag, so the retry
             // is accepted as an update.
             let resolved = await resolveConflict(local: record, server: serverRecord)
+            cacheSystemFields(from: serverRecord)
             conflictResolvedRecords[recordName] = resolved
             syncEngine?.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
+            #if DEBUG
+            NSLog(
+                "%@",
+                "[CLOUD-01] result=failed type=\(record.recordType) error=serverRecordChanged "
+                    + "code=\(error.code.rawValue) decision=merge-and-retry attempt=\(attempts + 1)"
+            )
+            #endif
             LoggingService.shared.logCloudKit("Resolved \(serverRecord.recordType) conflict for \(recordName), retrying (attempt \(attempts + 1))")
 
         case .unknownItem:
             // Record vanished server-side while we held its change tag —
             // drop the cached record and retry as a fresh insert.
             conflictResolvedRecords.removeValue(forKey: recordName)
+            removeSystemFields(for: recordID)
             syncEngine?.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
             LoggingService.shared.logCloudKit("Record \(recordName) missing on server, retrying as insert")
 
@@ -1996,6 +2114,7 @@ extension CloudKitSyncEngine: CKSyncEngineDelegate {
         // Cached conflict records hold change tags from the deleted zone
         conflictResolvedRecords.removeAll()
         retryCount.removeAll()
+        clearRecordSystemFields()
 
         do {
             try await zoneManager?.createZoneIfNeeded()
@@ -2017,6 +2136,7 @@ extension CloudKitSyncEngine: CKSyncEngineDelegate {
 
         // Apply modifications - process all incoming records
         for modification in changes.modifications {
+            cacheSystemFields(from: modification.record, persist: false)
             let result = await applyRemoteRecord(modification.record, to: dataManager)
             if case .deferred(let playlistID, let itemID) = result {
                 newlyDeferredItems.append((modification.record, playlistID, itemID))
@@ -2052,7 +2172,11 @@ extension CloudKitSyncEngine: CKSyncEngineDelegate {
 
         // Apply deletions
         for deletion in changes.deletions {
+            removeSystemFields(for: deletion.recordID, persist: false)
             await applyRemoteDeletion(deletion.recordID, to: dataManager)
+        }
+        if !changes.modifications.isEmpty || !changes.deletions.isEmpty {
+            persistRecordSystemFields()
         }
 
         // Update last sync date when receiving changes from other devices

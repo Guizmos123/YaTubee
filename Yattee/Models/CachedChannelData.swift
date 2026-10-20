@@ -66,6 +66,16 @@ struct CachedChannelData: Codable {
         saveToDisk()
     }
 
+    /// Resolves the best locally known avatar without stopping at an older
+    /// Subscription row whose avatar field is empty.
+    @MainActor
+    static func thumbnailURL(for channelID: String, using dataManager: DataManager) -> URL? {
+        loadFromDiskIfNeeded()
+        return dataManager.subscription(for: channelID)?.avatarURL
+            ?? dataManager.recentChannelEntry(forChannelID: channelID)?.thumbnailURLString.flatMap(URL.init(string:))
+            ?? authorCache[channelID]?.thumbnailURL
+    }
+
     // MARK: - Disk Persistence
 
     @MainActor

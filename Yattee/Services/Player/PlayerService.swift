@@ -409,6 +409,7 @@ final class PlayerService {
 
                 // Update state with full video details and selected stream
                 state.setCurrentVideo(fullVideo, stream: selectedStream, audioStream: selectedAudioStream)
+                dataManager.updatePersistedMetadata(from: fullVideo)
                 CachedChannelData.cacheAuthor(fullVideo.author)
                 state.videoDetailsState = .loaded
                 lockDurationIfNeeded(for: fullVideo, stream: selectedStream)
@@ -1082,6 +1083,8 @@ final class PlayerService {
     ///   - forceStartTime: When true, startTime is an explicit user request (timed link,
     ///     chapter tap) and is honored even past the completion threshold
     func openVideo(_ video: Video, startTime: TimeInterval? = nil, forceStartTime: Bool = false) {
+        FeedVideoOpenRegistry.shared.markOpenedFromPlayer(video)
+
         // Live streams have no meaningful resume position - drop any passed one
         // so callers with a stale watch entry cannot seek into the live window.
         let startTime = video.isLive ? nil : startTime
@@ -1139,6 +1142,8 @@ final class PlayerService {
     ///   - download: Optional download to load local storyboards and captions from
     ///   - captions: Optional array of external captions (e.g., from WebDAV subtitle files)
     func openVideo(_ video: Video, stream: Stream, audioStream: Stream? = nil, download: Download? = nil, captions: [Caption] = []) {
+        FeedVideoOpenRegistry.shared.markOpenedFromPlayer(video)
+
         // Check if MPV PiP is active - if so, don't expand the player
         #if os(iOS) || os(macOS)
         let mpvPiPActive = (currentBackend as? MPVBackend)?.isPiPActive ?? false
@@ -2812,6 +2817,30 @@ final class PlayerService {
         }
     }
 
+    /// Refreshes only the active video's text metadata after the resolved
+    /// metadata language changes. Playback streams and position are preserved.
+    func videoMetadataLanguageDidChange(to language: String) async {
+        guard let video = state.currentVideo,
+              let instance = try? await findInstance(for: video),
+              instance.type == .yatteeServer else { return }
+
+        do {
+            let fullVideo = try await contentService.video(id: video.id.videoID, instance: instance)
+            guard settingsManager?.resolvedVideoMetadataLanguage == language,
+                  state.currentVideo?.id == video.id else { return }
+
+            state.setCurrentVideo(fullVideo, stream: state.currentStream, audioStream: state.currentAudioStream)
+            dataManager.updatePersistedMetadata(from: fullVideo)
+            NotificationCenter.default.post(name: .videoDetailsDidLoad, object: nil)
+        } catch {
+            LoggingService.shared.debug(
+                "Video metadata refresh failed after language change",
+                category: .api,
+                details: error.localizedDescription
+            )
+        }
+    }
+
     /// Fetches full video details from API and updates state.
     /// Used for downloaded videos that may not have full metadata stored.
     private func fetchAndUpdateVideoDetails(for video: Video) async {
@@ -2825,6 +2854,9 @@ final class PlayerService {
 
             // Update state with full video (preserving current stream)
             state.setCurrentVideo(fullVideo, stream: state.currentStream, audioStream: state.currentAudioStream)
+            if instance.type == .yatteeServer {
+                dataManager.updatePersistedMetadata(from: fullVideo)
+            }
             NotificationCenter.default.post(name: .videoDetailsDidLoad, object: nil)
 
             // Also fetch dislike count if enabled

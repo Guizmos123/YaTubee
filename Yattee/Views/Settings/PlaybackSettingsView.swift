@@ -373,10 +373,13 @@ private struct OrientationSection: View {
     }
 
     var body: some View {
-        SettingsFormSection("settings.playback.orientation.header") {
+        SettingsFormSection(
+            "settings.playback.orientation.header",
+            footer: "settings.playback.orientation.automaticLandscapeFullscreen.footer"
+        ) {
             Toggle(
-                AppLocalization.string("settings.playback.orientation.rotateToMatchAspectRatio"),
-                isOn: $settings.rotateToMatchAspectRatio
+                AppLocalization.string("settings.playback.orientation.automaticLandscapeFullscreen"),
+                isOn: $settings.automaticLandscapeFullscreen
             )
 
             if isPhone {

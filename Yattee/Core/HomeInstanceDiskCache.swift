@@ -114,7 +114,8 @@ actor HomeInstanceDiskCache {
 
 extension HomeInstanceDiskCache {
     /// Data structure for the home instance cache.
-    /// Uses cache keys in format "instanceID_contentType" (e.g., "UUID_popular")
+    /// Uses cache keys in format "instanceID_contentType[_lang_language]".
+    /// The optional suffix keeps decoding compatible with existing cache files.
     struct CacheData: Codable, Sendable {
         var videos: [String: [Video]]  // cacheKey -> videos
         var lastUpdated: [String: Date]  // cacheKey -> timestamp

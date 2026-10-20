@@ -11,6 +11,47 @@ import Testing
 
 @Suite("Yattee Server Feed Snapshot Tests")
 struct YatteeServerFeedSnapshotTests {
+    @Test("Language-specific request contexts reject another scope or language")
+    func requestContextRejectsObsoleteResponses() {
+        let instanceID = UUID()
+        let frenchScope = YatteeServerFeedRequestContext.scope(instanceID: instanceID, language: "fr")
+        let englishScope = YatteeServerFeedRequestContext.scope(instanceID: instanceID, language: "en")
+        let request = YatteeServerFeedRequestContext(scope: englishScope, language: "en")
+
+        #expect(request.matches(scope: englishScope, language: "en"))
+        #expect(!request.matches(scope: frenchScope, language: "fr"))
+        #expect(!request.matches(scope: englishScope, language: "fr"))
+        #expect(frenchScope != englishScope)
+    }
+
+    @Test("A fresh localized Feed title replaces the cached title for the same video")
+    func localizedResponseReplacesCachedTitle() {
+        let cached = [video(id: "Pqnv41sujEY", title: "HE TOOK US HOSTAGE AGAIN...", published: 100)]
+        let response = response(
+            status: "pending",
+            videos: [serverVideo(id: "Pqnv41sujEY", title: "IL NOUS A ENCORE PRIS EN OTAGE...", published: 100)],
+            ready: 1,
+            pending: 1,
+            errors: 0
+        )
+
+        let resolved = YatteeServerFeedSnapshot.videos(
+            from: response,
+            preserving: cached,
+            expectedChannelCount: 2
+        )
+
+        #expect(resolved.first?.title == "IL NOUS A ENCORE PRIS EN OTAGE...")
+    }
+
+    @Test("Video details request contexts reject late language responses")
+    func videoDetailsContextRejectsLateResponse() {
+        let english = VideoDetailsRequestContext(videoID: "Pqnv41sujEY", language: "en", generation: 1)
+
+        #expect(english.matches(videoID: "Pqnv41sujEY", language: "en", generation: 1))
+        #expect(!english.matches(videoID: "Pqnv41sujEY", language: "fr", generation: 2))
+    }
+
     @Test("A complete successful response replaces the cached snapshot")
     func completeResponseReplacesCache() {
         let cached = [video(id: "stale", published: 100)]
@@ -162,11 +203,11 @@ struct YatteeServerFeedSnapshotTests {
         )
     }
 
-    private func serverVideo(id: String, published: Int64?) -> ServerFeedVideo {
+    private func serverVideo(id: String, title: String? = nil, published: Int64?) -> ServerFeedVideo {
         ServerFeedVideo(
             type: "video",
             videoId: id,
-            title: id,
+            title: title ?? id,
             author: "Author",
             authorId: "channel",
             lengthSeconds: 60,
@@ -181,7 +222,7 @@ struct YatteeServerFeedSnapshotTests {
         )
     }
 
-    private func video(id: String, published: Int64?) -> Video {
-        serverVideo(id: id, published: published).toVideo()!
+    private func video(id: String, title: String? = nil, published: Int64?) -> Video {
+        serverVideo(id: id, title: title, published: published).toVideo()!
     }
 }

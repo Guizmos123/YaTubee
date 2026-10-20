@@ -157,6 +157,8 @@ struct MiniPlayerView: View {
                 accessoryLayout
             } else if miniPlayerSettings.style == .video {
                 videoOverlayLayout
+            } else if miniPlayerSettings.style == .bubble {
+                bubbleOverlayLayout
             } else {
                 overlayLayout
             }
@@ -292,6 +294,33 @@ struct MiniPlayerView: View {
             .padding(.horizontal, 16)
     }
 
+    /// Floating circular Bubble style. It shares the preview surface and drag
+    /// callbacks with Video, but intentionally exposes no overlaid controls.
+    private var bubbleOverlayLayout: some View {
+        let diameter = floatingVideoWidth ?? MiniPlayerStyleMetrics.recommendedBubbleDiameter
+
+        return videoPreviewView
+            .frame(width: diameter, height: diameter)
+            .contentShape(Circle())
+            .onTapGesture {
+                expandPlayerWithPiPRestore()
+            }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { value in
+                        onFloatingDragChanged(value.translation)
+                    }
+                    .onEnded { value in
+                        onFloatingDragEnded(value.translation, value.predictedEndTranslation)
+                    },
+                including: isFloatingDragEnabled ? .all : .none
+            )
+            .clipShape(Circle())
+            .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.horizontal, 16)
+    }
+
     /// Commands shared with the mini-player settings, in their persisted order.
     /// Keeping them as a sibling of the gesture surface prevents button presses
     /// from being interpreted as video taps, drags, or magnification gestures.
@@ -299,6 +328,7 @@ struct MiniPlayerView: View {
         HStack(spacing: 2) {
             ForEach(miniPlayerSettings.videoButtons) { configuration in
                 miniPlayerButton(for: configuration)
+                    .scaleEffect(0.64)
                     .frame(width: 32, height: 32)
                     .foregroundStyle(.white)
                     .glassBackground(.regular, in: .circle, fallback: .ultraThinMaterial)

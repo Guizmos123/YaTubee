@@ -352,11 +352,11 @@ private struct BadgeDisplaySection: View {
             return
         }
 
+        settings.appIconBadgeEnabled = true
+        appEnvironment?.backgroundRefreshManager.handleAppIconBadgeEnabledChanged(true)
         isChangingAppIconBadge = true
         Task {
-            let isAvailable = await badgeManager.enable(count: currentBadgeCount)
-            settings.appIconBadgeEnabled = isAvailable
-            appEnvironment?.backgroundRefreshManager.handleAppIconBadgeEnabledChanged(isAvailable)
+            _ = await badgeManager.enable(count: currentBadgeCount)
             isChangingAppIconBadge = false
         }
     }

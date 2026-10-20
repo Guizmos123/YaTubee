@@ -24,6 +24,10 @@ struct VideoCardView: View {
     var customMetadata: String? = nil
     /// Custom duration text to show on thumbnail (e.g., remaining time). If nil, uses video.formattedDuration.
     var customDuration: String? = nil
+    /// Whether to display the subscription Feed's unopened-video corner marker.
+    var showsNoveltyBadge: Bool = false
+    /// Enlarges card typography for the macOS Home "Large" grid.
+    var usesLargeMacTypography: Bool = false
 
     // Platform-specific fonts
     #if os(tvOS)
@@ -31,9 +35,9 @@ struct VideoCardView: View {
     private var authorFont: Font { isCompact ? .caption : .subheadline }
     private var metadataFont: Font { isCompact ? .caption : .caption }
     #elseif os(macOS)
-    private var titleFont: Font { .body }
-    private var authorFont: Font { isCompact ? .caption : .subheadline }
-    private var metadataFont: Font { isCompact ? .caption2 : .caption }
+    private var titleFont: Font { usesLargeMacTypography ? .title3 : .body }
+    private var authorFont: Font { usesLargeMacTypography ? .body : (isCompact ? .caption : .subheadline) }
+    private var metadataFont: Font { usesLargeMacTypography ? .subheadline : (isCompact ? .caption2 : .caption) }
     #else
     private var titleFont: Font { .subheadline }
     private var authorFont: Font { isCompact ? .caption2 : .caption }
@@ -67,7 +71,9 @@ struct VideoCardView: View {
         DeArrowVideoThumbnail(
             video: video,
             watchProgress: watchProgress,
-            duration: customDuration ?? video.formattedDuration
+            duration: customDuration ?? video.formattedDuration,
+            showsNoveltyBadge: showsNoveltyBadge,
+            noveltyBadgeSize: isCompact ? 14 : 18
         )
         #if !os(tvOS)
         .contentShape(Rectangle())

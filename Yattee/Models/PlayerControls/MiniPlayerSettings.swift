@@ -27,20 +27,14 @@ enum MiniPlayerStyle: String, CaseIterable, Codable, Hashable, Sendable {
 /// The single container that should host the mini player for the current style.
 enum MiniPlayerPresentation: Equatable, Sendable {
     case tabAccessory
-    case prominentTab
     case rootOverlay
 
-    /// Resolves the presentation without changing the selected visual style.
-    /// Bubble temporarily follows Bar until its dedicated renderer is implemented.
+    /// Resolves Bar to the native accessory and floating styles to the root overlay.
     static func resolve(
         style: MiniPlayerStyle,
-        supportsTabAccessory: Bool,
-        supportsProminentTab: Bool = false
+        supportsTabAccessory: Bool
     ) -> MiniPlayerPresentation {
-        if style == .bubble, supportsProminentTab {
-            return .prominentTab
-        }
-        guard supportsTabAccessory, style != .video else {
+        guard supportsTabAccessory, style == .bar else {
             return .rootOverlay
         }
         return .tabAccessory

@@ -75,7 +75,7 @@ final class SettingsManager {
     var _keepPlayerPinnedEnabled: Bool?
     #if os(iOS)
     var _inAppOrientationLock: Bool?
-    var _rotateToMatchAspectRatio: Bool?
+    var _automaticLandscapeFullscreen: Bool?
     var _preferPortraitBrowsing: Bool?
     #endif
     #if os(macOS)
@@ -466,7 +466,7 @@ final class SettingsManager {
         _hapticFeedbackEnabled = nil
         _hapticFeedbackIntensity = nil
         _inAppOrientationLock = nil
-        _rotateToMatchAspectRatio = nil
+        _automaticLandscapeFullscreen = nil
         _preferPortraitBrowsing = nil
         #endif
         _iCloudSyncEnabled = nil

@@ -10,6 +10,65 @@ import Foundation
 import SwiftUI
 @testable import YaTubee
 
+@Suite("Video Metadata Language Tests", .serialized)
+@MainActor
+struct VideoMetadataLanguageTests {
+    @Test("Visible choices and the legacy value resolve to server contract values")
+    func resolvesChoices() {
+        #expect(VideoMetadataLanguage.original.resolvedValue(appLanguage: .french) == "original")
+        #expect(VideoMetadataLanguage.application.resolvedValue(appLanguage: .french) == "original")
+        #expect(VideoMetadataLanguage.application.resolvedValue(appLanguage: .english) == "original")
+        #expect(VideoMetadataLanguage.french.resolvedValue(appLanguage: .english) == "fr")
+        #expect(VideoMetadataLanguage.english.resolvedValue(appLanguage: .french) == "en")
+    }
+
+    @Test("Original is the stable default")
+    func originalIsDefault() {
+        #expect(VideoMetadataLanguage(rawValue: "") ?? .original == .original)
+        #expect(VideoMetadataLanguage.allCases == [.original, .french, .english])
+    }
+
+    @Test("A persisted Application preference falls back without being rewritten")
+    func legacyApplicationFallback() {
+        let defaults = UserDefaults.standard
+        let key = SettingsKey.videoMetadataLanguage.rawValue
+        let previousValue = defaults.object(forKey: key)
+        defer {
+            if let previousValue {
+                defaults.set(previousValue, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+
+        defaults.set(VideoMetadataLanguage.application.rawValue, forKey: key)
+        let settings = SettingsManager()
+
+        #expect(settings.videoMetadataLanguage == .original)
+        #expect(defaults.string(forKey: key) == VideoMetadataLanguage.application.rawValue)
+    }
+
+    @Test("Home cache can separate language variants without invalidating legacy keys")
+    func homeCacheLanguageKeys() {
+        let instanceID = UUID(uuidString: "2DDE4D23-23BC-4A22-A091-15534728674D")!
+        let legacy = HomeInstanceCache.cacheKey(instanceID: instanceID, contentType: .popular)
+        let french = HomeInstanceCache.cacheKey(
+            instanceID: instanceID,
+            contentType: .popular,
+            metadataLanguage: "fr"
+        )
+        let english = HomeInstanceCache.cacheKey(
+            instanceID: instanceID,
+            contentType: .popular,
+            metadataLanguage: "en"
+        )
+
+        #expect(legacy == "\(instanceID.uuidString)_popular")
+        #expect(french != english)
+        #expect(french.hasPrefix(legacy))
+    }
+}
+
 @Suite("Playback Thumbnail Status Tests")
 struct PlaybackThumbnailStatusTests {
     @Test("Only active playback states produce a thumbnail indicator")

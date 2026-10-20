@@ -29,8 +29,10 @@ extension SettingsManager {
 
     var videoMetadataLanguage: VideoMetadataLanguage {
         get {
-            if let cached = _videoMetadataLanguage { return cached }
-            return VideoMetadataLanguage(rawValue: string(for: .videoMetadataLanguage) ?? "") ?? .original
+            let stored = _videoMetadataLanguage
+                ?? VideoMetadataLanguage(rawValue: string(for: .videoMetadataLanguage) ?? "")
+                ?? .original
+            return stored == .application ? .original : stored
         }
         set {
             _videoMetadataLanguage = newValue

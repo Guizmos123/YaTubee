@@ -156,6 +156,8 @@ struct VideoThumbnailView: View {
     var isLive: Bool = false
     var placeholderTitle: String? = nil
     var isWatched: Bool = false
+    var showsNoveltyBadge: Bool = false
+    var noveltyBadgeSize: CGFloat = 18
 
     /// De-duplicated candidate URLs, best-quality first.
     private var candidates: [URL] {
@@ -210,7 +212,11 @@ struct VideoThumbnailView: View {
             liveBadge
         }
         .overlay(alignment: .topLeading) {
-            watchedCheckmark
+            if isWatched {
+                watchedCheckmark
+            } else if showsNoveltyBadge {
+                noveltyBadge
+            }
         }
         .overlay {
             if let playbackThumbnailStatus {
@@ -223,6 +229,19 @@ struct VideoThumbnailView: View {
     }
 
     // MARK: - Overlays
+
+    private var noveltyBadge: some View {
+        Path { path in
+            path.move(to: .zero)
+            path.addLine(to: CGPoint(x: noveltyBadgeSize, y: 0))
+            path.addLine(to: CGPoint(x: 0, y: noveltyBadgeSize))
+            path.closeSubpath()
+        }
+        .fill(.orange)
+        .frame(width: noveltyBadgeSize, height: noveltyBadgeSize)
+        .accessibilityLabel(Text("feed.noveltyBadge.accessibilityLabel"))
+        .accessibilityAddTraits(.isImage)
+    }
 
     @ViewBuilder
     private var watchProgressBar: some View {

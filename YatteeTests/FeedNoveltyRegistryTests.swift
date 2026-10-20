@@ -37,10 +37,11 @@ struct FeedNoveltyRegistryTests {
 
         #expect(await manager.enable(count: 5))
         #expect(await provider.requestCount == 1)
+        #expect(await provider.settingsReadCount == 2)
         #expect(await provider.appliedCounts == [5])
     }
 
-    @Test("A refused first badge request disables application without applying a count")
+    @Test("A refused first badge request does not apply a count")
     @MainActor
     func appIconBadgeFirstRequestRefused() async {
         let provider = TestAppIconBadgeProvider(state: .notDetermined, requestResult: false)
@@ -48,6 +49,23 @@ struct FeedNoveltyRegistryTests {
 
         #expect(!(await manager.enable(count: 5)))
         #expect(await provider.requestCount == 1)
+        #expect(await provider.settingsReadCount == 2)
+        #expect(await provider.appliedCounts.isEmpty)
+    }
+
+    @Test("Badge enable trusts the post-request system setting")
+    @MainActor
+    func appIconBadgeRequestRechecksSystemSetting() async {
+        let provider = TestAppIconBadgeProvider(
+            state: .notDetermined,
+            requestResult: true,
+            stateAfterRequest: .denied
+        )
+        let manager = AppIconBadgeManager(provider: provider)
+
+        #expect(!(await manager.enable(count: 6)))
+        #expect(await provider.requestCount == 1)
+        #expect(await provider.settingsReadCount == 2)
         #expect(await provider.appliedCounts.isEmpty)
     }
 
@@ -1103,6 +1121,7 @@ struct FeedNoveltyRegistryTests {
 private actor TestAppIconBadgeProvider: AppIconBadgeProviding {
     private var state: AppIconBadgeAuthorizationState
     private let requestResult: Bool
+    private let stateAfterRequest: AppIconBadgeAuthorizationState?
     private let failsToApply: Bool
     private(set) var requestCount = 0
     private(set) var settingsReadCount = 0
@@ -1111,10 +1130,12 @@ private actor TestAppIconBadgeProvider: AppIconBadgeProviding {
     init(
         state: AppIconBadgeAuthorizationState,
         requestResult: Bool = false,
+        stateAfterRequest: AppIconBadgeAuthorizationState? = nil,
         failsToApply: Bool = false
     ) {
         self.state = state
         self.requestResult = requestResult
+        self.stateAfterRequest = stateAfterRequest
         self.failsToApply = failsToApply
     }
 
@@ -1125,7 +1146,7 @@ private actor TestAppIconBadgeProvider: AppIconBadgeProviding {
 
     func requestBadgeAuthorization() async throws -> Bool {
         requestCount += 1
-        state = requestResult ? .authorized : .denied
+        state = stateAfterRequest ?? (requestResult ? .authorized : .denied)
         return requestResult
     }
 

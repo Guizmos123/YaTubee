@@ -8,6 +8,16 @@
 import SwiftUI
 import NukeUI
 
+struct VideoDetailsRequestContext: Equatable, Sendable {
+    let videoID: String
+    let language: String?
+    let generation: Int
+
+    func matches(videoID currentVideoID: String?, language currentLanguage: String?, generation currentGeneration: Int) -> Bool {
+        videoID == currentVideoID && language == currentLanguage && generation == currentGeneration
+    }
+}
+
 /// Initialization mode for VideoInfoView - either a loaded video or just an ID to fetch.
 enum VideoInfoInitMode: Sendable {
     case video(Video)
@@ -62,10 +72,10 @@ struct VideoInfoView: View {
     @State private var commentsContinuation: String?
 
     // Collapsible section states
-    @State private var isStatsExpanded = true
-    @State private var isDescriptionExpanded = true
-    @State private var isRelatedExpanded = true
-    @State private var isCommentsExpanded = true
+    @State private var isStatsExpanded = false
+    @State private var isDescriptionExpanded = false
+    @State private var isRelatedExpanded = false
+    @State private var isCommentsExpanded = false
     @State private var isWatchHistoryExpanded = false
     @State private var isBookmarkExpanded = true
     @State private var isDownloadExpanded = false
@@ -108,6 +118,7 @@ struct VideoInfoView: View {
     // Video details cache - stores full video details loaded from API
     @State private var loadedVideoDetails: [String: Video] = [:]
     @State private var isLoadingVideoDetails = false
+    @State private var videoDetailsRequestGeneration = 0
     /// Combined video list including originally loaded videos and extended videos from continuation
     private var allVideos: [Video]? {
         guard let originalList = videoQueueContext?.videoList else { return nil }
@@ -282,6 +293,10 @@ struct VideoInfoView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .onAppear {
+            if let video = displayedVideo {
+                FeedVideoOpenRegistry.shared.markOpenedFromDetails(video)
+            }
+
             // Initialize current index from queue context
             if currentVideoIndex == nil, let context = videoQueueContext {
                 currentVideoIndex = context.videoIndex
@@ -333,6 +348,10 @@ struct VideoInfoView: View {
             comments = []
             commentsState = .idle
             commentsContinuation = nil
+            isDescriptionExpanded = false
+            isStatsExpanded = false
+            isCommentsExpanded = false
+            isRelatedExpanded = false
             scrollViewID = UUID() // Reset scroll position
             // Don't reset scrollOffset here - let the new scroll view report its geometry
             // Resetting to 0 causes the blur to jump to an incorrect position briefly
@@ -371,6 +390,20 @@ struct VideoInfoView: View {
             Task {
                 await loadVideoDetails()
             }
+        }
+        .onChange(of: displayedVideo?.id) { _, _ in
+            if let video = displayedVideo {
+                FeedVideoOpenRegistry.shared.markOpenedFromDetails(video)
+            }
+        }
+        .onChange(of: appEnvironment?.settingsManager.resolvedVideoMetadataLanguage) { oldValue, newValue in
+            guard oldValue != newValue,
+                  let base = baseVideo,
+                  let instance = instancesManager?.instance(for: base),
+                  instance.type == .yatteeServer else { return }
+            videoDetailsRequestGeneration += 1
+            loadedVideoDetails.removeValue(forKey: base.id.videoID)
+            Task { await loadVideoDetails() }
         }
         .sheet(isPresented: $showingPlaylistSheet) {
             if let video = displayedVideo {
@@ -866,7 +899,9 @@ struct VideoInfoView: View {
         if let video = displayedVideo {
             videoCard(for: video, isLoadingMore: false, showTitle: true, isCurrent: true)
                 .frame(maxWidth: .infinity)
+                #if !os(iOS)
                 .padding(.horizontal)
+                #endif
         }
     }
     
@@ -957,7 +992,7 @@ struct VideoInfoView: View {
         let thumbnailSource = thumbnailFrom ?? video
         let deArrowURL = appEnvironment?.deArrowBrandingProvider.thumbnailURL(for: thumbnailSource)
         let thumbnailURLs = [deArrowURL].compactMap { $0 } + thumbnailSource.thumbnailURLsByQuality
-        return VStack(spacing: 12) {
+        return VStack(alignment: .leading, spacing: 12) {
             // Thumbnail with loading overlay
             ZStack {
                 FallbackLazyImage(urls: thumbnailURLs) { state in
@@ -982,13 +1017,21 @@ struct VideoInfoView: View {
                     }
                 }
                 .aspectRatio(16/9, contentMode: .fit)
+                #if os(iOS)
+                .frame(maxWidth: .infinity)
+                #else
                 .frame(width: thumbnailWidth)
+                #endif
 
                 // Loading overlay when fetching more videos (continuation)
                 if isLoadingMore {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(.black.opacity(0.4))
+                        #if os(iOS)
+                        .frame(maxWidth: .infinity)
+                        #else
                         .frame(width: thumbnailWidth)
+                        #endif
                         .aspectRatio(16/9, contentMode: .fit)
                     
                     ProgressView()
@@ -1000,17 +1043,51 @@ struct VideoInfoView: View {
                     playVideo()
                 }
             }
+            #if os(iOS)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            #endif
             
             // Title
+            #if os(iOS)
+            VideoInfoMarqueeTitle(
+                text: video.displayTitle(using: appEnvironment?.deArrowBrandingProvider)
+            )
+            .padding(.horizontal, 16)
+            .opacity(showTitle ? 1.0 : 0.0)
+            #else
             Text(video.displayTitle(using: appEnvironment?.deArrowBrandingProvider))
                 .font(.headline)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(width: thumbnailWidth)
                 .opacity(showTitle ? 1.0 : 0.0)
+            #endif
             
             // Channel row (horizontal) - only tappable if we have real channel info
             // Use authorFrom for author info (includes avatar URL) if available
+            #if os(iOS)
+            HStack(spacing: 12) {
+                channelLink(for: authorFrom ?? video)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button(action: playVideo) {
+                    Label(AppLocalization.string("video.context.play"), systemImage: "play.fill")
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .foregroundStyle(.white)
+                        .background(accentColor, in: Capsule())
+                        .frame(minHeight: 48)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .opacity(showTitle ? 1.0 : 0.0)
+            #else
             Group {
                 let authorVideo = authorFrom ?? video
                 if authorVideo.author.hasRealChannelInfo {
@@ -1025,6 +1102,21 @@ struct VideoInfoView: View {
                 }
             }
             .opacity(showTitle ? 1.0 : 0.0)
+            #endif
+        }
+    }
+
+    @ViewBuilder
+    private func channelLink(for video: Video) -> some View {
+        if video.author.hasRealChannelInfo {
+            Button {
+                navigationCoordinator?.navigateToChannel(for: video)
+            } label: {
+                channelRowContent(for: video)
+            }
+            .buttonStyle(.plain)
+        } else {
+            channelRowContent(for: video)
         }
     }
 
@@ -1141,6 +1233,12 @@ struct VideoInfoView: View {
     }
 
     private var actionButtons: some View {
+        #if os(iOS)
+        modernActionButtonsRow
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        #else
         VStack(spacing: 12) {
             #if !os(tvOS)
             // Play, Download and Share (vertical layout)
@@ -1217,7 +1315,77 @@ struct VideoInfoView: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal)
         .padding(.vertical, 12)
+        #endif
     }
+
+    #if os(iOS)
+    private var modernActionButtonsRow: some View {
+        HStack(alignment: .top, spacing: 8) {
+            videoInfoActionButton(
+                icon: "text.badge.plus",
+                label: AppLocalization.string("video.playlist")
+            ) {
+                showingPlaylistSheet = true
+            }
+
+            videoInfoActionButton(
+                icon: isBookmarked ? "bookmark.fill" : "bookmark",
+                label: AppLocalization.string("video.bookmark")
+            ) {
+                toggleBookmark()
+            }
+            .accessibilityLabel(
+                isBookmarked
+                    ? AppLocalization.string("video.removeBookmark")
+                    : AppLocalization.string("video.bookmark")
+            )
+
+            verticalDownloadActionButton
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+
+            if let video = displayedVideo {
+                ShareLink(item: video.shareURL) {
+                    videoInfoActionLabel(
+                        icon: "square.and.arrow.up",
+                        label: AppLocalization.string("video.share")
+                    )
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func videoInfoActionButton(
+        icon: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            videoInfoActionLabel(icon: icon, label: label)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func videoInfoActionLabel(icon: String, label: String) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 21, weight: .regular))
+
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
+        .contentShape(Rectangle())
+    }
+    #endif
 
     #if !os(tvOS)
     /// Vertical download action button with four states: default, enqueueing, downloading, downloaded
@@ -1237,19 +1405,21 @@ struct VideoInfoView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
                 #else
-                VStack(spacing: 6) {
+                VStack(spacing: 5) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.system(size: 21, weight: .regular))
                     Text(AppLocalization.string("video.downloaded"))
-                        .font(.caption)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
-                .frame(maxWidth: .infinity, minHeight: 50)
+                .frame(maxWidth: .infinity, minHeight: 44)
                 #endif
             }
             #if os(macOS)
             .buttonStyle(.bordered)
-            #else
-            .buttonStyle(.borderedProminent)
             #endif
         } else if isDownloading || isEnqueuingDownload {
             // Downloading/enqueueing state - shows progress
@@ -1277,32 +1447,34 @@ struct VideoInfoView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
                 #else
-                VStack(spacing: 6) {
+                VStack(spacing: 5) {
                     ProgressView()
-                        .controlSize(.regular)
+                        .controlSize(.small)
                     if isEnqueuingDownload {
                         Text(AppLocalization.string("video.downloading"))
                             .allowsTightening(true)
-                            .font(.caption)
+                            .font(.caption2)
                     } else if let video = displayedVideo,
                               let progress = downloadManager?.downloadProgressByVideo[video.id],
                               !progress.isIndeterminate {
                         Text("\(Int(progress.progress * 100))%")
-                            .font(.caption)
+                            .font(.caption2)
                             .monospacedDigit()
                     } else {
                         Text(AppLocalization.string("video.downloading"))
                             .allowsTightening(true)
-                            .font(.caption)
+                            .font(.caption2)
                     }
                 }
-                .frame(maxWidth: .infinity, minHeight: 50)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, minHeight: 44)
                 #endif
             }
             #if os(macOS)
             .buttonStyle(.bordered)
-            #else
-            .buttonStyle(.borderedProminent)
             #endif
             .disabled(true)
         } else if let video = displayedVideo {
@@ -1316,19 +1488,21 @@ struct VideoInfoView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
                 #else
-                VStack(spacing: 6) {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 18))
+                VStack(spacing: 5) {
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 21, weight: .regular))
                     Text(AppLocalization.string("video.download"))
-                        .font(.caption)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
-                .frame(maxWidth: .infinity, minHeight: 50)
+                .frame(maxWidth: .infinity, minHeight: 44)
                 #endif
             }
             #if os(macOS)
             .buttonStyle(.bordered)
-            #else
-            .buttonStyle(.borderedProminent)
             #endif
         }
     }
@@ -2144,6 +2318,7 @@ struct VideoInfoView: View {
             return
         }
         let videoID = base.id.videoID
+        let generationAtStart = videoDetailsRequestGeneration
 
         // Skip if already loaded
         guard loadedVideoDetails[videoID] == nil else {
@@ -2191,6 +2366,14 @@ struct VideoInfoView: View {
             isLoadingVideoDetails = false
             return
         }
+        let languageAtStart = instance.type == .yatteeServer
+            ? appEnvironment?.settingsManager.resolvedVideoMetadataLanguage
+            : nil
+        let requestContext = VideoDetailsRequestContext(
+            videoID: videoID,
+            language: languageAtStart,
+            generation: generationAtStart
+        )
 
         isLoadingVideoDetails = true
 
@@ -2199,9 +2382,20 @@ struct VideoInfoView: View {
                 id: videoID,
                 instance: instance
             )
+            let currentLanguage = instance.type == .yatteeServer
+                ? appEnvironment?.settingsManager.resolvedVideoMetadataLanguage
+                : nil
+            guard requestContext.matches(
+                videoID: baseVideo?.id.videoID,
+                language: currentLanguage,
+                generation: videoDetailsRequestGeneration
+            ) else { return }
             await prefetchNewThumbnailIfNeeded(old: base, new: fullVideo)
             invalidateStaleThumbnails(old: base, new: fullVideo)
             loadedVideoDetails[videoID] = fullVideo
+            if instance.type == .yatteeServer {
+                dataManager?.updatePersistedMetadata(from: fullVideo)
+            }
             CachedChannelData.cacheAuthor(fullVideo.author)
         } catch {
             // Fail silently - just use the partial video data we have
@@ -2487,6 +2681,85 @@ struct VideoInfoView: View {
     }
     #endif
 }
+
+#if os(iOS)
+// MARK: - Video Header Components
+
+/// Keeps long titles readable without permanently truncating them.
+private struct VideoInfoMarqueeTitle: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    let text: String
+
+    @State private var textWidth: CGFloat = 0
+    @State private var animationStart = Date.now
+
+    var body: some View {
+        if reduceMotion || dynamicTypeSize.isAccessibilitySize {
+            Text(text)
+                .font(.headline)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            Text(text)
+                .font(.headline)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .hidden()
+                .overlay {
+                    GeometryReader { geometry in
+                        let overflow = max(textWidth - geometry.size.width, 0)
+
+                        TimelineView(.animation(minimumInterval: 1 / 30, paused: overflow == 0)) { context in
+                            Text(text)
+                                .font(.headline)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .offset(x: offset(at: context.date, overflow: overflow))
+                                .onGeometryChange(for: CGFloat.self) { proxy in
+                                    proxy.size.width
+                                } action: { newWidth in
+                                    textWidth = newWidth
+                                }
+                        }
+                    }
+                }
+                .clipped()
+                .accessibilityLabel(text)
+                .onChange(of: text) {
+                    animationStart = .now
+                }
+        }
+    }
+
+    private func offset(at date: Date, overflow: CGFloat) -> CGFloat {
+        guard overflow > 0 else { return 0 }
+
+        let pauseDuration = 1.25
+        let travelDuration = TimeInterval(overflow / 24)
+        let legDuration = pauseDuration + travelDuration
+        let cycleDuration = legDuration * 2
+        let elapsed = date.timeIntervalSince(animationStart)
+            .truncatingRemainder(dividingBy: cycleDuration)
+
+        if elapsed < pauseDuration {
+            return 0
+        }
+        if elapsed < legDuration {
+            return -overflow * CGFloat((elapsed - pauseDuration) / travelDuration)
+        }
+        if elapsed < legDuration + pauseDuration {
+            return -overflow
+        }
+
+        let returnProgress = (elapsed - legDuration - pauseDuration) / travelDuration
+        return -overflow * CGFloat(1 - returnProgress)
+    }
+}
+
+#endif
 
 // MARK: - Collapsible Section
 

@@ -5,6 +5,7 @@
 //  Home tab with shortcuts dashboard for Playlists, History, and Downloads.
 //
 
+import Foundation
 import SwiftUI
 
 struct HomeView: View {
@@ -20,11 +21,8 @@ struct HomeView: View {
     @Namespace private var sheetTransition
     #endif
     @State private var playlists: [LocalPlaylist] = []
-    @State private var bookmarksCount: Int = 0
     @State private var recentBookmarks: [Bookmark] = []
-    @State private var continueWatchingCount: Int = 0
     @State private var recentContinueWatching: [WatchEntry] = []
-    @State private var historyCount: Int = 0
     @State private var recentHistory: [WatchEntry] = []
     #if !os(tvOS) && !os(macOS)
     @State private var showingSettings = false
@@ -32,12 +30,23 @@ struct HomeView: View {
     @State private var showingOpenLink = false
     @State private var showingRemoteControl = false
     @State private var showingCustomizeHome = false
-    @State private var channelsCount: Int = 0
+    @State private var remoteChannelsCount: LocalCountState = .notLoaded
     @State private var discoveredDevicesCount: Int = 0
     @State private var feedCache = SubscriptionFeedCache.shared
 
     private var dataManager: DataManager? { appEnvironment?.dataManager }
     private var settingsManager: SettingsManager? { appEnvironment?.settingsManager }
+
+    private var localStatistics: LocalDataStatistics {
+        dataManager?.localStatistics ?? LocalDataStatistics()
+    }
+
+    private var channelsCountState: LocalCountState {
+        guard let service = appEnvironment?.subscriptionService else { return .notLoaded }
+        return service.currentAccountType == .local
+            ? localStatistics.subscriptions
+            : remoteChannelsCount
+    }
 
     private var presentationSettings: HomePresentationSettings? {
         settingsManager?.presentationSettings(for: customizationContext)
@@ -69,6 +78,17 @@ struct HomeView: View {
         return !settings.presentationSettings(for: customizationContext).visibleShortcuts.isEmpty
     }
 
+    private var showsShortcutsOnCurrentPlatform: Bool {
+        #if os(tvOS)
+        switch customizationContext {
+        case .home: false
+        case .hub: true
+        }
+        #else
+        true
+        #endif
+    }
+
     /// The current layout for shortcuts (list or cards)
     private var shortcutLayout: HomeShortcutLayout {
         presentationSettings?.shortcutLayout ?? .cards
@@ -92,8 +112,8 @@ struct HomeView: View {
         switch customizationContext {
         case .home:
             AppLocalization.string("tabs.home")
-        case .more:
-            AppLocalization.string("tabs.more")
+        case .hub:
+            AppLocalization.string("tabs.hub")
         }
     }
 
@@ -122,18 +142,6 @@ struct HomeView: View {
                 .accessibilityIdentifier("home.settingsButton")
                 .accessibilityLabel(AppLocalization.string("settings.title"))
                 .liquidGlassTransitionSource(id: "homeSettings", in: sheetTransition)
-            }
-            if #available(iOS 26, *) {
-                ToolbarSpacer(.fixed, placement: .primaryAction)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    appEnvironment?.navigationCoordinator.navigate(to: .search(""))
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                }
-                .accessibilityIdentifier("home.searchButton")
-                .accessibilityLabel(AppLocalization.string("tabs.search"))
             }
             #endif
         }
@@ -204,8 +212,7 @@ struct HomeView: View {
             loadBookmarksData()
         }
         .onReceive(NotificationCenter.default.publisher(for: .watchHistoryDidChange)) { _ in
-            loadHistoryData()
-            loadContinueWatchingData()
+            loadHistorySectionsData()
         }
         .onReceive(NotificationCenter.default.publisher(for: .playlistsDidChange)) { _ in
             loadPlaylistsData()
@@ -221,6 +228,9 @@ struct HomeView: View {
     /// True on tvOS when no Home section would render content — prevents a focus trap
     /// on fresh installs where the detail pane would otherwise be completely empty.
     private var isHomeEmpty: Bool {
+        if showsShortcutsOnCurrentPlatform && hasVisibleShortcuts {
+            return false
+        }
         let sections = presentationSettings?.visibleSections ?? HomeSectionItem.defaultOrder.filter { HomeSectionItem.defaultVisibility[$0] == true }
         for section in sections {
             switch section {
@@ -296,11 +306,9 @@ struct HomeView: View {
 
     @ViewBuilder
     private var homeContent: some View {
-        #if !os(tvOS)
-        if hasVisibleShortcuts {
+        if showsShortcutsOnCurrentPlatform && hasVisibleShortcuts {
             shortcutsSection
         }
-        #endif
 
         ForEach(presentationSettings?.visibleSections ?? HomeSectionItem.defaultOrder.filter { HomeSectionItem.defaultVisibility[$0] == true }) { section in
             sectionView(for: section)
@@ -615,14 +623,16 @@ struct HomeView: View {
     }
 
     private var playlistsShortcutCard: some View {
-        Button {
+        let state = localStatistics.playlists
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .playlists)
         } label: {
             HomeShortcutCardView(
                 icon: "list.bullet.rectangle",
                 title: AppLocalization.string("home.playlists.title"),
-                count: playlists.count,
-                subtitle: formatCount(playlists.count, singular: "home.count.playlist", plural: "home.count.playlists"),
+                count: countValue(state),
+                subtitle: formatCount(state, singular: "home.count.playlist", plural: "home.count.playlists"),
+                showsCount: state.value != nil,
                 colorfulColor: HomeShortcutItem.playlists.cardColor
             )
         }
@@ -635,14 +645,16 @@ struct HomeView: View {
     }
 
     private var bookmarksShortcutCard: some View {
-        Button {
+        let state = localStatistics.bookmarks
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .bookmarks)
         } label: {
             HomeShortcutCardView(
                 icon: "bookmark",
                 title: AppLocalization.string("home.bookmarks.title"),
-                count: bookmarksCount,
-                subtitle: formatCount(bookmarksCount, singular: "home.count.bookmark", plural: "home.count.bookmarks"),
+                count: countValue(state),
+                subtitle: formatCount(state, singular: "home.count.bookmark", plural: "home.count.bookmarks"),
+                showsCount: state.value != nil,
                 colorfulColor: HomeShortcutItem.bookmarks.cardColor
             )
         }
@@ -655,14 +667,16 @@ struct HomeView: View {
     }
 
     private var continueWatchingShortcutCard: some View {
-        Button {
+        let state = localStatistics.continueWatching
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .continueWatching)
         } label: {
             HomeShortcutCardView(
                 icon: "play.circle",
                 title: AppLocalization.string("home.shortcut.continueWatching"),
-                count: continueWatchingCount,
-                subtitle: formatCount(continueWatchingCount, singular: "home.count.video", plural: "home.count.videos"),
+                count: countValue(state),
+                subtitle: formatCount(state, singular: "home.count.video", plural: "home.count.videos"),
+                showsCount: state.value != nil,
                 colorfulColor: HomeShortcutItem.continueWatching.cardColor
             )
         }
@@ -675,14 +689,16 @@ struct HomeView: View {
     }
 
     private var historyShortcutCard: some View {
-        Button {
+        let state = localStatistics.history
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .history)
         } label: {
             HomeShortcutCardView(
                 icon: "clock",
                 title: AppLocalization.string("home.history.title"),
-                count: historyCount,
-                subtitle: formatCount(historyCount, singular: "home.count.video", plural: "home.count.videos"),
+                count: countValue(state),
+                subtitle: formatCount(state, singular: "home.count.video", plural: "home.count.videos"),
+                showsCount: state.value != nil,
                 colorfulColor: HomeShortcutItem.history.cardColor
             )
         }
@@ -714,14 +730,16 @@ struct HomeView: View {
     #endif
 
     private var channelsShortcutCard: some View {
-        Button {
+        let state = channelsCountState
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .manageChannels)
         } label: {
             HomeShortcutCardView(
                 icon: "person.2",
                 title: AppLocalization.string("home.channels.title"),
-                count: channelsCount,
-                subtitle: formatCount(channelsCount, singular: "home.count.channel", plural: "home.count.channels"),
+                count: countValue(state),
+                subtitle: formatCount(state, singular: "home.count.channel", plural: "home.count.channels"),
+                showsCount: state.value != nil,
                 colorfulColor: HomeShortcutItem.channels.cardColor
             )
         }
@@ -861,52 +879,56 @@ struct HomeView: View {
     }
 
     private var playlistsShortcutRow: some View {
-        Button {
+        let state = localStatistics.playlists
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .playlists)
         } label: {
             HomeShortcutRowView(
                 icon: "list.bullet.rectangle",
                 title: AppLocalization.string("home.playlists.title"),
-                subtitle: formatCount(playlists.count, singular: "home.count.playlist", plural: "home.count.playlists")
+                subtitle: formatCount(state, singular: "home.count.playlist", plural: "home.count.playlists")
             )
         }
         .buttonStyle(.plain)
     }
 
     private var bookmarksShortcutRow: some View {
-        Button {
+        let state = localStatistics.bookmarks
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .bookmarks)
         } label: {
             HomeShortcutRowView(
                 icon: "bookmark.fill",
                 title: AppLocalization.string("home.bookmarks.title"),
-                subtitle: formatCount(bookmarksCount, singular: "home.count.bookmark", plural: "home.count.bookmarks")
+                subtitle: formatCount(state, singular: "home.count.bookmark", plural: "home.count.bookmarks")
             )
         }
         .buttonStyle(.plain)
     }
 
     private var continueWatchingShortcutRow: some View {
-        Button {
+        let state = localStatistics.continueWatching
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .continueWatching)
         } label: {
             HomeShortcutRowView(
                 icon: "play.circle",
                 title: AppLocalization.string("home.shortcut.continueWatching"),
-                subtitle: formatCount(continueWatchingCount, singular: "home.count.video", plural: "home.count.videos")
+                subtitle: formatCount(state, singular: "home.count.video", plural: "home.count.videos")
             )
         }
         .buttonStyle(.plain)
     }
 
     private var historyShortcutRow: some View {
-        Button {
+        let state = localStatistics.history
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .history)
         } label: {
             HomeShortcutRowView(
                 icon: "clock",
                 title: AppLocalization.string("home.history.title"),
-                subtitle: formatCount(historyCount, singular: "home.count.video", plural: "home.count.videos")
+                subtitle: formatCount(state, singular: "home.count.video", plural: "home.count.videos")
             )
         }
         .buttonStyle(.plain)
@@ -929,13 +951,14 @@ struct HomeView: View {
     #endif
 
     private var channelsShortcutRow: some View {
-        Button {
+        let state = channelsCountState
+        return Button {
             appEnvironment?.navigationCoordinator.navigate(to: .manageChannels)
         } label: {
             HomeShortcutRowView(
                 icon: "person.2",
                 title: AppLocalization.string("home.channels.title"),
-                subtitle: formatCount(channelsCount, singular: "home.count.channel", plural: "home.count.channels")
+                subtitle: formatCount(state, singular: "home.count.channel", plural: "home.count.channels")
             )
         }
         .buttonStyle(.plain)
@@ -1009,6 +1032,25 @@ struct HomeView: View {
         let formattedCount = CountFormatter.compact(count)
         let key = count == 1 ? singular : plural
         return AppLocalization.string("\(formattedCount) \(AppLocalization.string(key))")
+    }
+
+    private func formatCount(
+        _ state: LocalCountState,
+        singular: String.LocalizationValue,
+        plural: String.LocalizationValue
+    ) -> String {
+        switch state {
+        case .notLoaded:
+            AppLocalization.string("common.loading")
+        case .value(let count):
+            formatCount(count, singular: singular, plural: plural)
+        case .error:
+            AppLocalization.string("common.error")
+        }
+    }
+
+    private func countValue(_ state: LocalCountState) -> Int {
+        state.value ?? 0
     }
     
     // MARK: - Queue Support
@@ -1117,8 +1159,8 @@ struct HomeView: View {
             }
 
             if sectionLayout != .list {
-                HomeHorizontalCards(
-                    videos: videoList,
+                HomeContinueWatchingHorizontalCards(
+                    entries: limitedEntries,
                     queueSource: continueWatchingQueueSource,
                     sourceLabel: AppLocalization.string("queue.source.continueWatching"),
                     layout: sectionLayout,
@@ -1473,8 +1515,7 @@ struct HomeView: View {
     private func loadData() {
         loadPlaylistsData()
         loadBookmarksData()
-        loadContinueWatchingData()
-        loadHistoryData()
+        loadHistorySectionsData()
         loadChannelsData()
         loadRemoteDevicesData()
         cleanupOrphanedHomeInstanceItems()
@@ -1504,36 +1545,50 @@ struct HomeView: View {
     }
 
     private func loadBookmarksData() {
-        bookmarksCount = dataManager?.bookmarksCount() ?? 0
         recentBookmarks = dataManager?.bookmarks(limit: 50) ?? []
     }
 
-    private func loadContinueWatchingData() {
+    private func loadHistorySectionsData() {
         let allHistory = dataManager?.watchHistory(limit: 100) ?? []
-        // Filter to in-progress only (same logic as ContinueWatchingView)
-        recentContinueWatching = allHistory.filter { !$0.isFinished && !$0.isLive && $0.watchedSeconds > 10 }
-        continueWatchingCount = recentContinueWatching.count
+        loadContinueWatchingData(from: allHistory)
+        loadHistoryData(from: allHistory)
     }
 
-    private func loadHistoryData() {
-        historyCount = dataManager?.watchHistoryCount() ?? 0
-        recentHistory = dataManager?.watchHistory(limit: 50) ?? []
+    private func loadContinueWatchingData(from history: [WatchEntry]? = nil) {
+        let allHistory = history ?? dataManager?.watchHistory(limit: 100) ?? []
+        // Filter to in-progress only (same logic as ContinueWatchingView)
+        recentContinueWatching = allHistory.filter { !$0.isFinished && !$0.isLive && $0.watchedSeconds > 10 }
+    }
+
+    private func loadHistoryData(from history: [WatchEntry]? = nil) {
+        if let history {
+            recentHistory = Array(history.prefix(50))
+        } else {
+            recentHistory = dataManager?.watchHistory(limit: 50) ?? []
+        }
     }
 
     private func loadChannelsData() {
         guard let service = appEnvironment?.subscriptionService else {
-            channelsCount = 0
+            remoteChannelsCount = .notLoaded
             return
         }
 
-        // Local accounts always have a count; server accounts only after their
-        // in-memory cache is populated — fetch it once in the background otherwise.
+        guard service.currentAccountType != .local else { return }
+
+        // Server-account counts remain explicitly unknown until their existing
+        // provider cache is available. This fetch is provider content loading,
+        // not a network request introduced for local counters.
         if let cached = service.cachedSubscriptionCount {
-            channelsCount = cached
+            remoteChannelsCount = .value(cached)
         } else {
+            remoteChannelsCount = .notLoaded
             Task {
-                if let channels = try? await service.fetchSubscriptions() {
-                    channelsCount = channels.count
+                do {
+                    let channels = try await service.fetchSubscriptions()
+                    remoteChannelsCount = .value(channels.count)
+                } catch {
+                    remoteChannelsCount = .error
                 }
             }
         }

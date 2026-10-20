@@ -26,6 +26,7 @@ struct UnifiedTabView: View {
 
     // Navigation paths
     @State private var homePath = NavigationPath()
+    @State private var hubPath = NavigationPath()
     @State private var searchPath = NavigationPath()
     @State private var channelPaths: [String: NavigationPath] = [:]
     @State private var playlistPaths: [UUID: NavigationPath] = [:]
@@ -108,8 +109,7 @@ struct UnifiedTabView: View {
         .environment(\.locale, localizationLocale)
         .tabViewStyle(.sidebarAdaptable)
         .iOS26TabFeatures(
-            shouldShowAccessory: shouldShowAccessory,
-            allowsMiniPlayerAccessory: usesMiniPlayerAccessory,
+            shouldShowAccessory: shouldShowAccessory && usesMiniPlayerAccessory,
             settingsManager: appEnvironment?.settingsManager
         )
         .zoomTransitionNamespace(zoomTransition)
@@ -180,6 +180,16 @@ struct UnifiedTabView: View {
                 }
             } label: {
                 Label(SidebarItem.home.title, systemImage: SidebarItem.home.systemImage)
+            }
+
+        case .hub:
+            Tab(value: SidebarItem.hub) {
+                NavigationStack(path: $hubPath) {
+                    HomeView(customizationContext: .hub)
+                        .withNavigationDestinations()
+                }
+            } label: {
+                Label(SidebarItem.hub.title, systemImage: SidebarItem.hub.systemImage)
             }
 
         case .subscriptions:
@@ -358,26 +368,15 @@ extension View {
     @ViewBuilder
     func iOS26TabFeatures(
         shouldShowAccessory: Bool,
-        allowsMiniPlayerAccessory: Bool,
         settingsManager: SettingsManager?
     ) -> some View {
         if #available(iOS 26.1, *) {
             let behavior = settingsManager?.miniPlayerMinimizeBehavior.tabBarMinimizeBehavior ?? .onScrollDown
             self
                 .tabViewBottomAccessory(
-                    isEnabled: shouldShowAccessory && allowsMiniPlayerAccessory
+                    isEnabled: shouldShowAccessory
                 ) {
-                    if allowsMiniPlayerAccessory {
-                        MiniPlayerView(isTabAccessory: true)
-                            #if DEBUG
-                            .onAppear {
-                                LoggingService.shared.debug(
-                                    "[ProminentTabPoC] tabViewBottomAccessory content mounted",
-                                    category: .general
-                                )
-                            }
-                            #endif
-                    }
+                    MiniPlayerView(isTabAccessory: true)
                 }
                 .tabBarMinimizeBehavior(behavior)
         } else if #available(iOS 26.0, *) {
@@ -421,6 +420,7 @@ struct UnifiedTabView: View {
 
     // Navigation paths
     @State private var homePath = NavigationPath()
+    @State private var hubPath = NavigationPath()
     @State private var searchPath = NavigationPath()
     @State private var channelPaths: [String: NavigationPath] = [:]
     @State private var playlistPaths: [UUID: NavigationPath] = [:]
@@ -551,6 +551,11 @@ struct UnifiedTabView: View {
             NavigationStack(path: $homePath) {
                 HomeView().withNavigationDestinations()
             }
+        case .hub:
+            NavigationStack(path: $hubPath) {
+                HomeView(customizationContext: .hub)
+                    .withNavigationDestinations()
+            }
         case .search:
             NavigationStack(path: $searchPath) {
                 SearchView().withNavigationDestinations()
@@ -635,6 +640,7 @@ struct UnifiedTabView: View {
 
     // Navigation paths
     @State private var homePath = NavigationPath()
+    @State private var hubPath = NavigationPath()
     @State private var searchPath = NavigationPath()
     @State private var channelPaths: [String: NavigationPath] = [:]
     @State private var playlistPaths: [UUID: NavigationPath] = [:]
@@ -709,6 +715,8 @@ struct UnifiedTabView: View {
         switch item {
         case .home:
             homePath = NavigationPath()
+        case .hub:
+            hubPath = NavigationPath()
         case .search:
             searchPath = NavigationPath()
         case .subscriptionsFeed:
@@ -804,6 +812,16 @@ struct UnifiedTabView: View {
                 }
             } label: {
                 Label(SidebarItem.home.title, systemImage: SidebarItem.home.systemImage)
+            }
+
+        case .hub:
+            Tab(value: SidebarItem.hub) {
+                NavigationStack(path: $hubPath) {
+                    HomeView(customizationContext: .hub)
+                        .withNavigationDestinations()
+                }
+            } label: {
+                Label(SidebarItem.hub.title, systemImage: SidebarItem.hub.systemImage)
             }
 
         case .subscriptions:
@@ -1005,6 +1023,8 @@ extension UnifiedTabView {
         switch selection {
         case .home:
             homePath.append(destination)
+        case .hub:
+            hubPath.append(destination)
         case .search:
             searchPath.append(destination)
         case .channel:

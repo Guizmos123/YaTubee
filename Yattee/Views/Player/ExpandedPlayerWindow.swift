@@ -724,6 +724,12 @@ final class ExpandedPlayerWindowManager {
 
     func show(with appEnvironment: AppEnvironment, animated: Bool = true) {
         LoggingService.shared.logPlayer("[ExpandedPlayerWindowManager] show called, expandedWindow=\(expandedWindow != nil), animated=\(animated), retryCount=\(showRetryCount)")
+        if appEnvironment.navigationCoordinator.isAutomaticLandscapeFullscreen {
+            LoggingService.shared.debug(
+                "[AutoLandscape] presenting expanded player window animated=\(animated)",
+                category: .player
+            )
+        }
         guard expandedWindow == nil else { return }
 
         self.appEnvironment = appEnvironment

@@ -1884,6 +1884,8 @@ struct ChannelView: View {
 
     @ViewBuilder
     private var searchResultsListContent: some View {
+        let videoContext = searchResultVideoContext
+
         VideoListContent(listStyle: listStyle) {
             ForEach(Array(searchResults.items.enumerated()), id: \.element.id) { index, item in
                 VideoListRow(
@@ -1898,8 +1900,8 @@ struct ChannelView: View {
                                 video,
                                 queueSource: searchQueueSource,
                                 sourceLabel: channel?.name,
-                                videoList: searchResultVideos,
-                                videoIndex: searchResultVideos.firstIndex(where: { $0.id == video.id }) ?? 0,
+                                videoList: videoContext.videos,
+                                videoIndex: videoContext.indexByID[video.id] ?? 0,
                                 loadMoreVideos: nil
                             )
                             #if !os(tvOS)
@@ -1923,6 +1925,8 @@ struct ChannelView: View {
 
     @ViewBuilder
     private var searchResultsGridContent: some View {
+        let videoContext = searchResultVideoContext
+
         VideoGridContent(columns: gridConfig.effectiveColumns) {
             ForEach(searchResults.items) { item in
                 switch item {
@@ -1932,8 +1936,8 @@ struct ChannelView: View {
                             video,
                             queueSource: searchQueueSource,
                             sourceLabel: channel?.name,
-                            videoList: searchResultVideos,
-                            videoIndex: searchResultVideos.firstIndex(where: { $0.id == video.id }) ?? 0,
+                            videoList: videoContext.videos,
+                            videoIndex: videoContext.indexByID[video.id] ?? 0,
                             loadMoreVideos: nil
                         )
 
@@ -1966,14 +1970,21 @@ struct ChannelView: View {
         }
     }
 
-    /// Extracts just the videos from search results for queue navigation
-    private var searchResultVideos: [Video] {
-        searchResults.items.compactMap { item in
+    /// Extracts videos and their first queue index from search results.
+    private var searchResultVideoContext: (videos: [Video], indexByID: [VideoID: Int]) {
+        var videos: [Video] = []
+        var indexByID: [VideoID: Int] = [:]
+
+        for item in searchResults.items {
             if case .video(let video) = item {
-                return video
+                if indexByID[video.id] == nil {
+                    indexByID[video.id] = videos.count
+                }
+                videos.append(video)
             }
-            return nil
         }
+
+        return (videos, indexByID)
     }
 
     // MARK: - Search Loading

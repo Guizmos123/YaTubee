@@ -11,6 +11,7 @@ import Foundation
 enum SidebarItem: Hashable, Identifiable {
     // MARK: - Fixed Navigation Items
     case home
+    case hub
     case search
     case sources
     case settings
@@ -45,6 +46,8 @@ enum SidebarItem: Hashable, Identifiable {
         switch self {
         case .home:
             return "home"
+        case .hub:
+            return "hub"
         case .search:
             return "search"
         case .sources:
@@ -88,6 +91,8 @@ enum SidebarItem: Hashable, Identifiable {
         switch self {
         case .home:
             return AppLocalization.string("tabs.home")
+        case .hub:
+            return AppLocalization.string("tabs.hub")
         case .search:
             return AppLocalization.string("tabs.search")
         case .sources:
@@ -129,6 +134,8 @@ enum SidebarItem: Hashable, Identifiable {
         switch self {
         case .home:
             return "house.fill"
+        case .hub:
+            return "circle.grid.2x2"
         case .search:
             return "magnifyingglass"
         case .sources:
@@ -172,7 +179,7 @@ enum SidebarItem: Hashable, Identifiable {
     /// Returns nil for items that are root views (home, search) which don't push.
     func navigationDestination() -> NavigationDestination? {
         switch self {
-        case .home, .search, .sources, .settings, .nowPlaying, .openURL, .remoteControl:
+        case .home, .hub, .search, .sources, .settings, .nowPlaying, .openURL, .remoteControl:
             // These are root tabs, not push destinations
             return nil
         case .channel(let channelID, _, let source):
@@ -206,7 +213,7 @@ enum SidebarItem: Hashable, Identifiable {
     /// Whether this is a fixed navigation item (always visible).
     var isFixedNavigation: Bool {
         switch self {
-        case .home, .search, .sources, .settings, .nowPlaying, .openURL, .remoteControl:
+        case .home, .hub, .search, .sources, .settings, .nowPlaying, .openURL, .remoteControl:
             return true
         default:
             return false

@@ -9,6 +9,27 @@ import Foundation
 
 /// Utility for formatting counts with compact notation and proper pluralization.
 enum CountFormatter {
+    private final class Storage: @unchecked Sendable {
+        private let lock = NSLock()
+        private let formatter: NumberFormatter = {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            formatter.usesGroupingSeparator = false
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 1
+            return formatter
+        }()
+
+        func string(from value: Double, locale: Locale) -> String? {
+            lock.withLock {
+                formatter.locale = locale
+                return formatter.string(from: NSNumber(value: value))
+            }
+        }
+    }
+
+    private static let storage = Storage()
+
     /// Formats a count to compact notation (e.g., 1K, 2.5K, 1M, 1B).
     /// - Parameter count: The number to format
     /// - Returns: Formatted string (e.g., "150", "1.2K", "2.5M", "1B")
@@ -26,12 +47,7 @@ enum CountFormatter {
     }
 
     private static func compactValue(_ value: Double, suffix: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = AppLocalization.selectedLocale
-        formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = false
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 1
-        return (formatter.string(from: NSNumber(value: value)) ?? "\(value)") + suffix
+        let formatted = storage.string(from: value, locale: AppLocalization.selectedLocale)
+        return (formatted ?? "\(value)") + suffix
     }
 }

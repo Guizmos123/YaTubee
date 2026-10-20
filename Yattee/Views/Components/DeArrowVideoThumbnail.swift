@@ -27,6 +27,8 @@ struct DeArrowVideoThumbnail: View {
     var watchProgress: Double? = nil
     var duration: String? = nil
     var durationAlignment: Alignment = .bottomLeading
+    var showsNoveltyBadge: Bool = false
+    var noveltyBadgeSize: CGFloat = 18
 
     @State private var isWatched = false
 
@@ -110,7 +112,9 @@ struct DeArrowVideoThumbnail: View {
             downloadProgressIndeterminate: downloadProgressIndeterminate,
             isLive: video.isLive,
             placeholderTitle: placeholderTitle,
-            isWatched: isFinishedWatching
+            isWatched: isFinishedWatching,
+            showsNoveltyBadge: showsNoveltyBadge,
+            noveltyBadgeSize: noveltyBadgeSize
         )
         .task(id: video.id) {
             deArrowProvider?.fetchIfNeeded(for: video)

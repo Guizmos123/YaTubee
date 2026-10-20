@@ -28,6 +28,7 @@ struct SubscriptionsView: View {
     @State private var watchEntriesMap: [String: WatchEntry] = [:]
     @State private var showViewOptions = false
     @State private var noveltyBadgeState = FeedNoveltyBadgeState.shared
+    @State private var videoOpenRegistry = FeedVideoOpenRegistry.shared
     #if DEBUG
     @State private var noveltyBadgeDiagnostic = FeedNoveltyBadgeDiagnosticState.shared
     #endif
@@ -55,6 +56,7 @@ struct SubscriptionsView: View {
     @AppStorage("subscriptionsRowStyle") private var rowStyle: VideoRowStyle = .regular
     @AppStorage("subscriptionsGridColumns") private var gridColumns = 2
     @AppStorage("subscriptionsHideWatched") private var hideWatched = false
+    @AppStorage("subscriptionsNoveltyBadgeEnabled") private var noveltyBadgeEnabled = false
     @AppStorage("subscriptionsChannelStripSize") private var channelStripSize: ChannelStripSize = .normal
     @AppStorage("subscriptionsShowSidebar") private var showSidebar = true
     /// Whether the last completed load produced enough channels for the sidebar,
@@ -167,6 +169,15 @@ struct SubscriptionsView: View {
                 }
                 #else
                 Toggle("viewOptions.hideWatched", isOn: $hideWatched)
+                #endif
+
+                #if os(tvOS)
+                PlatformMenuPicker(AppLocalization.string("viewOptions.noveltyBadge"), selection: $noveltyBadgeEnabled) {
+                    Text("common.on").tag(true)
+                    Text("common.off").tag(false)
+                }
+                #else
+                Toggle("viewOptions.noveltyBadge", isOn: $noveltyBadgeEnabled)
                 #endif
 
                 #if os(iOS)
@@ -325,11 +336,30 @@ struct SubscriptionsView: View {
         }
     }
 
+    /// Uses the same enriched local channel metadata as the Channels page when
+    /// an older subscription record has no avatar URL of its own.
+    private func avatarURL(for subscription: Subscription) -> URL? {
+        subscription.avatarURL ?? appEnvironment.flatMap {
+            CachedChannelData.thumbnailURL(
+                for: subscription.channelID,
+                using: $0.dataManager
+            )
+        }
+    }
+
     /// Gets the watch progress (0.0-1.0) for a video, or nil if not watched/finished.
     private func watchProgress(for video: Video) -> Double? {
         guard let entry = watchEntriesMap[video.id.videoID] else { return nil }
         let progress = entry.progress
         return progress > 0 && progress < 1 ? progress : nil
+    }
+
+    private func showsNoveltyBadge(for video: Video) -> Bool {
+        FeedNoveltyThumbnailPresentation.showsBadge(
+            isEnabled: noveltyBadgeEnabled,
+            isOpened: videoOpenRegistry.isOpened(video.id),
+            isWatched: watchEntriesMap[video.id.videoID]?.isFinished == true
+        )
     }
 
     /// View options button lives on the leading edge on macOS, trailing elsewhere.
@@ -489,15 +519,6 @@ struct SubscriptionsView: View {
                         }
                         #endif
                     }
-                    #if os(iOS)
-                    ToolbarItem(placement: .primaryAction) {
-                        NavigationLink(value: NavigationDestination.search("")) {
-                            Image(systemName: "magnifyingglass")
-                        }
-                        .accessibilityIdentifier("subscriptions.searchButton")
-                        .accessibilityLabel(AppLocalization.string("tabs.search"))
-                    }
-                    #endif
                 }
                 #endif
                 #if os(macOS)
@@ -531,6 +552,7 @@ struct SubscriptionsView: View {
                         // Synchronous load for local accounts so the sidebar is
                         // present in the first layout pass (avoids layout jump).
                         loadSubscriptions()
+                        loadWatchEntries()
                     }
                     .task {
                         await loadSubscriptionsAsync()
@@ -711,7 +733,8 @@ struct SubscriptionsView: View {
                         VideoRowView(
                             video: video,
                             style: rowStyle,
-                            watchProgress: watchProgress(for: video)
+                            watchProgress: watchProgress(for: video),
+                            showsNoveltyBadge: showsNoveltyBadge(for: video)
                         )
                         .tappableVideo(
                             video,
@@ -837,7 +860,7 @@ struct SubscriptionsView: View {
                 ChannelFilterChip(
                     channelID: subscription.channelID,
                     name: subscription.name,
-                    avatarURL: subscription.avatarURL,
+                    avatarURL: avatarURL(for: subscription),
                     serverURL: yatteeServerURL,
                     source: subscription.contentSource,
                     isSelected: selectedChannelID == subscription.channelID,
@@ -1253,7 +1276,8 @@ struct SubscriptionsView: View {
                     VideoCardView(
                         video: video,
                         watchProgress: watchProgress(for: video),
-                        isCompact: gridConfig.isCompactCards
+                        isCompact: gridConfig.isCompactCards,
+                        showsNoveltyBadge: showsNoveltyBadge(for: video)
                     )
                     .tappableVideo(
                         video,
@@ -1546,7 +1570,13 @@ struct SubscriptionsView: View {
     }
 
     private func loadWatchEntries() {
-        watchEntriesMap = dataManager?.watchEntriesMap() ?? [:]
+        let entries = dataManager?.watchHistory(limit: 10_000) ?? []
+        watchEntriesMap = entries.reduce(into: [:]) { result, entry in
+            result[entry.videoID] = entry
+        }
+        // Seed with the complete source-aware entries rather than the display map,
+        // whose videoID-only key intentionally collapses equivalent feed rows.
+        videoOpenRegistry.seed(from: entries)
     }
 
     #if os(iOS)

@@ -8,6 +8,25 @@
 
 @preconcurrency import Foundation
 
+private enum PeerTubeDateFormatter {
+    private final class Storage: @unchecked Sendable {
+        private let lock = NSLock()
+        private let formatter = ISO8601DateFormatter()
+
+        func date(from string: String) -> Date? {
+            lock.withLock {
+                formatter.date(from: string)
+            }
+        }
+    }
+
+    private static let storage = Storage()
+
+    static func date(from string: String) -> Date? {
+        storage.date(from: string)
+    }
+}
+
 /// PeerTube API client for federated video content.
 actor PeerTubeAPI: InstanceAPI {
     private let httpClient: HTTPClient
@@ -150,7 +169,7 @@ private struct PeerTubeVideo: Decodable, Sendable {
     }
 
     nonisolated func toVideo(instanceURL: URL) -> Video {
-        let publishDate = publishedAt.flatMap { ISO8601DateFormatter().date(from: $0) }
+        let publishDate = publishedAt.flatMap { PeerTubeDateFormatter.date(from: $0) }
 
         var thumbnails: [Thumbnail] = []
         if let thumbnailPath {
@@ -221,7 +240,7 @@ private struct PeerTubeVideoDetails: Decodable, Sendable {
     }
 
     nonisolated func toVideo(instanceURL: URL) -> Video {
-        let publishDate = publishedAt.flatMap { ISO8601DateFormatter().date(from: $0) }
+        let publishDate = publishedAt.flatMap { PeerTubeDateFormatter.date(from: $0) }
 
         var thumbnails: [Thumbnail] = []
         if let thumbnailPath {
@@ -502,7 +521,7 @@ private struct PeerTubeComment: Decodable, Sendable {
     }
 
     nonisolated func toComment(instanceURL: URL) -> Comment {
-        let publishDate = createdAt.flatMap { ISO8601DateFormatter().date(from: $0) }
+        let publishDate = createdAt.flatMap { PeerTubeDateFormatter.date(from: $0) }
 
         return Comment(
             id: String(id),

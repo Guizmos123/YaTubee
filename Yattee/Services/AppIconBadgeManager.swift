@@ -79,8 +79,10 @@ final class AppIconBadgeManager {
         guard isEnabled else { return false }
 
         if state == .notDetermined {
-            let granted = (try? await provider.requestBadgeAuthorization()) == true
-            state = granted ? .authorized : .denied
+            _ = try? await provider.requestBadgeAuthorization()
+            // The request result only means that at least one requested option was
+            // granted. Always re-read badgeSetting to determine badge availability.
+            state = await provider.authorizationState()
         }
 
         guard isEnabled else { return false }

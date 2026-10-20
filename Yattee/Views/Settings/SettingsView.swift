@@ -18,14 +18,23 @@ struct SettingsView: View {
     #endif
 
     var body: some View {
-        #if os(macOS)
-        macOSSettings
-            .frame(minWidth: 600, minHeight: 520)
-        #elseif os(tvOS)
-        tvOSSettings
-        #else
-        iOSSettings
-        #endif
+        Group {
+            #if os(macOS)
+            macOSSettings
+                .frame(minWidth: 600, minHeight: 520)
+            #elseif os(tvOS)
+            tvOSSettings
+            #else
+            iOSSettings
+            #endif
+        }
+        // Settings can live in a sheet or a separate scene whose inherited
+        // locale was captured at presentation time. Re-inject it at the root
+        // so the existing navigation hierarchy updates in place.
+        .environment(
+            \.locale,
+            appEnvironment?.settingsManager.appLanguage.locale ?? AppLanguage.english.locale
+        )
     }
 
     // MARK: - macOS Settings
@@ -435,6 +444,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 
 private struct LanguageSettingsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
+    @State private var pendingVideoMetadataLanguage: VideoMetadataLanguage?
 
     var body: some View {
         SettingsFormContainer {
@@ -450,7 +460,10 @@ private struct LanguageSettingsView: View {
                 }
 
                 SettingsFormSection("settings.language.youtubeContent.section") {
-                    Picker("settings.language.video.title", selection: Bindable(settings).videoMetadataLanguage) {
+                    Picker(
+                        "settings.language.video.title",
+                        selection: videoMetadataLanguageSelection(for: settings)
+                    ) {
                         ForEach(VideoMetadataLanguage.allCases, id: \.self) { language in
                             Text(language.displayName).tag(language)
                         }
@@ -464,6 +477,43 @@ private struct LanguageSettingsView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .alert(
+            AppLocalization.string("settings.language.video.changeConfirmation.title"),
+            isPresented: pendingVideoMetadataLanguageAlert
+        ) {
+            Button(AppLocalization.string("common.cancel"), role: .cancel) {
+                pendingVideoMetadataLanguage = nil
+            }
+            Button(AppLocalization.string("settings.language.video.changeConfirmation.action")) {
+                guard let pendingVideoMetadataLanguage,
+                      let settings = appEnvironment?.settingsManager else { return }
+                settings.videoMetadataLanguage = pendingVideoMetadataLanguage
+                self.pendingVideoMetadataLanguage = nil
+            }
+        } message: {
+            Text(AppLocalization.string("settings.language.video.changeConfirmation.message"))
+        }
+    }
+
+    private var pendingVideoMetadataLanguageAlert: Binding<Bool> {
+        Binding(
+            get: { pendingVideoMetadataLanguage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    pendingVideoMetadataLanguage = nil
+                }
+            }
+        )
+    }
+
+    private func videoMetadataLanguageSelection(for settings: SettingsManager) -> Binding<VideoMetadataLanguage> {
+        Binding(
+            get: { settings.videoMetadataLanguage },
+            set: { newLanguage in
+                guard newLanguage != settings.videoMetadataLanguage else { return }
+                pendingVideoMetadataLanguage = newLanguage
+            }
+        )
     }
 }
 

@@ -92,7 +92,6 @@ actor FeedCache {
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
-            encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(cacheData)
             let sizeMB = Double(data.count) / (1024 * 1024)
             try data.write(to: cacheFileURL(for: scopeKey), options: .atomic)

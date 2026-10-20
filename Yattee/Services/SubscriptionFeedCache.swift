@@ -369,24 +369,22 @@ final class SubscriptionFeedCache {
     }
 
     /// Saves the current feed state to disk.
-    private func saveToDisk() {
+    private func saveToDisk() async {
         guard let lastUpdated else {
             LoggingService.shared.warning("saveToDisk called but lastUpdated is nil", category: .general)
             return
         }
         LoggingService.shared.debug("Saving feed cache to disk: \(videos.count) videos, lastUpdated: \(lastUpdated)", category: .general)
-        Task {
-            await FeedCache.shared.save(
-                videos: videos,
-                lastUpdated: lastUpdated,
-                scopeKey: cacheScopeKey,
-                syncSnapshot: syncSnapshot
-            )
-        }
+        await FeedCache.shared.save(
+            videos: videos,
+            lastUpdated: lastUpdated,
+            scopeKey: cacheScopeKey,
+            syncSnapshot: syncSnapshot
+        )
     }
 
     /// Updates the cache with new videos and persists to disk.
-    func update(videos: [Video]) {
+    private func update(videos: [Video]) async {
         let oldCount = self.videos.count
         let oldDate = self.lastUpdated
         self.videos = videos
@@ -396,31 +394,31 @@ final class SubscriptionFeedCache {
             "Feed cache updated: \(oldCount) -> \(videos.count) videos, lastUpdated changed from \(oldDate?.description ?? "nil") to \(Date())",
             category: .general
         )
-        saveToDisk()
+        await saveToDisk()
         TopShelfSnapshotWriter.writeFeed()
     }
 
     /// Stores an incomplete Yattee Server snapshot without making the cache
     /// appear freshly and completely synchronized.
-    private func updatePartialYatteeServerSnapshot(videos: [Video]) {
+    private func updatePartialYatteeServerSnapshot(videos: [Video]) async {
         self.videos = videos
         self.lastUpdated = lastUpdated ?? .distantPast
         self.hasLoadedOnce = true
-        saveToDisk()
+        await saveToDisk()
         TopShelfSnapshotWriter.writeFeed()
     }
 
     /// Stores an incomplete local Invidious snapshot without marking it fresh.
-    private func updatePartialInvidiousSnapshot(videos: [Video]) {
+    private func updatePartialInvidiousSnapshot(videos: [Video]) async {
         self.videos = videos
         self.lastUpdated = lastUpdated ?? .distantPast
         self.hasLoadedOnce = true
-        saveToDisk()
+        await saveToDisk()
         TopShelfSnapshotWriter.writeFeed()
     }
 
     /// Appends videos to the existing cache (for pagination).
-    private func appendVideos(_ newVideos: [Video]) {
+    private func appendVideos(_ newVideos: [Video]) async {
         let existingIDs = Set(videos.map { $0.id })
         let uniqueNewVideos = newVideos.filter { !existingIDs.contains($0.id) }
         videos.append(contentsOf: uniqueNewVideos)
@@ -429,7 +427,7 @@ final class SubscriptionFeedCache {
             "Appended \(uniqueNewVideos.count) videos to feed cache (total: \(videos.count))",
             category: .general
         )
-        saveToDisk()
+        await saveToDisk()
     }
 
     // MARK: - Feed Context Change Handling
@@ -582,26 +580,26 @@ final class SubscriptionFeedCache {
                 isCompleteSnapshot: aggregation.status == .complete,
                 settings: appEnvironment.settingsManager
             )
-            await storeSyncSnapshot(
-                invidiousSnapshot(
-                    aggregation: aggregation,
-                    instance: instance,
-                    refreshStartedAt: refreshStartedAt,
-                    refreshFinishedAt: Date()
-                )
+            let refreshSnapshot = invidiousSnapshot(
+                aggregation: aggregation,
+                instance: instance,
+                refreshStartedAt: refreshStartedAt,
+                refreshFinishedAt: Date()
             )
+            syncSnapshot = refreshSnapshot
 
             if aggregation.status == .complete {
-                update(videos: resolvedVideos)
+                await update(videos: resolvedVideos)
                 feedLoadState = .ready
             } else if aggregation.successfulChannelCount > 0 {
-                updatePartialInvidiousSnapshot(videos: resolvedVideos)
+                await updatePartialInvidiousSnapshot(videos: resolvedVideos)
                 feedLoadState = .partiallyLoaded(
                     readyCount: aggregation.successfulChannelCount,
                     pendingCount: 0,
                     errorCount: aggregation.failedChannelCount
                 )
             } else {
+                await storeSyncSnapshot(refreshSnapshot)
                 feedLoadState = .error(.networkError("All Invidious channel requests failed"))
             }
 
@@ -715,7 +713,7 @@ final class SubscriptionFeedCache {
                 isCompleteSnapshot: true,
                 settings: appEnvironment.settingsManager
             )
-            update(videos: feedVideos)
+            await update(videos: feedVideos)
             appEnvironment.dataManager.updateLastVideoPublishedDates(from: feedVideos)
             prefetchDeArrow(for: feedVideos, using: appEnvironment)
             feedLoadState = .ready
@@ -785,7 +783,7 @@ final class SubscriptionFeedCache {
                 isCompleteSnapshot: !response.hasMore,
                 settings: appEnvironment.settingsManager
             )
-            update(videos: feedVideos)
+            await update(videos: feedVideos)
             appEnvironment.dataManager.updateLastVideoPublishedDates(from: feedVideos)
 
             // Update pagination state
@@ -854,7 +852,7 @@ final class SubscriptionFeedCache {
                 isCompleteSnapshot: !response.hasMore,
                 settings: appEnvironment.settingsManager
             )
-            appendVideos(feedVideos)
+            await appendVideos(feedVideos)
 
             // Update pagination state
             hasMorePages = response.hasMore
@@ -1451,10 +1449,10 @@ final class SubscriptionFeedCache {
         )
 
         if isComplete {
-            update(videos: resolvedVideos)
+            await update(videos: resolvedVideos)
             feedLoadState = .ready
         } else {
-            updatePartialYatteeServerSnapshot(videos: resolvedVideos)
+            await updatePartialYatteeServerSnapshot(videos: resolvedVideos)
             feedLoadState = .partiallyLoaded(
                 readyCount: response.readyCount ?? 0,
                 pendingCount: response.pendingCount ?? 0,

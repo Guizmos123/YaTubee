@@ -9,6 +9,17 @@ import Foundation
 import SwiftUI
 
 struct HomeView: View {
+    private struct DataReloadScope: OptionSet {
+        let rawValue: UInt8
+
+        static let playlists = DataReloadScope(rawValue: 1 << 0)
+        static let bookmarks = DataReloadScope(rawValue: 1 << 1)
+        static let history = DataReloadScope(rawValue: 1 << 2)
+        static let channels = DataReloadScope(rawValue: 1 << 3)
+        static let visibility = DataReloadScope(rawValue: 1 << 4)
+        static let full: DataReloadScope = [.playlists, .bookmarks, .history, .channels, .visibility]
+    }
+
     let customizationContext: HomeCustomizationContext
 
     init(customizationContext: HomeCustomizationContext = .home) {
@@ -33,6 +44,8 @@ struct HomeView: View {
     @State private var remoteChannelsCount: LocalCountState = .notLoaded
     @State private var discoveredDevicesCount: Int = 0
     @State private var feedCache = SubscriptionFeedCache.shared
+    @State private var pendingDataReload: DataReloadScope = .full
+    @State private var dataReloadGeneration = 0
 
     private var dataManager: DataManager? { appEnvironment?.dataManager }
     private var settingsManager: SettingsManager? { appEnvironment?.settingsManager }
@@ -177,13 +190,18 @@ struct HomeView: View {
             #endif
         }
         #endif
-        .onAppear {
-            loadData()
-        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                loadData()
+                requestDataReload()
             }
+        }
+        .task(id: dataReloadGeneration) {
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+
+            let scope = pendingDataReload
+            pendingDataReload = []
+            loadData(scope)
         }
         .task {
             if let appEnvironment {
@@ -195,30 +213,30 @@ struct HomeView: View {
         .onChange(of: appEnvironment?.navigationCoordinator.isPlayerExpanded) { _, isExpanded in
             // Refresh when player is collapsed
             if isExpanded == false {
-                loadData()
+                requestDataReload()
             }
         }
         .onChange(of: appEnvironment?.navigationCoordinator.selectedTab) { _, newTab in
             if newTab == .home {
-                loadData()
+                requestDataReload()
             }
         }
         .onChange(of: showingCustomizeHome) { _, isShowing in
             if !isShowing {
-                loadData()
+                requestDataReload()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .bookmarksDidChange)) { _ in
-            loadBookmarksData()
+            requestDataReload(.bookmarks)
         }
         .onReceive(NotificationCenter.default.publisher(for: .watchHistoryDidChange)) { _ in
-            loadHistorySectionsData()
+            requestDataReload(.history)
         }
         .onReceive(NotificationCenter.default.publisher(for: .playlistsDidChange)) { _ in
-            loadPlaylistsData()
+            requestDataReload(.playlists)
         }
         .onReceive(NotificationCenter.default.publisher(for: .subscriptionsDidChange)) { _ in
-            loadChannelsData()
+            requestDataReload(.channels)
         }
     }
 
@@ -1178,7 +1196,6 @@ struct HomeView: View {
                             entry: entry,
                             onRemove: {
                                 dataManager?.removeFromHistory(videoID: entry.videoID)
-                                loadData()
                             },
                             queueSource: continueWatchingQueueSource,
                             sourceLabel: AppLocalization.string("queue.source.continueWatching"),
@@ -1197,7 +1214,6 @@ struct HomeView: View {
                                 background: .red
                             ) { reset in
                                 dataManager?.removeFromHistory(videoID: entry.videoID)
-                                loadData()
                                 reset()
                             }
                         ]
@@ -1281,7 +1297,6 @@ struct HomeView: View {
                             bookmark: bookmark,
                             onRemove: {
                                 dataManager?.removeBookmark(for: bookmark.videoID)
-                                loadData()
                             },
                             queueSource: recentBookmarksQueueSource,
                             sourceLabel: AppLocalization.string("queue.source.bookmarks"),
@@ -1300,7 +1315,6 @@ struct HomeView: View {
                                 background: .red
                             ) { reset in
                                 dataManager?.removeBookmark(for: bookmark.videoID)
-                                loadData()
                                 reset()
                             }
                         ]
@@ -1341,7 +1355,6 @@ struct HomeView: View {
                             entry: entry,
                             onRemove: {
                                 dataManager?.removeFromHistory(videoID: entry.videoID)
-                                loadData()
                             },
                             queueSource: recentHistoryQueueSource,
                             sourceLabel: AppLocalization.string("queue.source.history"),
@@ -1360,7 +1373,6 @@ struct HomeView: View {
                                 background: .red
                             ) { reset in
                                 dataManager?.removeFromHistory(videoID: entry.videoID)
-                                loadData()
                                 reset()
                             }
                         ]
@@ -1512,16 +1524,31 @@ struct HomeView: View {
 
     // MARK: - Data Loading
 
-    private func loadData() {
-        loadPlaylistsData()
-        loadBookmarksData()
-        loadHistorySectionsData()
-        loadChannelsData()
-        loadRemoteDevicesData()
-        cleanupOrphanedHomeInstanceItems()
-        cleanupOrphanedHomeMediaSourceItems()
-        // Media sources are shortcuts-only; drop any legacy media-source sections.
-        appEnvironment?.settingsManager.removeAllHomeMediaSourceSections()
+    private func requestDataReload(_ scope: DataReloadScope = .full) {
+        pendingDataReload.formUnion(scope)
+        dataReloadGeneration &+= 1
+    }
+
+    private func loadData(_ scope: DataReloadScope) {
+        if scope.contains(.playlists) {
+            loadPlaylistsData()
+        }
+        if scope.contains(.bookmarks) {
+            loadBookmarksData()
+        }
+        if scope.contains(.history) {
+            loadHistorySectionsData()
+        }
+        if scope.contains(.channels) {
+            loadChannelsData()
+        }
+        if scope.contains(.visibility) {
+            loadRemoteDevicesData()
+            cleanupOrphanedHomeInstanceItems()
+            cleanupOrphanedHomeMediaSourceItems()
+            // Media sources are shortcuts-only; drop any legacy media-source sections.
+            appEnvironment?.settingsManager.removeAllHomeMediaSourceSections()
+        }
     }
 
     private func cleanupOrphanedHomeInstanceItems() {

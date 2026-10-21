@@ -11,10 +11,11 @@ import Network
 
 #if os(tvOS)
 import Darwin
+import Security
 import UIKit
 
 /// Lightweight HTTP server for exporting logs on tvOS.
-/// Starts a temporary server that serves logs at /logs.txt for download.
+/// Starts a temporary server that serves logs through a protected /logs.txt URL.
 @MainActor
 @Observable
 final class LogExportHTTPServer {
@@ -23,7 +24,7 @@ final class LogExportHTTPServer {
     /// Whether the server is currently running.
     private(set) var isRunning = false
 
-    /// The URL where logs can be downloaded (e.g., "http://192.168.1.50:8080/logs.txt").
+    /// The single-use URL where logs can be downloaded.
     private(set) var serverURL: String?
 
     /// The port the server is listening on.
@@ -40,6 +41,8 @@ final class LogExportHTTPServer {
     private var listener: NWListener?
     private var autoStopTask: Task<Void, Never>?
     private var countdownTask: Task<Void, Never>?
+    private var accessToken: String?
+    private var isDownloadInProgress = false
     private let queue = DispatchQueue(label: "stream.yattee.logexport", qos: .userInitiated)
 
     /// Auto-stop timeout in seconds (5 minutes).
@@ -56,6 +59,12 @@ final class LogExportHTTPServer {
         guard !isRunning else { return }
 
         errorMessage = nil
+
+        guard let accessToken = generateAccessToken() else {
+            errorMessage = "Unable to secure log export"
+            LoggingService.shared.error("Failed to generate log export access token", category: .general)
+            return
+        }
 
         guard let ipAddress = getLocalIPAddress() else {
             errorMessage = AppLocalization.string("settings.advanced.logs.export.noNetwork")
@@ -83,6 +92,8 @@ final class LogExportHTTPServer {
 
             listener.start(queue: queue)
             self.listener = listener
+            self.accessToken = accessToken
+            isDownloadInProgress = false
             isRunning = true
             secondsRemaining = autoStopTimeout
             startAutoStopTimer()
@@ -98,6 +109,8 @@ final class LogExportHTTPServer {
 
     /// Stop the HTTP server.
     func stop() {
+        accessToken = nil
+        isDownloadInProgress = false
         guard isRunning else { return }
 
         listener?.cancel()
@@ -121,8 +134,8 @@ final class LogExportHTTPServer {
         case .ready:
             if let port = listener?.port?.rawValue {
                 self.port = port
-                self.serverURL = "http://\(ipAddress):\(port)"
-                LoggingService.shared.info("Log export server ready", category: .general, details: serverURL)
+                self.serverURL = accessToken.map { "http://\(ipAddress):\(port)/logs.txt?token=\($0)" }
+                LoggingService.shared.info("Log export server ready", category: .general)
             }
 
         case .failed(let error):
@@ -187,29 +200,26 @@ final class LogExportHTTPServer {
             return
         }
 
-        let method = parts[0]
-        var path = parts[1]
-
-        // Handle absolute URLs (some clients send full URL instead of just path)
-        if path.hasPrefix("http://") || path.hasPrefix("https://") {
-            if let url = URL(string: path) {
-                path = url.path.isEmpty ? "/" : url.path
-            }
+        guard parts[0] == "GET", let components = requestComponents(from: parts[1]), components.path == "/logs.txt" else {
+            sendErrorResponse(on: connection, code: 404, message: "Not Found")
+            return
         }
 
-        // Handle GET /logs.txt or GET /
-        if method == "GET" && (path == "/logs.txt" || path == "/" || path.hasPrefix("/?")) {
-            sendLogsResponse(on: connection)
-        } else if method == "GET" && path == "/favicon.ico" {
-            // Ignore favicon requests
-            sendErrorResponse(on: connection, code: 404, message: "Not Found")
-        } else {
-            sendErrorResponse(on: connection, code: 404, message: "Not Found")
+        guard !isDownloadInProgress,
+              let accessToken,
+              let suppliedToken = components.queryItems?.first(where: { $0.name == "token" })?.value,
+              securelyMatches(suppliedToken, accessToken)
+        else {
+            sendErrorResponse(on: connection, code: 403, message: "Forbidden")
+            return
         }
+
+        isDownloadInProgress = true
+        sendLogsResponse(on: connection)
     }
 
     private func sendLogsResponse(on connection: NWConnection) {
-        let logs = LoggingService.shared.exportLogs()
+        let logs = sanitizedLogExport(LoggingService.shared.exportLogs())
         let logsData = logs.data(using: .utf8) ?? Data()
         let filename = generateLogFilename()
 
@@ -226,11 +236,62 @@ final class LogExportHTTPServer {
         var responseData = headers.data(using: .utf8) ?? Data()
         responseData.append(logsData)
 
-        connection.send(content: responseData, completion: .contentProcessed { _ in
+        connection.send(content: responseData, completion: .contentProcessed { [weak self] error in
             connection.cancel()
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if error == nil {
+                    LoggingService.shared.info("Logs downloaded via HTTP", category: .general)
+                    self.stop()
+                } else {
+                    self.isDownloadInProgress = false
+                }
+            }
         })
+    }
 
-        LoggingService.shared.info("Logs downloaded via HTTP", category: .general)
+    private func requestComponents(from requestTarget: String) -> URLComponents? {
+        if requestTarget.hasPrefix("http://") || requestTarget.hasPrefix("https://") {
+            return URLComponents(string: requestTarget)
+        }
+        return URLComponents(string: "http://localhost\(requestTarget)")
+    }
+
+    private func generateAccessToken() -> String? {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else {
+            return nil
+        }
+        return bytes.map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func securelyMatches(_ suppliedToken: String, _ expectedToken: String) -> Bool {
+        let suppliedBytes = Array(suppliedToken.utf8)
+        let expectedBytes = Array(expectedToken.utf8)
+        guard suppliedBytes.count == expectedBytes.count else { return false }
+
+        var difference: UInt8 = 0
+        for index in suppliedBytes.indices {
+            difference |= suppliedBytes[index] ^ expectedBytes[index]
+        }
+        return difference == 0
+    }
+
+    private func sanitizedLogExport(_ logs: String) -> String {
+        let redactions = [
+            (#"(?i)(\b(?:authorization|proxy-authorization|cookie|set-cookie|x-api-key)\s*:\s*)[^\r\n]+"#, "$1[REDACTED]"),
+            (#"(?i)(\"(?:password|passwd|access_token|refresh_token|api_key|apikey|client_secret|token)\"\s*:\s*\")[^\"]*(\")"#, "$1[REDACTED]$2"),
+            (#"(?i)(\b(?:password|passwd|access_token|refresh_token|api_key|apikey|client_secret|token)\s*=\s*)[^&\s,;]+"#, "$1[REDACTED]"),
+            (#"(?i)(://[^:/\s]+:)[^@/\s]+(@)"#, "$1[REDACTED]$2")
+        ]
+
+        return redactions.reduce(logs) { result, redaction in
+            result.replacingOccurrences(
+                of: redaction.0,
+                with: redaction.1,
+                options: .regularExpression
+            )
+        }
     }
 
     /// Generate a filename with device name, build number, and timestamp.
